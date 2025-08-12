@@ -4,11 +4,11 @@
 
 **PSAppDeployToolkit** is a PowerShell-based, open-source framework for Windows software deployment that integrates with deployment solutions like Microsoft Intune, SCCM, Tanium, and BigFix. It achieves consistently high deployment success rates (>98%) through battle-tested workflows, extensive function libraries, customizable user interfaces, and comprehensive logging.
 
-- **Repository Size**: ~116MB with 186 PowerShell scripts, 30 PowerShell data files, 19 compiled binaries
+- **Repository Size**: Over 100MB with 150+ PowerShell scripts, PowerShell data files and compiled binaries
 - **Languages**: PowerShell (primary), C# (.NET Framework 4.7.2), XAML for UI  
 - **Target Runtime**: Windows PowerShell 5.1+ and PowerShell 7+
 - **Dependencies**: .NET Framework 4.7.2+, Visual Studio/MSBuild for C# compilation
-- **Exported Functions**: 134 public functions with ADT prefix (e.g., Get-ADTApplication)
+- **Exported Functions**: Module public functions have ADT prefix (e.g., Get-ADTApplication)
 
 ## Build System & Validation
 
@@ -60,7 +60,7 @@ Test-ModuleManifest ./src/PSAppDeployToolkit/PSAppDeployToolkit.psd1
 # Load module for testing (may show CimCmdlets warning - this is expected on non-Windows)
 Import-Module ./src/PSAppDeployToolkit/PSAppDeployToolkit.psd1 -Force
 
-# Verify function count (should be 134 functions)
+# Verify function count (will change as new functions are added)
 (Import-PowerShellDataFile ./src/PSAppDeployToolkit/PSAppDeployToolkit.psd1).FunctionsToExport.Count
 
 # Run script analysis
@@ -81,16 +81,16 @@ Invoke-ScriptAnalyzer -Path ./src/PSAppDeployToolkit -Recurse -Settings ./.vscod
 │   ├── PSAppDeployToolkit/     # PowerShell module source
 │   │   ├── PSAppDeployToolkit.psd1  # Module manifest
 │   │   ├── PSAppDeployToolkit.psm1  # Main module file
-│   │   ├── Public/             # 120+ exported functions
+│   │   ├── Public/             # Eported functions
 │   │   ├── Private/            # Internal helper functions
 │   │   ├── Config/config.psd1  # Default configuration
 │   │   ├── Frontend/           # v3 and v4 executable wrappers
-│   │   ├── Strings/            # Localization files (26 languages)
+│   │   ├── Strings/            # Localization files
 │   │   └── lib/                # Compiled C# assemblies
 │   ├── PSADT/                  # C# solution for core libraries
 │   ├── PSADT.Invoke/           # C# solution for executable wrapper
 │   ├── Tests/                  # Pester test suites
-│   │   ├── Unit/               # Unit tests (11 test files)
+│   │   ├── Unit/               # Unit tests
 │   │   └── Integration/        # Integration tests
 │   └── PSAppDeployToolkit.build.ps1  # Main build script
 ├── examples/                   # Sample deployment scripts
@@ -99,7 +99,7 @@ Invoke-ScriptAnalyzer -Path ./src/PSAppDeployToolkit -Recurse -Settings ./.vscod
 ```
 
 ### Critical Configuration Files
-- **Module Manifest**: `src/PSAppDeployToolkit/PSAppDeployToolkit.psd1` (version 4.1.0)
+- **Module Manifest**: `src/PSAppDeployToolkit/PSAppDeployToolkit.psd1`
 - **Main Build Script**: `src/PSAppDeployToolkit.build.ps1` (comprehensive build pipeline)
 - **CI/CD Pipeline**: `.github/workflows/module-build.yml` (Windows-only GitHub Actions)
 - **PSScriptAnalyzer Rules**: `.vscode/PSScriptAnalyzerSettings.psd1` (PowerShell 5.1 compatibility rules)
@@ -137,7 +137,7 @@ Invoke-Build -Task IntegrationTest -File ./src/PSAppDeployToolkit.build.ps1
 3. **"File encoding not UTF-8 with BOM"**: Save all PowerShell files with proper encoding
 4. **PSScriptAnalyzer warnings**: Fix using excluded rules in `.vscode/PSScriptAnalyzerSettings.psd1`
 5. **C# compilation failures**: Ensure .NET Framework 4.7.2+ is installed
-6. **Module import shows 0 functions**: Check for missing dependencies; manifest defines 134 functions
+6. **Module import shows 0 functions**: Check for missing dependencies; verify manifest function count
 7. **PowerShell Gallery connection issues**: Use local module installation or check network connectivity
 
 ## GitHub Actions & Validation Pipeline
