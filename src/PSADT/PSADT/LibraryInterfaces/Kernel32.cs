@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Microsoft.Win32.SafeHandles;
 using PSADT.SafeHandles;
 using PSADT.Utilities;
@@ -332,14 +333,14 @@ namespace PSADT.LibraryInterfaces
         /// <param name="dwMilliseconds"></param>
         /// <returns></returns>
         /// <exception cref="Win32Exception"></exception>
-        internal unsafe static BOOL GetQueuedCompletionStatus(SafeHandle CompletionPort, out uint lpCompletionCode, out nuint lpCompletionKey, out IntPtr lpOverlapped, uint dwMilliseconds)
+        internal unsafe static BOOL GetQueuedCompletionStatus(SafeHandle CompletionPort, out uint lpCompletionCode, out nuint lpCompletionKey, out nuint lpOverlapped, uint dwMilliseconds)
         {
             var res = PInvoke.GetQueuedCompletionStatus(CompletionPort, out lpCompletionCode, out lpCompletionKey, out var pOverlapped, dwMilliseconds);
             if (!res)
             {
                 throw ExceptionUtilities.GetExceptionForLastWin32Error();
             }
-            lpOverlapped = (IntPtr)pOverlapped;
+            lpOverlapped = (nuint)pOverlapped;
             return res;
         }
 
@@ -397,23 +398,6 @@ namespace PSADT.LibraryInterfaces
         {
             var res = PInvoke.TerminateJobObject(hJob, uExitCode);
             if (!res)
-            {
-                throw ExceptionUtilities.GetExceptionForLastWin32Error();
-            }
-            return res;
-        }
-
-        /// <summary>
-        /// Wrapper around WaitForMultipleObjects to manage error handling.
-        /// </summary>
-        /// <param name="lpHandles"></param>
-        /// <param name="bWaitAll"></param>
-        /// <param name="dwMilliseconds"></param>
-        /// <returns></returns>
-        internal static WAIT_EVENT WaitForMultipleObjects(ReadOnlySpan<HANDLE> lpHandles, BOOL bWaitAll, uint dwMilliseconds)
-        {
-            var res = PInvoke.WaitForMultipleObjects(lpHandles, bWaitAll, dwMilliseconds);
-            if (res == WAIT_EVENT.WAIT_FAILED)
             {
                 throw ExceptionUtilities.GetExceptionForLastWin32Error();
             }
@@ -775,6 +759,39 @@ namespace PSADT.LibraryInterfaces
             if (res > szLang.Length)
             {
                 throw new OverflowException("Buffer was too small. Value was truncated.");
+            }
+            return res;
+        }
+
+        /// <summary>
+        /// Frees a block of memory allocated by the LocalAlloc function.
+        /// </summary>
+        /// <param name="hMem"></param>
+        /// <returns></returns>
+        internal static HLOCAL LocalFree(HLOCAL hMem)
+        {
+            var res = PInvoke.LocalFree(hMem);
+            if (!res.IsNull)
+            {
+                throw ExceptionUtilities.GetExceptionForLastWin32Error();
+            }
+            return hMem;
+        }
+
+        /// <summary>
+        /// Posts a completion packet to a specified completion port.
+        /// </summary>
+        /// <param name="CompletionPort"></param>
+        /// <param name="dwNumberOfBytesTransferred"></param>
+        /// <param name="dwCompletionKey"></param>
+        /// <param name="lpOverlapped"></param>
+        /// <returns></returns>
+        internal static BOOL PostQueuedCompletionStatus(SafeHandle CompletionPort, uint dwNumberOfBytesTransferred, nuint dwCompletionKey, NativeOverlapped? lpOverlapped)
+        {
+            var res = PInvoke.PostQueuedCompletionStatus(CompletionPort, dwNumberOfBytesTransferred, dwCompletionKey, lpOverlapped);
+            if (!res)
+            {
+                throw ExceptionUtilities.GetExceptionForLastWin32Error();
             }
             return res;
         }
