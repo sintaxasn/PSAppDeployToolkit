@@ -21,8 +21,17 @@ PACKAGE_VERSION_MAX_LENGTH
 PACKAGE_VERSION_MIN_LENGTH
 AssignProcessToJobObject
 AttachThreadInput
+AuthzAccessCheck
+AuthzInitializeContextFromSid
+AuthzInitializeContextFromToken
+AuthzInitializeResourceManager
+AUTHZ_RESOURCE_MANAGER_FLAGS
+AUTHZ_SKIP_TOKEN_GROUPS
+AUTHZ_REQUIRE_S4U_LOGON
+AUTHZ_COMPUTE_PRIVILEGES
 BringWindowToTop
 CloseHandle
+CreateFile
 CreateEnvironmentBlock
 CreateIoCompletionPort
 CreateJobObjectW
@@ -50,6 +59,7 @@ GetExitCodeProcess
 GetExitCodeThread
 GetForegroundWindow
 GetModuleInformation
+GetNamedSecurityInfo
 GetPrivateProfileSection
 GetPrivateProfileSectionNames
 GetPrivateProfileString
@@ -199,6 +209,7 @@ ReadProcessMemory
 RECT
 RegOpenKeyEx
 RegQueryInfoKey
+RegRenameKey
 ReleaseCapture
 RemoveMenu
 ResumeThread
@@ -292,7 +303,6 @@ SetFocus
 SetForegroundWindow
 SetInformationJobObject
 SetLastError
-SetPriorityClass
 SetSecurityInfo
 SHChangeNotify
 SHGetImageList

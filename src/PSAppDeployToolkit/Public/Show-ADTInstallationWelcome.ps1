@@ -835,16 +835,10 @@ function Show-ADTInstallationWelcome
                 }
 
                 # Bypass if no one's logged on to answer the dialog.
-                if (!$Silent -and !($runAsActiveUser = Get-ADTClientServerUser))
+                if (!$Silent -and !($runAsActiveUser = Get-ADTClientServerUser -AllowSystemFallback))
                 {
                     Write-ADTLogEntry -Message "Running $($MyInvocation.MyCommand.Name) silently as there is no active user logged onto the system."
                     $Silent = $true
-                }
-
-                # If using Zero-Config MSI Deployment, append any executables found in the MSI to the CloseProcesses list
-                if ($adtSession -and ($msiExecutables = $adtSession.GetDefaultMsiExecutablesList()))
-                {
-                    $CloseProcesses = $(if ($CloseProcesses) { $CloseProcesses }; $msiExecutables)
                 }
 
                 # Check disk space requirements if specified
@@ -1222,7 +1216,6 @@ function Show-ADTInstallationWelcome
                 # If block execution switch is true, call the function to block execution of these processes.
                 if ($BlockExecution -and $CloseProcesses)
                 {
-                    Write-ADTLogEntry -Message '[-BlockExecution] parameter specified.'
                     $baaeParams = @{ ProcessName = $CloseProcesses.Name }
                     if ($PSBoundParameters.ContainsKey('WindowLocation'))
                     {

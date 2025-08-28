@@ -8,9 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Win32;
+using PSADT.AccountManagement;
 using PSADT.DeviceManagement;
 using PSADT.LibraryInterfaces;
 using PSADT.ProcessManagement;
+using PSADT.RegistryManagement;
 using PSADT.Types;
 using PSADT.UserInterface;
 using PSADT.UserInterface.DialogOptions;
@@ -36,51 +38,71 @@ namespace PSADT.ClientServer
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        private static int Main(string[] args)
+        private static int Main(string[] argv)
         {
             // Detect what mode the executable has been asked to run in.
             try
             {
                 // Determine the mode of operation based on the provided arguments.
-                if (null == args || args.Length == 0)
+                if (null == argv || argv.Length == 0)
                 {
                     ShowHelpDialog();
                 }
-                else if (args.Any(static arg => arg == "/ShowModalDialog"))
+                else if (argv.Any(static arg => arg == "/ShowModalDialog" || arg == "/smd"))
                 {
-                    Console.WriteLine(ShowModalDialog(ConvertArgsToDictionary(args)));
+                    Console.WriteLine(ShowModalDialog(ArgvToDictionary(argv), null, argv));
                 }
-                else if (args.Any(static arg => arg == "/ShowBalloonTip"))
+                else if (argv.Any(static arg => arg == "/ShowBalloonTip" || arg == "/sbt"))
                 {
-                    Console.WriteLine(ShowBalloonTip(ConvertArgsToDictionary(args)));
+                    Console.WriteLine(ShowBalloonTip(ArgvToDictionary(argv)));
                 }
-                else if (args.Any(static arg => arg == "/GetProcessWindowInfo"))
+                else if (argv.Any(static arg => arg == "/GetProcessWindowInfo" || arg == "/gpwi"))
                 {
-                    Console.WriteLine(GetProcessWindowInfo(ConvertArgsToDictionary(args)));
+                    Console.WriteLine(GetProcessWindowInfo(ArgvToDictionary(argv)));
                 }
-                else if (args.Any(static arg => arg == "/GetUserNotificationState"))
+                else if (argv.Any(static arg => arg == "/GetUserNotificationState" || arg == "/guns"))
                 {
                     Console.WriteLine(GetUserNotificationState());
                 }
-                else if (args.Any(static arg => arg == "/GetForegroundWindowProcessId"))
+                else if (argv.Any(static arg => arg == "/GetForegroundWindowProcessId" || arg == "/gfwpi"))
                 {
                     Console.WriteLine(GetForegroundWindowProcessId());
                 }
-                else if (args.Any(static arg => arg == "/RefreshDesktopAndEnvironmentVariables"))
+                else if (argv.Any(static arg => arg == "/RefreshDesktopAndEnvironmentVariables" || arg == "/rdaev"))
                 {
                     Console.WriteLine(RefreshDesktopAndEnvironmentVariables());
                 }
-                else if (args.Any(static arg => arg == "/SendKeys"))
+                else if (argv.Any(static arg => arg == "/MinimizeAllWindows" || arg == "/maw"))
                 {
-                    Console.WriteLine(SendKeys(ConvertArgsToDictionary(args)));
+                    Console.WriteLine(MinimizeAllWindows());
                 }
-                else if (args.Any(static arg => arg == "/SilentRestart"))
+                else if (argv.Any(static arg => arg == "/RestoreAllWindows" || arg == "/raw"))
                 {
-                    Console.WriteLine(SilentRestart(ConvertArgsToDictionary(args)));
+                    Console.WriteLine(RestoreAllWindows());
                 }
-                else if (args.Any(static arg => arg == "/ClientServer"))
+                else if (argv.Any(static arg => arg == "/SendKeys" || arg == "/sk"))
                 {
-                    EnterClientServerMode(ConvertArgsToDictionary(args));
+                    Console.WriteLine(SendKeys(ArgvToDictionary(argv)));
+                }
+                else if (argv.Any(static arg => arg == "/GetEnvironmentVariable" || arg == "/gev"))
+                {
+                    Console.WriteLine(GetEnvironmentVariable(ArgvToDictionary(argv)));
+                }
+                else if (argv.Any(static arg => arg == "/SetEnvironmentVariable" || arg == "/sev"))
+                {
+                    Console.WriteLine(SetEnvironmentVariable(ArgvToDictionary(argv)));
+                }
+                else if (argv.Any(static arg => arg == "/RemoveEnvironmentVariable" || arg == "/rev"))
+                {
+                    Console.WriteLine(RemoveEnvironmentVariable(ArgvToDictionary(argv)));
+                }
+                else if (argv.Any(static arg => arg == "/SilentRestart" || arg == "/sr"))
+                {
+                    Console.WriteLine(SilentRestart(ArgvToDictionary(argv)));
+                }
+                else if (argv.Any(static arg => arg == "/ClientServer" || arg == "/cs"))
+                {
+                    EnterClientServerMode(ArgvToDictionary(argv));
                 }
                 else
                 {
@@ -137,50 +159,50 @@ namespace PSADT.ClientServer
         /// follow as a separate argument. If a key is not followed by a valid value (e.g., null, empty, or another
         /// key-like argument), the method writes an error message to the standard error stream and terminates the
         /// application with an exit code indicating invalid arguments.</remarks>
-        /// <param name="args">An array of strings representing command-line arguments. Each key must be prefixed with a hyphen ('-')  and
+        /// <param name="argv">An array of strings representing command-line arguments. Each key must be prefixed with a hyphen ('-')  and
         /// followed by its corresponding value as a separate argument.</param>
         /// <returns>A <see cref="ReadOnlyDictionary{TKey, TValue}"/> containing the parsed key-value pairs from the input
         /// arguments.</returns>
-        private static ReadOnlyDictionary<string, string> ConvertArgsToDictionary(string[] args)
+        private static ReadOnlyDictionary<string, string> ArgvToDictionary(string[] argv)
         {
             // Loop through arguments and match argument names to their values.
             Dictionary<string, string> arguments = [];
-            for (int i = 0; i < args!.Length; i++)
+            for (int i = 0; i < argv.Length; i++)
             {
-                if (!args[i].StartsWith("-"))
+                if (!argv[i].StartsWith("-"))
                 {
                     continue;
                 }
-                var key = args[i].Substring(1).Trim();
-                var value = (i + 1 < args.Length) ? args[i + 1].Trim() : null;
+                var key = argv[i].Substring(1).Trim();
+                var value = (i + 1 < argv.Length) ? argv[i + 1].Trim() : null;
                 if (null == value || string.IsNullOrWhiteSpace(value) || value!.StartsWith("-") || value!.StartsWith("/"))
                 {
-                    throw new ClientException($"The argument [{args[i]}] has an invalid value.", ClientExitCode.InvalidArguments);
+                    throw new ClientException($"The argument [{argv[i]}] has an invalid value.", ClientExitCode.InvalidArguments);
                 }
                 arguments.Add(key, value);
             }
 
             // Check whether an ArgumentsDictionary was provided.
-            if (arguments.TryGetValue("ArgumentsDictionary", out string? argsDictValue))
+            if (arguments.TryGetValue("ArgumentsDictionary", out var argvDictValue) || arguments.TryGetValue("ArgV", out argvDictValue))
             {
-                if (argsDictValue.StartsWith("HKEY"))
+                if (argvDictValue.StartsWith("HKEY"))
                 {
                     // Provided value is a registry key path.
-                    if ((argsDictValue.LastIndexOf('\\') is int valueDivider && valueDivider == -1) || Registry.GetValue(argsDictValue.Substring(0, valueDivider), argsDictValue.Substring(valueDivider + 1), null) is not string argsDictContent)
+                    if ((argvDictValue.LastIndexOf('\\') is int valueDivider && valueDivider == -1) || Registry.GetValue(argvDictValue.Substring(0, valueDivider), argvDictValue.Substring(valueDivider + 1), null) is not string argvDictContent)
                     {
-                        throw new ClientException($"The specified ArgumentsDictionary registry key [{argsDictValue}] does not exist or is invalid.", ClientExitCode.InvalidArguments);
+                        throw new ClientException($"The specified ArgumentsDictionary registry key [{argvDictValue}] does not exist or is invalid.", ClientExitCode.InvalidArguments);
                     }
-                    arguments = DeserializeString<Dictionary<string, string>>(argsDictContent);
+                    arguments = DeserializeString<Dictionary<string, string>>(argvDictContent);
                 }
-                else if (File.Exists(argsDictValue))
+                else if (File.Exists(argvDictValue))
                 {
                     // Provided value is a file path.
-                    arguments = DeserializeString<Dictionary<string, string>>(File.ReadAllText(argsDictValue));
+                    arguments = DeserializeString<Dictionary<string, string>>(File.ReadAllText(argvDictValue));
                 }
                 else
                 {
                     // Assume anything else is a literal Base64-encoded string.
-                    arguments = DeserializeString<Dictionary<string, string>>(argsDictValue);
+                    arguments = DeserializeString<Dictionary<string, string>>(argvDictValue);
                 }
             }
 
@@ -362,14 +384,12 @@ namespace PSADT.ClientServer
                                 else if (parts[0] == "MinimizeAllWindows")
                                 {
                                     // Minimize all windows and write back that we were successful.
-                                    ShellUtilities.MinimizeAllWindows();
-                                    WriteResult(SerializeObject(true));
+                                    WriteResult(MinimizeAllWindows());
                                 }
                                 else if (parts[0] == "RestoreAllWindows")
                                 {
                                     // Restore all windows and write back that we were successful.
-                                    ShellUtilities.RestoreAllWindows();
-                                    WriteResult(SerializeObject(true));
+                                    WriteResult(RestoreAllWindows());
                                 }
                                 else if (parts[0] == "SendKeys")
                                 {
@@ -403,6 +423,33 @@ namespace PSADT.ClientServer
                                 {
                                     // Get the foreground process Id and write it back to the output pipe.
                                     WriteResult(GetForegroundWindowProcessId());
+                                }
+                                else if (parts[0] == "GetEnvironmentVariable")
+                                {
+                                    // Confirm the length of our parts showing the dialog and writing back the result.
+                                    if (parts.Length != 2)
+                                    {
+                                        throw new ClientException("The GetEnvironmentVariable command requires exactly one argument: Variable.", ClientExitCode.InvalidArguments);
+                                    }
+                                    WriteResult(GetEnvironmentVariable(new Dictionary<string, string> { { "Variable", parts[1] } }));
+                                }
+                                else if (parts[0] == "SetEnvironmentVariable")
+                                {
+                                    // Confirm the length of our parts showing the dialog and writing back the result.
+                                    if (parts.Length != 3)
+                                    {
+                                        throw new ClientException("The SetEnvironmentVariable command requires exactly two arguments: Variable and Value.", ClientExitCode.InvalidArguments);
+                                    }
+                                    WriteResult(SetEnvironmentVariable(new Dictionary<string, string> { { "Variable", parts[1] }, { "Value", parts[2] } }));
+                                }
+                                else if (parts[0] == "RemoveEnvironmentVariable")
+                                {
+                                    // Confirm the length of our parts showing the dialog and writing back the result.
+                                    if (parts.Length != 2)
+                                    {
+                                        throw new ClientException("The RemoveEnvironmentVariable command requires exactly one argument: Variable.", ClientExitCode.InvalidArguments);
+                                    }
+                                    WriteResult(RemoveEnvironmentVariable(new Dictionary<string, string> { { "Variable", parts[1] } }));
                                 }
                                 else if (parts[0] == "Open")
                                 {
@@ -459,8 +506,37 @@ namespace PSADT.ClientServer
         /// <c>DialogStyle</c> key is missing, empty, or invalid.</description></item> <item><description>The
         /// <c>DialogOptions</c> key is missing, empty, or invalid.</description></item> <item><description>The
         /// specified <c>DialogType</c> is not supported.</description></item> </list></exception>
-        private static string ShowModalDialog(IReadOnlyDictionary<string, string> arguments, BaseState? closeAppsDialogState = null)
+        private static string ShowModalDialog(IReadOnlyDictionary<string, string> arguments, BaseState? closeAppsDialogState = null, string[]? argv = null)
         {
+            // Return early if this is a BlockExecution dialog and we're running as SYSTEM.
+            if (arguments.TryGetValue("BlockExecution", out string? blockExecutionArg) && bool.TryParse(blockExecutionArg, out bool blockExecution) && blockExecution && AccountUtilities.CallerIsLocalSystem && null != argv)
+            {
+                // Set up the required variables.
+                ReadOnlyCollection<string> command = argv.SkipWhile(static arg => !File.Exists(arg)).ToList().AsReadOnly();
+                var filePath = command[0]; var argumentList = command.Skip(1).ToList().AsReadOnly();
+                var ifeoPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+                var fileName = Path.GetFileName(filePath); var ifeoName = Path.GetFileNameWithoutExtension(filePath) + ".ifeo";
+
+                // Rename the IFEO subkey, start the process asynchronously, and then rename it back.
+                RegistryUtilities.RenameRegistryKey(ifeoPath, fileName, ifeoName);
+                ProcessHandle? handle;
+                try
+                {
+                    handle = ProcessManager.LaunchAsync(new(filePath, argumentList, Path.GetDirectoryName(filePath)));
+                }
+                finally
+                {
+                    RegistryUtilities.RenameRegistryKey(ifeoPath, ifeoName, fileName);
+                }
+
+                // Exit with the underlying process's exit code if available, otherwise exit with the BlockExecution button text.
+                if (handle?.Task.GetAwaiter().GetResult() is ProcessResult result)
+                {
+                    Environment.Exit(result.ExitCode);
+                }
+                return SerializeObject(DialogTools.BlockExecutionButtonText);
+            }
+
             // Confirm we have a DialogType and that it's valid.
             if (!arguments.TryGetValue("DialogType", out string? dialogTypeArg) || string.IsNullOrWhiteSpace(dialogTypeArg))
             {
@@ -554,6 +630,26 @@ namespace PSADT.ClientServer
         }
 
         /// <summary>
+        /// Minimizes all open windows on the desktop.
+        /// </summary>
+        /// <returns></returns>
+        private static string MinimizeAllWindows()
+        {
+            ShellUtilities.MinimizeAllWindows();
+            return SerializeObject(true);
+        }
+
+        /// <summary>
+        /// Restores all minimized windows on the desktop.
+        /// </summary>
+        /// <returns></returns>
+        private static string RestoreAllWindows()
+        {
+            ShellUtilities.RestoreAllWindows();
+            return SerializeObject(true);
+        }
+
+        /// <summary>
         /// Sends a sequence of keystrokes to the specified window.
         /// </summary>
         /// <remarks>This method brings the specified window to the foreground and ensures it is enabled 
@@ -578,6 +674,57 @@ namespace PSADT.ClientServer
 
             // Send the keys and write back that we were successful.
             System.Windows.Forms.SendKeys.SendWait(options.Keys);
+            return SerializeObject(true);
+        }
+
+        /// <summary>
+        /// Retrieves the value of an environment variable specified by the "Variable" key in the provided arguments dictionary.
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        /// <exception cref="ClientException"></exception>
+        private static string GetEnvironmentVariable(IReadOnlyDictionary<string, string> arguments)
+        {
+            if (!arguments.TryGetValue("Variable", out string? variable) || string.IsNullOrWhiteSpace(variable))
+            {
+                throw new ClientException("A required Variable was not specified on the command line.", ClientExitCode.InvalidArguments);
+            }
+            return SerializeObject(Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User) ?? new(CommonUtilities.ArgumentSeparator, 1));
+        }
+
+        /// <summary>
+        /// Sets an environment variable specified by the "Variable" and "Value" keys in the provided arguments dictionary.
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        /// <exception cref="ClientException"></exception>
+        private static string SetEnvironmentVariable(IReadOnlyDictionary<string, string> arguments)
+        {
+            if (!arguments.TryGetValue("Variable", out string? variable) || string.IsNullOrWhiteSpace(variable))
+            {
+                throw new ClientException("A required Variable was not specified on the command line.", ClientExitCode.InvalidArguments);
+            }
+            if (!arguments.TryGetValue("Value", out string? value) || string.IsNullOrWhiteSpace(value))
+            {
+                throw new ClientException("A required Value was not specified on the command line.", ClientExitCode.InvalidArguments);
+            }
+            Environment.SetEnvironmentVariable(variable, value, EnvironmentVariableTarget.User);
+            return SerializeObject(true);
+        }
+
+        /// <summary>
+        /// Removes an environment variable specified by the "Variable" key in the provided arguments dictionary.
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        /// <exception cref="ClientException"></exception>
+        private static string RemoveEnvironmentVariable(IReadOnlyDictionary<string, string> arguments)
+        {
+            if (!arguments.TryGetValue("Variable", out string? variable) || string.IsNullOrWhiteSpace(variable))
+            {
+                throw new ClientException("A required Variable was not specified on the command line.", ClientExitCode.InvalidArguments);
+            }
+            Environment.SetEnvironmentVariable(variable, null, EnvironmentVariableTarget.User);
             return SerializeObject(true);
         }
 

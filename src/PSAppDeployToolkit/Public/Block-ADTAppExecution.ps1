@@ -92,6 +92,7 @@ function Block-ADTAppExecution
             Write-ADTLogEntry -Message "Bypassing Function [$($MyInvocation.MyCommand.Name)], because [User: $($adtEnv.ProcessNTAccount)] is not admin."
             return
         }
+        Write-ADTLogEntry -Message "Preparing to block execution of the following processes: ['$([System.String]::Join("', '", $ProcessName))']."
 
         try
         {
@@ -103,6 +104,64 @@ function Block-ADTAppExecution
                     Write-ADTLogEntry -Message "Scheduled task [$taskName] already exists, running [Unblock-ADTAppExecution] to clean up previous state."
                     Unblock-ADTAppExecution -Tasks $task
                 }
+
+                # Configure the appropriate permissions for the client/server process.
+                if (!$Script:ADT.ClientServerProcess)
+                {
+                    if (!($runAsActiveUser = Get-ADTClientServerUser))
+                    {
+                        Write-ADTLogEntry -Message "There is no active logged on user. Verifying client/server access permissions using [BUILTIN\Users]."
+                        $usersSid = [PSADT.AccountManagement.AccountUtilities]::GetWellKnownSid([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid)
+                        $usersNtAccount = $usersSid.Translate([System.Security.Principal.NTAccount]); $usersSessionId = [System.UInt32]::MaxValue
+                        Set-ADTClientServerProcessPermissions -User ([PSADT.Module.RunAsActiveUser]::new($usersNtAccount, $usersSid, $usersSessionId))
+                    }
+                    else
+                    {
+                        Set-ADTClientServerProcessPermissions -User $runAsActiveUser
+                    }
+                }
+
+                # Build out hashtable of parameters needed to construct the dialog.
+                $dialogOptions = @{
+                    AppTitle = $adtSession.InstallTitle
+                    Subtitle = $adtStrings.BlockExecutionText.Subtitle.($adtSession.DeploymentType.ToString())
+                    AppIconImage = $adtConfig.Assets.Logo
+                    AppIconDarkImage = $adtConfig.Assets.LogoDark
+                    AppBannerImage = $adtConfig.Assets.Banner
+                    DialogTopMost = $true
+                    MinimizeWindows = $false
+                    DialogExpiryDuration = [System.TimeSpan]::FromSeconds($adtConfig.UI.DefaultTimeout)
+                    MessageText = $adtStrings.BlockExecutionText.Message.($adtSession.DeploymentType.ToString())
+                    ButtonRightText = [PSADT.UserInterface.Dialogs.DialogTools]::BlockExecutionButtonText
+                    Icon = [PSADT.UserInterface.Dialogs.DialogSystemIcon]::Warning
+                }
+                if ($PSBoundParameters.ContainsKey('WindowLocation'))
+                {
+                    $dialogOptions.Add('DialogPosition', $WindowLocation)
+                }
+                if ($null -ne $adtConfig.UI.FluentAccentColor)
+                {
+                    $dialogOptions.Add('FluentAccentColor', $adtConfig.UI.FluentAccentColor)
+                }
+
+                # Set up dictionary that we'll serialise and store in the registry as it's too long to pass on the command line.
+                $blockExecArgs = [System.Collections.Generic.Dictionary[System.String, System.String]]::new()
+                $blockExecArgs.Add('Options', [PSADT.ClientServer.DataSerialization]::SerializeToString([PSADT.UserInterface.DialogOptions.CustomDialogOptions]$dialogOptions))
+                $blockExecArgs.Add('DialogType', [PSADT.UserInterface.Dialogs.DialogType]::CustomDialog.ToString())
+                $blockExecArgs.Add('DialogStyle', $adtConfig.UI.DialogStyle)
+                $blockExecArgs.Add('BlockExecution', $true)
+
+                # Store the BlockExection command in the registry due to IFEO length issues when > 255 chars.
+                $blockExecRegPath = "Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SOFTWARE\$($adtEnv.appDeployToolkitName)"; $blockExecRegName = 'BlockExecutionCommand'
+                $blockExecDbgPath = "`"$($Script:PSScriptRoot)\lib\PSADT.ClientServer.Client.Launcher.exe`" /smd -ArgV $($blockExecRegPath.Split('::', [System.StringSplitOptions]::RemoveEmptyEntries)[1])\$blockExecRegName"
+
+                # If the IFEO path is > 255 characters, warn about it and bomb out.
+                if ($blockExecDbgPath -gt 255)
+                {
+                    Write-ADTLogEntry -Message "The generated block execution command of [$blockExecDbgPath] exceeds the maximum allowable length of 255 characters; unable to block execution." -Severity Warning
+                    return
+                }
+                Set-ADTRegistryKey -Key $blockExecRegPath -Name $blockExecRegName -Value ([PSADT.ClientServer.DataSerialization]::SerializeToString($blockExecArgs)) -InformationAction SilentlyContinue
 
                 # Create a scheduled task to run on startup to call this script and clean up blocked applications in case the installation is interrupted, e.g. user shuts down during installation"
                 Write-ADTLogEntry -Message 'Creating scheduled task to cleanup blocked applications in case the installation is interrupted.'
@@ -121,43 +180,6 @@ function Block-ADTAppExecution
                     Write-ADTLogEntry -Message "Failed to create the scheduled task [$taskName]." -Severity 3
                     return
                 }
-
-                # Configure the appropriate permissions for the client/server process.
-                Set-ADTClientServerProcessPermissions -User (Get-ADTClientServerUser)
-
-                # Build out hashtable of parameters needed to construct the dialog.
-                $dialogOptions = @{
-                    AppTitle = $adtSession.InstallTitle
-                    Subtitle = $adtStrings.BlockExecutionText.Subtitle.($adtSession.DeploymentType.ToString())
-                    AppIconImage = $adtConfig.Assets.Logo
-                    AppIconDarkImage = $adtConfig.Assets.LogoDark
-                    AppBannerImage = $adtConfig.Assets.Banner
-                    DialogTopMost = $true
-                    MinimizeWindows = $false
-                    DialogExpiryDuration = [System.TimeSpan]::FromSeconds($adtConfig.UI.DefaultTimeout)
-                    MessageText = $adtStrings.BlockExecutionText.Message.($adtSession.DeploymentType.ToString())
-                    Icon = [PSADT.UserInterface.Dialogs.DialogSystemIcon]::Warning
-                    ButtonRightText = 'OK'
-                }
-                if ($PSBoundParameters.ContainsKey('WindowLocation'))
-                {
-                    $dialogOptions.Add('DialogPosition', $WindowLocation)
-                }
-                if ($null -ne $adtConfig.UI.FluentAccentColor)
-                {
-                    $dialogOptions.Add('FluentAccentColor', $adtConfig.UI.FluentAccentColor)
-                }
-
-                # Set up dictionary that we'll serialise and store in the registry as it's too long to pass on the command line.
-                $blockExecArgs = [System.Collections.Generic.Dictionary[System.String, System.String]]::new()
-                $blockExecArgs.Add('Options', [PSADT.ClientServer.DataSerialization]::SerializeToString([PSADT.UserInterface.DialogOptions.CustomDialogOptions]$dialogOptions))
-                $blockExecArgs.Add('DialogType', [PSADT.UserInterface.Dialogs.DialogType]::CustomDialog.ToString())
-                $blockExecArgs.Add('DialogStyle', $adtConfig.UI.DialogStyle)
-
-                # Store the BlockExection command in the registry due to IFEO length issues when > 255 chars.
-                $blockExecRegPath = Convert-ADTRegistryPath -Key (Join-Path -Path $adtConfig.Toolkit.RegPath -ChildPath $adtEnv.appDeployToolkitName)
-                $blockExecDbgPath = "`"$($Script:PSScriptRoot)\lib\PSADT.ClientServer.Client.Launcher.exe`" /ShowModalDialog -ArgumentsDictionary $($blockExecRegPath.Split('::', [System.StringSplitOptions]::RemoveEmptyEntries)[1])\BlockExecutionCommand"
-                Set-ADTRegistryKey -Key $blockExecRegPath -Name BlockExecutionCommand -Value ([PSADT.ClientServer.DataSerialization]::SerializeToString($blockExecArgs)) -InformationAction SilentlyContinue
 
                 # Enumerate each process and set the debugger value to block application execution.
                 foreach ($process in $ProcessName)

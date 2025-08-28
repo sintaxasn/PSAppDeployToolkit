@@ -120,6 +120,7 @@
             Language Code    Language
             =============    ========
             ar               Arabic
+            bg               Bulgarian
             cs               Czech
             da               Danish
             de               German
@@ -133,6 +134,7 @@
             it               Italian
             ja               Japanese
             ko               Korean
+            lv               Latvian
             nl               Dutch
             nb               Norwegian (Bokmål)
             pl               Polish

@@ -21,15 +21,12 @@ function Private:Set-ADTClientServerProcessPermissions
     }
 
     # Set required permissions on this module's library files.
-    $builtinUsersSid = [PSADT.AccountManagement.AccountUtilities]::GetWellKnownSid([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid)
-    $saipParams = @{ User = "*$($builtinUsersSid.Value)"; Permission = 'ReadAndExecute'; PermissionType = 'Allow'; Method = 'AddAccessRule'; InformationAction = 'SilentlyContinue' }
-    Set-ADTItemPermission @saipParams -Path $Script:PSScriptRoot\lib -Inheritance ObjectInherit -Propagation InheritOnly
-
-    # Set required permissions on the initialised assets.
-    if (Test-ADTModuleInitialized)
+    try
     {
-        Set-ADTItemPermission @saipParams -Path ($adtConfig = Get-ADTConfig).Assets.Logo
-        Set-ADTItemPermission @saipParams -Path $adtConfig.Assets.LogoDark
-        Set-ADTItemPermission @saipParams -Path $adtConfig.Assets.Banner
+        [PSADT.ClientServer.ClientPermissions]::Remediate($User, [System.String[]]$(if (Test-ADTModuleInitialized) { ($adtConfig = Get-ADTConfig).Assets.Logo; $adtConfig.Assets.LogoDark; $adtConfig.Assets.Banner }))
+    }
+    catch
+    {
+        $PSCmdlet.ThrowTerminatingError($_)
     }
 }

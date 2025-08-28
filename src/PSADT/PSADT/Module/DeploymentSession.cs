@@ -249,7 +249,7 @@ namespace PSADT.Module
 
 
                 #endregion
-                #region DetectDefaultWimFile
+                #region DetectDefaultWim
 
 
                 // If the default frontend hasn't been modified, and there's not already a mounted WIM file, check for WIM files and modify the install accordingly.
@@ -354,7 +354,7 @@ namespace PSADT.Module
                         }
 
                         // Read the MSI and get the installation details.
-                        if (Settings.HasFlag(DeploymentSettings.DisableDefaultMsiProcessList))
+                        if (!Settings.HasFlag(DeploymentSettings.DisableDefaultMsiProcessList))
                         {
                             var exeProps = (IReadOnlyDictionary<string, object>)ModuleDatabase.InvokeScript(ScriptBlock.Create("$gmtpParams = @{ Path = $args[0] }; if ($args[1]) { $gmtpParams.Add('TransformPath', $args[1]) }; & $Script:CommandTable.'Get-ADTMsiTableProperty' @gmtpParams -Table File"), DefaultMsiFile!, DefaultMstFile!).First().BaseObject;
                             List<ProcessDefinition> msiExecList = exeProps.Where(static p => Path.GetExtension(p.Key).Equals(".exe", StringComparison.OrdinalIgnoreCase)).Select(static p => new ProcessDefinition(Regex.Replace(Path.GetFileNameWithoutExtension(p.Key), "^_", string.Empty))).ToList();
@@ -362,8 +362,8 @@ namespace PSADT.Module
                             // Generate list of MSI executables for testing later on.
                             if (msiExecList.Count > 0)
                             {
-                                DefaultMsiExecutablesList = msiExecList.AsReadOnly();
-                                WriteLogEntry($"MSI Executable List [{string.Join(", ", DefaultMsiExecutablesList.Select(static p => p.Name))}].");
+                                _appProcessesToClose = _appProcessesToClose.Concat(msiExecList).GroupBy(static p => p.Name, StringComparer.OrdinalIgnoreCase).Select(static g => g.First()).ToList().AsReadOnly();
+                                WriteLogEntry($"MSI Executable List [{string.Join(", ", msiExecList.Select(static p => p.Name))}].");
                             }
                         }
 
@@ -606,7 +606,7 @@ namespace PSADT.Module
                 // Test and warn if this toolkit was started with ServiceUI anywhere as a parent process.
                 if (AccountUtilities.CallerUsingServiceUI)
                 {
-                    WriteLogEntry($"[{appDeployToolkitName}] was started with ServiceUI as a parent process. This is no longer required and will not be supported in a later release.", LogSeverity.Warning);
+                    WriteLogEntry($"[{appDeployToolkitName}] was started with ServiceUI as a parent process. This is no longer required with PSAppDeployToolkit 4.1.3 and will be forbidden in a later release.", LogSeverity.Warning);
                 }
 
 
@@ -863,7 +863,7 @@ namespace PSADT.Module
                     {
                         WriteLogEntry($"The processes ['{string.Join("', '", _appProcessesToClose.Select(static p => p.Name))}'] were specified as requiring closure but deployment has already been changed to [{_deployMode}]");
                     }
-                    if (_deployMode != DeployMode.Auto)
+                    else if (_deployMode != DeployMode.Auto)
                     {
                         WriteLogEntry($"The processes ['{string.Join("', '", _appProcessesToClose.Select(static p => p.Name))}'] were specified as requiring closure but deployment mode was explicitly set to [{_deployMode}].");
                     }
@@ -1206,7 +1206,7 @@ namespace PSADT.Module
             {
                 return (T)CallerSessionState.PSVariable.GetValue(propertyName);
             }
-            return (T)(Enum.TryParse<DeploymentSettings>(propertyName, out DeploymentSettings flag) ? Settings.HasFlag(flag) : BackingFields[propertyName!].GetValue(this)!);
+            return (T)(Enum.TryParse(propertyName, out DeploymentSettings flag) ? Settings.HasFlag(flag) : BackingFields[propertyName!].GetValue(this)!);
         }
 
         /// <summary>
@@ -1365,12 +1365,6 @@ namespace PSADT.Module
         public void AddMountedWimFile(FileInfo wimFile) => MountedWimFiles.Add(wimFile);
 
         /// <summary>
-        /// Gets the default MSI executables list.
-        /// </summary>
-        /// <returns>An array of default MSI executables.</returns>
-        public IReadOnlyList<ProcessDefinition> GetDefaultMsiExecutablesList() => DefaultMsiExecutablesList;
-
-        /// <summary>
         /// Determines whether the session is allowed to exit PowerShell on close.
         /// </summary>
         /// <returns>True if the session can exit; otherwise, false.</returns>
@@ -1439,11 +1433,6 @@ namespace PSADT.Module
         /// Gets the mounted WIM files within this session.
         /// </summary>
         private readonly List<FileInfo> MountedWimFiles = [];
-
-        /// <summary>
-        /// Gets the list of executables found within a Zero-Config MSI file.
-        /// </summary>
-        private readonly ReadOnlyCollection<ProcessDefinition> DefaultMsiExecutablesList = new ReadOnlyCollection<ProcessDefinition>([]);
 
         /// <summary>
         /// Gets the drive letter used with subst during a Zero-Config WIM file mount operation.
@@ -1707,6 +1696,11 @@ namespace PSADT.Module
         /// Gets the deployment session's log filename.
         /// </summary>
         public string LogName => GetPropertyValue<string>();
+
+        /// <summary>
+        /// Gets a value indicating whether administrative privileges are required.
+        /// </summary>
+        public bool RequireAdmin => GetPropertyValue<bool>();
 
 
         #endregion

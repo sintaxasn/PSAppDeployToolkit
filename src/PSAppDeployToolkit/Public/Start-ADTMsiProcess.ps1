@@ -55,6 +55,9 @@ function Start-ADTMsiProcess
     .PARAMETER UseLinkedAdminToken
         Use a user's linked administrative token while running the process under their context.
 
+    .PARAMETER UseHighestAvailableToken
+        Use a user's linked administrative token if it's available while running the process under their context.
+
     .PARAMETER InheritEnvironmentVariables
         Specifies whether the process running as a user should inherit the SYSTEM account's environment variables.
 
@@ -166,8 +169,11 @@ function Start-ADTMsiProcess
         [System.String]$Action = 'Install',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'FilePath', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'FilePath_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Username_FilePath', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_FilePath_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_FilePath', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_FilePath_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
         [ValidateScript({
                 if ([System.IO.Path]::GetExtension($_) -notmatch '^\.ms[ip]$')
                 {
@@ -178,14 +184,20 @@ function Start-ADTMsiProcess
         [System.String]$FilePath = [System.Management.Automation.Language.NullString]::Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ProductCode', ValueFromPipeline = $true, HelpMessage = 'Please supply the Product Code to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ProductCode_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the Product Code to process.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Username_ProductCode', ValueFromPipeline = $true, HelpMessage = 'Please supply the Product Code to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_ProductCode_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the Product Code to process.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_ProductCode', ValueFromPipeline = $true, HelpMessage = 'Please supply the Product Code to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_ProductCode_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the Product Code to process.')]
         [ValidateNotNullOrEmpty()]
         [System.Guid]$ProductCode,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'InstalledApplication', ValueFromPipeline = $true, HelpMessage = 'Please supply the InstalledApplication object to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'InstalledApplication_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the InstalledApplication object to process.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Username_InstalledApplication', ValueFromPipeline = $true, HelpMessage = 'Please supply the InstalledApplication object to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_InstalledApplication_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the InstalledApplication object to process.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_InstalledApplication', ValueFromPipeline = $true, HelpMessage = 'Please supply the InstalledApplication object to process.')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_InstalledApplication_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the InstalledApplication object to process.')]
         [ValidateNotNullOrEmpty()]
         [PSADT.Types.InstalledApplication]$InstalledApplication,
 
@@ -214,24 +226,44 @@ function Start-ADTMsiProcess
         [System.String[]]$Patches,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_FilePath_NoWait')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_ProductCode_NoWait')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_InstalledApplication_NoWait')]
         [ValidateNotNullOrEmpty()]
         [System.Security.Principal.NTAccount]$Username,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath_NoWait')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode_NoWait')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication_NoWait')]
         [System.Management.Automation.SwitchParameter]$UseLinkedAdminToken,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath_NoWait')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode_NoWait')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication_NoWait')]
+        [System.Management.Automation.SwitchParameter]$UseHighestAvailableToken,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath_NoWait')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode_NoWait')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication_NoWait')]
         [System.Management.Automation.SwitchParameter]$InheritEnvironmentVariables,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_FilePath')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_FilePath_NoWait')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_ProductCode')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_ProductCode_NoWait')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_InstalledApplication')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_InstalledApplication_NoWait')]
         [System.Management.Automation.SwitchParameter]$UseUnelevatedToken,
 
         [Parameter(Mandatory = $false)]
@@ -246,10 +278,6 @@ function Start-ADTMsiProcess
                 if ([System.String]::IsNullOrWhiteSpace($_))
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LogFileName -ProvidedValue $_ -ExceptionMessage 'The specified input is null or white space.'))
-                }
-                if ([System.IO.Path]::GetExtension($_) -match '^\.(log|txt)$')
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LogFileName -ProvidedValue $_ -ExceptionMessage 'The specified input cannot have an extension.'))
                 }
                 return $true
             })]
@@ -268,15 +296,39 @@ function Start-ADTMsiProcess
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.SwitchParameter]$IncludeUpdatesAndHotfixes,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ParameterSetName = 'FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_ProductCode')]
         [ValidateNotNullOrEmpty()]
         [System.Int32[]]$SuccessExitCodes,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ParameterSetName = 'FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_ProductCode')]
         [ValidateNotNullOrEmpty()]
         [System.Int32[]]$RebootExitCodes,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ParameterSetName = 'FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_ProductCode')]
         [ValidateNotNullOrEmpty()]
         [System.String[]]$IgnoreExitCodes,
 
@@ -284,13 +336,29 @@ function Start-ADTMsiProcess
         [ValidateNotNullOrEmpty()]
         [System.Diagnostics.ProcessPriorityClass]$PriorityClass,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ParameterSetName = 'FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Username_ProductCode')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_FilePath')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_InstalledApplication')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseUnelevatedToken_ProductCode')]
         [System.Management.Automation.SwitchParameter]$ExitOnProcessFailure,
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.SwitchParameter]$NoDesktopRefresh,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'FilePath_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'InstalledApplication_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ProductCode_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_FilePath_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_InstalledApplication_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username_ProductCode_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_FilePath_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_InstalledApplication_NoWait')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseUnelevatedToken_ProductCode_NoWait')]
         [System.Management.Automation.SwitchParameter]$NoWait,
 
         [Parameter(Mandatory = $false)]
@@ -458,19 +526,22 @@ function Start-ADTMsiProcess
                 # Build the log path to use.
                 $logPath = if ($logFile)
                 {
+                    # Determine whether or not we use the NoAdminRights pathway.
+                    $logPathProperty = ('LogPath', 'LogPathNoAdminRights')[$PSBoundParameters.ContainsKey('Username')]
+
                     # A defined MSI log path is considered an override.
-                    if (![System.String]::IsNullOrWhiteSpace($adtConfig.MSI.LogPath))
+                    if (![System.String]::IsNullOrWhiteSpace($adtConfig.MSI.$logPathProperty))
                     {
                         # Create the Log directory if it doesn't already exist.
-                        if (!(Test-Path -LiteralPath $adtConfig.MSI.LogPath -PathType Container))
+                        if (!(Test-Path -LiteralPath $adtConfig.MSI.$logPathProperty -PathType Container))
                         {
-                            $null = [System.IO.Directory]::CreateDirectory($adtConfig.MSI.LogPath)
+                            $null = [System.IO.Directory]::CreateDirectory($adtConfig.MSI.$logPathProperty)
                         }
 
                         # Build the log file path.
-                        (Join-Path -Path $adtConfig.MSI.LogPath -ChildPath $logFile).Trim()
+                        (Join-Path -Path $adtConfig.MSI.$logPathProperty -ChildPath $logFile).Trim()
                     }
-                    elseif ($adtSession)
+                    elseif ($adtSession -and !$PSBoundParameters.ContainsKey('Username'))
                     {
                         # Get the log directory from the session. This will factor in
                         # whether we're compressing logs, or logging to a subfolder.
@@ -479,13 +550,13 @@ function Start-ADTMsiProcess
                     else
                     {
                         # Fall back to the toolkit's LogPath.
-                        if (!(Test-Path -LiteralPath $adtConfig.Toolkit.LogPath -PathType Container))
+                        if (!(Test-Path -LiteralPath $adtConfig.Toolkit.$logPathProperty -PathType Container))
                         {
-                            $null = [System.IO.Directory]::CreateDirectory($adtConfig.Toolkit.LogPath)
+                            $null = [System.IO.Directory]::CreateDirectory($adtConfig.Toolkit.$logPathProperty)
                         }
 
                         # Build the log file path.
-                        (Join-Path -Path $adtConfig.Toolkit.LogPath -ChildPath $logFile).Trim()
+                        (Join-Path -Path $adtConfig.Toolkit.$logPathProperty -ChildPath $logFile).Trim()
                     }
                 }
 
@@ -555,6 +626,10 @@ function Start-ADTMsiProcess
                     if (!(Test-ADTCallerIsAdmin))
                     {
                         $msiLogFile = $msiLogFile + '_' + (Remove-ADTInvalidFileNameChars -Name ([System.Environment]::UserName))
+                    }
+                    elseif ($PSBoundParameters.ContainsKey('Username'))
+                    {
+                        $msiLogFile = $msiLogFile + '_' + (Remove-ADTInvalidFileNameChars -Name $Username)
                     }
 
                     # Append ".log" to the MSI logfile path and enclose in quotes.

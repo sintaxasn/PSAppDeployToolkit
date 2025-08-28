@@ -49,6 +49,7 @@ function Update-ADTEnvironmentPsProvider
     param
     (
         [Parameter(Mandatory = $false)]
+        [System.Obsolete("This parameter is deprecated and will be removed in PSAppDeployToolkit 4.2.0.")]
         [System.Management.Automation.SwitchParameter]$LoadLoggedOnUserEnvironmentVariables
     )
 
@@ -57,7 +58,11 @@ function Update-ADTEnvironmentPsProvider
         Initialize-ADTFunction -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
         # Determine the user SID to base things off of.
-        $userSid = if ($LoadLoggedOnUserEnvironmentVariables -and ($runAsActiveUser = Get-ADTClientServerUser))
+        if ($LoadLoggedOnUserEnvironmentVariables)
+        {
+            Write-ADTLogEntry -Message "The parameter [-LoadLoggedOnUserEnvironmentVariables] is deprecated and will be removed in PSAppDeployToolkit 4.2.0." -Severity 2
+        }
+        $userSid = if ($LoadLoggedOnUserEnvironmentVariables -and ($runAsActiveUser = Get-ADTClientServerUser -AllowSystemFallback))
         {
             $runAsActiveUser.SID
         }

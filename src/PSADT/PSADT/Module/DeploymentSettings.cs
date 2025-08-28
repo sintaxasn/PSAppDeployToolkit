@@ -6,9 +6,8 @@ namespace PSADT.Module
     /// A bitfield representing the possible settings used within an active DeploymentSession object.
     /// </summary>
     [Flags]
-    public enum DeploymentSettings : uint
+    internal enum DeploymentSettings : uint
     {
-        None = 0,
         Disposed = 1,
         SuppressRebootPassThru = 2,
         TerminalServerMode = 4,
