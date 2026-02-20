@@ -497,5 +497,25 @@ namespace PSADT.LibraryInterfaces
         /// A window command to restore all minimised windows.
         /// </summary>
         internal const nuint MIN_ALL_UNDO = 416;
+
+        /// <summary>
+        /// Gets the window style bits for the given window handle.
+        /// </summary>
+        /// <param name="hwnd">The window handle.</param>
+        /// <returns>The window style flags as a 32-bit integer.</returns>
+        internal static int GetWindowStyle(HWND hwnd)
+        {
+            return PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        }
+
+        /// <summary>
+        /// Sets the window style bits for the given window handle.
+        /// </summary>
+        /// <param name="hwnd">The window handle.</param>
+        /// <param name="style">The new window style flags.</param>
+        internal static void SetWindowStyle(HWND hwnd, int style)
+        {
+            _ = PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
+        }
     }
 }

@@ -55,6 +55,7 @@ GetProcessImageFileName
 GetProductInfo
 GetQueuedCompletionStatus
 GetShellWindow
+GetWindowLong
 GetSystemFirmwareTable
 GetSystemMenu
 GetSystemPowerStatus
@@ -350,6 +351,7 @@ SetForegroundWindow
 SetInformationJobObject
 SetLastError
 SetNamedSecurityInfo
+SetWindowLong
 SetSecurityInfo
 SHChangeNotify
 SHGetImageList
