@@ -70,33 +70,43 @@ namespace PSADT.UserInterface.TestHarness
                 new("taskmgr", "Windows Task Manager")
             ]);
 
+            ReadOnlyCollection<ProcessDefinition> noAppsToClose = new(
+               [
+                    new("noappstoclose", "No Apps to Close")
+            ]);
+
             TimeSpan dialogExpiryDuration = TimeSpan.FromSeconds(580);
 
             TimeSpan countdownDuration = TimeSpan.FromSeconds(580);
 
-            string customMessageText = @"Basic URL: [url]https://example.com[/url]
-URL with Description: [url=https://example.com]Read the IT Security Policy here[/url].
-This is [bold]bold text[/bold] and [italic]italic text[/italic].
-Nested tags: [bold]Bold plus [italic]italic inside[/italic], with an [accent]accent[/accent][/bold].
-Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][/accent][/bold].";
+            // string customMessageText = @"Basic URL: [url]https://example.com[/url]
+            // URL with Description: [url=https://example.com]Read the IT Security Policy here[/url].
+            // This is [bold]bold text[/bold] and [italic]italic text[/italic].
+            // Nested tags: [bold]Bold plus [italic]italic inside[/italic], with an [accent]accent[/accent][/bold].
+            // Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][/accent][/bold].";
 
-            uint deferralsRemaining = 3;
-            DateTime deferralDeadline = DateTime.Parse("2025-09-20T13:00:00", CultureInfo.InvariantCulture);
+            uint deferralsRemaining = 10;
+            DateTime deferralDeadline = DateTime.Parse("2026-02-18T13:00:00", CultureInfo.InvariantCulture);
 
             // DateTime? deferralDeadline = null;
-            string progressMessageText = "Performing [accent]pre-flight checks[/accent]…";
-            string progressDetailMessageText = "Testing your [accent]system to ensure compatibility[/accent]. Please wait…";
+            string progressMessageText = "Performing [accent]custom integration tasks[/accent] …";
+            string progressDetailMessageText = "Task [2/3] Performing custom data integration ...";
+
+            //string progressMessageText = "Performing [accent]pre-flight checks[/accent]…";
+            //string progressDetailMessageText = "Testing your [accent]system to ensure compatibility[/accent]. Please wait…";
 
             TimeSpan restartCountdownDuration = TimeSpan.FromSeconds(80);
             TimeSpan restartCountdownNoMinimizeDuration = TimeSpan.FromSeconds(70);
 
-            string customDialogMessageText = "The installation requires you to have an exceptional amount of patience, as well an almost superhuman ability to not lose your temper. Given that you have not had much and seem to be super-cranky, are you sure you want to proceed? [bold]URL Formatting Tests:[/bold] Visit [url]https://psappdeploytoolkit.com[/url] or check our [url=https://github.com/PSAppDeployToolkit/PSAppDeployToolkit]GitHub Repository[/url] for support.";
+            string customDialogMessageText = "You can display custom dialogs with up to 3 optional buttons and customized text. The text from the button clicked by the user is returned in the dialog Result property. You can also embed a URL like this: [url]https://psappdeploytoolkit.com[/url].";
             string customDialogButtonLeftText = "LeftButton";
             string customDialogButtonMiddleText = "MiddleButton";
             string customDialogButtonRightText = "RightButton";
 
             string listDialogMessageText = "Please choose how you’d like to use Adobe Creative Cloud on this device. You can change this later in Preferences.";
             string[] listDialogItems = ["Personal (Individual Plan)", "Team (Creative Cloud for Teams)", "Enterprise (Managed by IT)", "Education (Student / Faculty)", "Shared Device (Lab / Classroom)"];
+            int initialSelectedItem = 0;
+
             string listDialogButtonLeftText = "OK";
             string listDialogButtonRightText = "Cancel";
 
@@ -104,6 +114,49 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             string inputDialogTextBox = "YouCompleteMe";
             string inputDialogButtonLeftText = "Continue";
             string inputDialogButtonRightText = "Cancel";
+
+            // Set up options for the dialogs
+            using CloseAppsDialogState deferOnlyDialogState = new(noAppsToClose, (_, _, _) => { });
+            Hashtable deferOnlyDialogOptions = new()
+            {
+                { "DialogExpiryDuration", dialogExpiryDuration },
+                //{ "FluentAccentColor", ValueTypeConverter.ToInt(0xFF107C10) }, // Accent Color: Green #107C10
+                { "DialogPosition", dialogPosition },
+                { "DialogTopMost", dialogTopMost },
+                { "DialogAllowMove", dialogAllowMove },
+                { "AppTitle", appTitle },
+                { "Subtitle", subtitle },
+                { "AppIconImage", appIconImage },
+                { "AppIconDarkImage", appIconDarkImage },
+                { "AppBannerImage", appBannerImage },
+                { "DeferralsRemaining", deferralsRemaining },
+                { "DialogAllowMinimize", true },
+                { "Language", CultureInfo.CurrentCulture },
+                { "Strings", stringTable["CloseAppsPrompt"] as Hashtable },
+            };
+
+            // Set up options for the dialogs
+            using CloseAppsDialogState noCloseAppsDialogState = new(noAppsToClose, (_, _, _) => { });
+            Hashtable noCloseAppsDialogOptions = new()
+            {
+                { "DialogExpiryDuration", dialogExpiryDuration },
+                //{ "FluentAccentColor", ValueTypeConverter.ToInt(0xFF107C10) }, // Accent Color: Green #107C10
+                { "DialogPosition", dialogPosition },
+                { "DialogTopMost", dialogTopMost },
+                { "DialogAllowMove", dialogAllowMove },
+                { "AppTitle", appTitle },
+                { "Subtitle", subtitle },
+                { "AppIconImage", appIconImage },
+                { "AppIconDarkImage", appIconDarkImage },
+                { "AppBannerImage", appBannerImage },
+                { "CountdownDuration", countdownDuration },
+                { "DeferralsRemaining", deferralsRemaining },
+                { "DeferralDeadline", deferralDeadline },
+                { "DialogAllowMinimize", true },
+                { "CustomMessageText", customDialogMessageText },
+                { "Language", CultureInfo.CurrentCulture },
+                { "Strings", stringTable["CloseAppsPrompt"] as Hashtable },
+            };
 
             // Set up options for the dialogs
             using CloseAppsDialogState closeAppsDialogState = new(appsToClose, (_, _, _) => { });
@@ -123,9 +176,9 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "DeferralsRemaining", deferralsRemaining },
                 { "DeferralDeadline", deferralDeadline },
                 { "DialogAllowMinimize", true },
-                { "CustomMessageText", customMessageText },
+                //{ "CustomMessageText", customMessageText },
                 { "Language", CultureInfo.CurrentCulture },
-                { "Strings", (Hashtable)stringTable["CloseAppsPrompt"]! },
+                { "Strings", stringTable["CloseAppsPrompt"] as Hashtable },
             };
             ProgressDialogOptions progressDialogOptions = new(new()
             {
@@ -182,8 +235,8 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "ButtonLeftText", listDialogButtonLeftText },
                 { "ButtonRightText", listDialogButtonRightText },
                 { "ListItems", listDialogItems },
-                { "InitialSelectedItem", listDialogItems[0] },
-                { "Strings", (Hashtable)stringTable["ListSelectionPrompt"]! },
+                { "SelectedIndex", initialSelectedItem },
+                { "Strings", stringTable["ListSelectionPrompt"] as Hashtable },
                 { "MinimizeWindows", false },
                 { "Language", CultureInfo.CurrentCulture },
                 { "MessageAlignment", DialogMessageAlignment.Left }
@@ -226,8 +279,31 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "CountdownNoMinimizeDuration", restartCountdownNoMinimizeDuration },
                 // { "CustomMessageText", customMessageText },
                 { "Language", CultureInfo.CurrentCulture },
-                { "Strings", (Hashtable)stringTable["RestartPrompt"]! },
+                { "Strings", stringTable["RestartPrompt"] as Hashtable },
             };
+
+            // #################################################################################
+
+            // Show DeferOnly Dialog
+
+            CloseAppsDialogResult deferOnlyResult = DialogManager.ShowCloseAppsDialog(dialogStyle, new CloseAppsDialogOptions(deploymentType, deferOnlyDialogOptions), deferOnlyDialogState); // Pass the service as optional parameter
+
+            if (deferOnlyResult == CloseAppsDialogResult.Defer)
+            {
+                Environment.Exit(0);
+            }
+
+
+            // #################################################################################
+
+            // Show NoCloseApps Dialog
+
+            CloseAppsDialogResult noCloseAppsResult = DialogManager.ShowCloseAppsDialog(dialogStyle, new CloseAppsDialogOptions(deploymentType, noCloseAppsDialogOptions), noCloseAppsDialogState); // Pass the service as optional parameter
+
+            if (noCloseAppsResult == CloseAppsDialogResult.Defer)
+            {
+                Environment.Exit(0);
+            }
 
             // #################################################################################
 
@@ -246,14 +322,16 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             DialogManager.ShowProgressDialog(dialogStyle, progressDialogOptions);
 
-            Thread.Sleep(3000); // Simulate some work being done
+            Thread.Sleep(10000); // Simulate some work being done
+            // Thread.Sleep(3000); // Simulate some work being done
 
             // Simulate a process with progress updates
             for (int i = 0; i <= 100; i += 10)
             {
                 // Update progress
-                DialogManager.UpdateProgressDialog($"Installation progress: {i}%", $"Step {i / 10} of 10", i);
-                Thread.Sleep(250);  // Simulate work being done
+                DialogManager.UpdateProgressDialog($"Performing custom data integration. Please wait...", $"Executing task... {i}% Complete.", i);
+                Thread.Sleep(1000);  // Simulate work being done
+                //Thread.Sleep(250);  // Simulate work being done
             }
 
             // Close Progress Dialog
