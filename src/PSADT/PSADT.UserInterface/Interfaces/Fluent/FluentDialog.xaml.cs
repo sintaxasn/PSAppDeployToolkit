@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Automation;
-using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -22,24 +21,24 @@ using PSADT.ClientServer;
 using PSADT.LibraryInterfaces;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.Utilities;
-using iNKORE.UI.WPF.Modern;
-using iNKORE.UI.WPF.Modern.Controls;
-using iNKORE.UI.WPF.Modern.Controls.Primitives;
+using Wpf.Ui.Appearance;
+using Wpf.Ui.Controls;
+using Wpf.Ui.Markup;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
     /// <summary>
     /// Unified dialog for PSAppDeployToolkit that consolidates all dialog types into one
     /// </summary>
-    internal abstract partial class FluentDialog : Window, IDialogBase, INotifyPropertyChanged
+    internal abstract partial class FluentDialog : FluentWindow, IDialogBase, INotifyPropertyChanged
     {
         /// <summary>
         /// Static constructor to set up the theme and resources for the dialog.
         /// </summary>
         static FluentDialog()
         {
-            Application.Current.Resources.MergedDictionaries.Add(new ThemeResources());
-            Application.Current.Resources.MergedDictionaries.Add(new XamlControlsResources());
+            Application.Current.Resources.MergedDictionaries.Add(new ThemesDictionary());
+            Application.Current.Resources.MergedDictionaries.Add(new ControlsDictionary());
         }
 
         /// <summary>
@@ -69,7 +68,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // If the accent color is passed through, update via ThemeManager
             if (options.FluentAccentColor is not null)
             {
-                ThemeManager.Current.AccentColor = IntToColor(options.FluentAccentColor.Value);
+                ApplicationAccentColorManager.Apply(IntToColor(options.FluentAccentColor.Value), ApplicationThemeManager.GetAppTheme(), false);
             }
 
             // Set the language and flow direction for the dialog.
@@ -143,7 +142,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 { ApplicationTheme.Light, GetIcon(options.AppIconImage) },
                 { ApplicationTheme.Dark, GetIcon(options.AppIconDarkImage) },
             });
-            ThemeManager.AddActualThemeChangedHandler(this, (_, _) => SetDialogIcon());
+            ApplicationThemeManager.Changed += OnActualThemeChanged;
             SetDialogIcon();
 
             // Set the expiry timer if specified.
@@ -512,7 +511,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 {
                     run.FontWeight = FontWeights.Bold;
                 }
-                run.SetResourceReference(ForegroundProperty, ThemeKeys.AccentTextFillColorPrimaryBrushKey);
+                run.SetResourceReference(ForegroundProperty, "AccentTextFillColorPrimaryBrush");
             }
 
             textBlock.Inlines.Add(run);
@@ -562,7 +561,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="button"></param>
         protected static void SetAccentButton(Button button)
         {
-            button.SetResourceReference(StyleProperty, ThemeKeys.AccentButtonStyleKey);
+            button.SetResourceReference(ForegroundProperty, "AccentButtonStyleKey");
         }
 
         /// <summary>
@@ -571,7 +570,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="button"></param>
         protected static void SetCancelButton(Button button)
         {
-            button.IsCancel = true;
+            button.IsCancel = true
+;
         }
 
         /// <summary>
@@ -596,7 +596,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
 
             // Create AccessText to properly handle the underscore as accelerator
-            button.Content = new AccessText
+            button.Content = new System.Windows.Controls.AccessText
             {
                 Text = text
             };
@@ -704,11 +704,19 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// displaying the application icon.</remarks>
         private void SetDialogIcon()
         {
-            AppIconImage.Source = _dialogBitmapCache[ThemeManager.Current.ActualApplicationTheme];
+            AppIconImage.Source = _dialogBitmapCache[ApplicationThemeManager.GetAppTheme()];
             if (_appTaskbarIcon is null)
             {
                 Icon = AppIconImage.Source;
             }
+        }
+
+        /// <summary>
+        /// Handles the application theme change event to update the dialog icon.
+        /// </summary>
+        private void OnActualThemeChanged(ApplicationTheme theme, Color accentColor)
+        {
+            SetDialogIcon();
         }
 
         /// <summary>
@@ -809,13 +817,22 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             Top = _startingTop;
         }
 
+        private const int WS_MINIMIZEBOX = 0x00020000;
+
         /// <summary>
         /// Sets the minimize button availability based on specific conditions.
         /// </summary>
-        /// <param name="availability">The desired button availability state.</param>
-        protected void SetMinimizeButtonAvailability(TitleBarButtonAvailability availability)
+        /// <param name="enabled">Whether the minimize button should be enabled.</param>
+        protected void SetMinimizeButtonAvailability(bool enabled)
         {
-            TitleBar.SetMinimizeButtonAvailability(this, availability);
+            nint hwndRaw = new WindowInteropHelper(this).Handle;
+            if (hwndRaw == default)
+            {
+                return;
+            }
+            Windows.Win32.Foundation.HWND hwnd = new(hwndRaw);
+            int style = User32.GetWindowStyle(hwnd);
+            User32.SetWindowStyle(hwnd, enabled ? style | WS_MINIMIZEBOX : style & ~WS_MINIMIZEBOX);
         }
 
         /// <summary>
@@ -854,8 +871,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 for (int i = 0; i < visibleButtons.Count; i++)
                 {
                     // Set margin based on position
-                    ActionButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new(1, GridUnitType.Star) });
-                    Grid.SetColumn(visibleButtons[i], i);
+                    ActionButtons.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = new(1, GridUnitType.Star) });
+                    System.Windows.Controls.Grid.SetColumn(visibleButtons[i], i);
                     Button button = (Button)visibleButtons[i];
                     button.Margin = i == 0 ? new(0, 0, 4, 0) : i == visibleButtons.Count - 1 ? new(4, 0, 0, 0) : new(4, 0, 4, 0);
                 }
@@ -863,11 +880,11 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             else
             {
                 // Add two columns - one for the button (50% width) and one empty (50% width)
-                ActionButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new(1, GridUnitType.Star) });
-                ActionButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new(1, GridUnitType.Star) });
+                ActionButtons.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = new(1, GridUnitType.Star) });
+                ActionButtons.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = new(1, GridUnitType.Star) });
 
                 // Place the single button in the second column
-                Grid.SetColumn(visibleButtons[0], 1);
+                System.Windows.Controls.Grid.SetColumn(visibleButtons[0], 1);
 
                 // Set appropriate margin
                 Button button = (Button)visibleButtons[0];
@@ -1085,7 +1102,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 }
 
                 // Clean up resources.
-                ThemeManager.RemoveActualThemeChangedHandler(this, (_, _) => SetDialogIcon());
+                ApplicationThemeManager.Changed -= OnActualThemeChanged;
                 _hwndSource?.RemoveHook(WndProc);
                 _hwndSource?.Dispose();
                 _countdownTimer?.Dispose();
