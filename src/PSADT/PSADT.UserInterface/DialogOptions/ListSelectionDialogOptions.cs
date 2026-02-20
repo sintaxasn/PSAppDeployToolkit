@@ -39,7 +39,7 @@ namespace PSADT.UserInterface.DialogOptions
             options["Icon"] as DialogSystemIcon?,
             options["MinimizeWindows"] as bool? ?? false,
             options["ListItems"] as IReadOnlyList<string> ?? null!,
-            options["SelectedIndex"] as int? ?? -1,
+            options["SelectedIndex"] as int? ?? 0,
             options["Strings"] as Hashtable is { Count: > 0 } strings ? new ListSelectionDialogStrings(strings) : null!)
         {
         }
