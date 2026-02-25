@@ -65,10 +65,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Initialize the window
             InitializeComponent();
 
-            // If the accent color is passed through, update via ThemeManager
+            // Set up the system theme watcher to update the accent color if the theme changes, but only if we're not using the system accent color - if we are, then the SystemThemeWatcher will handle it for us.
             if (options.FluentAccentColor is not null)
             {
                 ApplicationAccentColorManager.Apply(IntToColor(options.FluentAccentColor.Value), ApplicationThemeManager.GetAppTheme(), false);
+                SystemThemeWatcher.Watch(this, WindowBackdropType.Acrylic, false);
+            }
+            else
+            {
+                SystemThemeWatcher.Watch(this, WindowBackdropType.Acrylic, true);
             }
 
             // Set the language and flow direction for the dialog.
@@ -561,7 +566,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="button"></param>
         protected static void SetAccentButton(Button button)
         {
-            button.SetResourceReference(ForegroundProperty, "AccentButtonStyleKey");
+            button.SetResourceReference(ForegroundProperty, "AccentTextFillColorPrimaryBrush");
         }
 
         /// <summary>
