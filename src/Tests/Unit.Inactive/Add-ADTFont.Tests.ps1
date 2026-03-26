@@ -1,8 +1,7 @@
-﻿BeforeAll {
+﻿#Requires -RunAsAdministrator
+BeforeAll {
     Remove-Module PSAppDeployToolkit -Force -ErrorAction SilentlyContinue
     Import-Module "$PSScriptRoot\..\..\PSAppDeployToolkit\PSAppDeployToolkit.psd1" -Force
-
-    $script:IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
     # Mock Set-ADTPreferenceVariables due to its expense when running via Pester.
     Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables { }
@@ -14,6 +13,7 @@
     # Helper function to create a test font file by copying a system font
     function New-TestFontFile
     {
+        [CmdletBinding(SupportsShouldProcess)]
         param(
             [Parameter(Mandatory)]
             [string]$Extension,
@@ -39,13 +39,17 @@
             throw "Could not find a system font with extension $Extension"
         }
 
-        Copy-Item -Path $SourceFont -Destination $destPath -Force
+        if ($PSCmdlet.ShouldProcess($destPath, 'Copy test font file'))
+        {
+            Copy-Item -Path $SourceFont -Destination $destPath -Force
+        }
         return $destPath
     }
 
     # Helper function to clean up an installed test font using Remove-ADTFont
     function Remove-TestFont
     {
+        [CmdletBinding(SupportsShouldProcess)]
         param(
             [Parameter(Mandatory)]
             [string]$FontFileName
@@ -54,7 +58,10 @@
         # Use Remove-ADTFont to properly clean up the font
         try
         {
-            Remove-ADTFont -Name $FontFileName -ErrorAction SilentlyContinue
+            if ($PSCmdlet.ShouldProcess($FontFileName, 'Remove test font'))
+            {
+                Remove-ADTFont -Name $FontFileName -ErrorAction SilentlyContinue
+            }
         }
         catch
         {
@@ -63,7 +70,7 @@
 
         # Fallback: If file still exists, force remove it
         $fontPath = Join-Path $script:FontsDir $FontFileName
-        if (Test-Path -LiteralPath $fontPath)
+        if ((Test-Path -LiteralPath $fontPath) -and $PSCmdlet.ShouldProcess($fontPath, 'Remove lingering font file'))
         {
             Remove-Item -LiteralPath $fontPath -Force -ErrorAction SilentlyContinue
         }
@@ -75,7 +82,7 @@
             if ($regKey)
             {
                 $regKey.Property | ForEach-Object {
-                    if ($regKey.GetValue($_) -eq $FontFileName)
+                    if (($regKey.GetValue($_) -eq $FontFileName) -and $PSCmdlet.ShouldProcess($_, 'Remove lingering font registry entry'))
                     {
                         Remove-ItemProperty -Path $script:FontRegKey -Name $_ -Force -ErrorAction SilentlyContinue
                     }
@@ -92,11 +99,6 @@
 Describe 'Add-ADTFont' {
     BeforeAll {
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry {}
-        Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
-    }
-
-    BeforeEach {
-        if (!$script:IsAdmin) { Set-ItResult -Skipped -Because 'Requires admin rights (font installation modifies system Fonts directory and registry)'; return }
     }
 
     Context 'Single File Installation' {
@@ -211,8 +213,8 @@ Describe 'Add-ADTFont' {
             }
             $script:InstalledFontFiles = @()
 
-            # Clean up test directory (guard against null when BeforeEach was skipped)
-            if ($script:TestFontDir -and (Test-Path $script:TestFontDir))
+            # Clean up test directory
+            if (Test-Path $script:TestFontDir)
             {
                 Remove-Item -Path $script:TestFontDir -Recurse -Force -ErrorAction SilentlyContinue
             }
@@ -281,7 +283,7 @@ Describe 'Add-ADTFont' {
             }
             $script:InstalledFontFiles = @()
 
-            if ($script:TestFontDir -and (Test-Path $script:TestFontDir))
+            if (Test-Path $script:TestFontDir)
             {
                 Remove-Item -Path $script:TestFontDir -Recurse -Force -ErrorAction SilentlyContinue
             }
@@ -344,7 +346,7 @@ Describe 'Add-ADTFont' {
             }
             $script:InstalledFontFiles = @()
 
-            if ($script:TestFontDir -and (Test-Path $script:TestFontDir))
+            if (Test-Path $script:TestFontDir)
             {
                 Remove-Item -Path $script:TestFontDir -Recurse -Force -ErrorAction SilentlyContinue
             }

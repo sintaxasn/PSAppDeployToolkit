@@ -1,8 +1,7 @@
-﻿BeforeAll {
+﻿#Requires -RunAsAdministrator
+BeforeAll {
     Remove-Module PSAppDeployToolkit -Force -ErrorAction SilentlyContinue
     Import-Module "$PSScriptRoot\..\..\PSAppDeployToolkit\PSAppDeployToolkit.psd1" -Force
-
-    $script:IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
     # Mock Set-ADTPreferenceVariables due to its expense when running via Pester.
     Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables { }
@@ -90,6 +89,7 @@
     # Cleanup helper for fonts that may have been partially installed
     function Remove-TestFontForce
     {
+        [CmdletBinding(SupportsShouldProcess)]
         param(
             [Parameter(Mandatory)]
             [string]$FileName
@@ -98,7 +98,10 @@
         # Try to remove using Remove-ADTFont first
         try
         {
-            Remove-ADTFont -Name $FileName -ErrorAction SilentlyContinue
+            if ($PSCmdlet.ShouldProcess($FileName, 'Force-remove test font'))
+            {
+                Remove-ADTFont -Name $FileName -ErrorAction SilentlyContinue
+            }
         }
         catch
         {
@@ -107,7 +110,7 @@
 
         # Fallback: If file still exists, force remove it
         $fontPath = Join-Path $script:FontsDir $FileName
-        if (Test-Path -LiteralPath $fontPath)
+        if ((Test-Path -LiteralPath $fontPath) -and $PSCmdlet.ShouldProcess($fontPath, 'Remove lingering font file'))
         {
             Remove-Item -LiteralPath $fontPath -Force -ErrorAction SilentlyContinue
         }
@@ -119,7 +122,7 @@
             if ($regKey)
             {
                 $regKey.Property | ForEach-Object {
-                    if ($regKey.GetValue($_) -eq $FileName)
+                    if (($regKey.GetValue($_) -eq $FileName) -and $PSCmdlet.ShouldProcess($_, 'Remove lingering font registry entry'))
                     {
                         Remove-ItemProperty -Path $script:FontRegKey -Name $_ -Force -ErrorAction SilentlyContinue
                     }
@@ -136,11 +139,6 @@
 Describe 'Remove-ADTFont' {
     BeforeAll {
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry {}
-        Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
-    }
-
-    BeforeEach {
-        if (!$script:IsAdmin) { Set-ItResult -Skipped -Because 'Requires admin rights (font removal modifies system Fonts directory and registry)'; return }
     }
 
     Context 'Removal by Filename' {
