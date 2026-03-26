@@ -1,4 +1,4 @@
-﻿BeforeAll {
+BeforeAll {
     Remove-Module PSAppDeployToolkit -Force -ErrorAction SilentlyContinue
     Import-Module "$PSScriptRoot\..\..\PSAppDeployToolkit\PSAppDeployToolkit.psd1" -Force
 }
@@ -13,6 +13,8 @@ MyOtherKey=MyOtherValue
         $IniPath = "$TestDrive\IniFile.ini"
         Set-Content -Path $IniPath -Value $IniContent -Encoding Ascii -Force
 
+        # Mock Set-ADTPreferenceVariables to avoid changing preference state during tests.
+        Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
         # Mock Write-ADTLogEntry due to its expense when running via Pester.
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry { }
     }

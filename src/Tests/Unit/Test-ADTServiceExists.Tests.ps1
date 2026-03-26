@@ -1,31 +1,16 @@
-﻿BeforeAll {
+BeforeAll {
     Remove-Module PSAppDeployToolkit -Force -ErrorAction SilentlyContinue
     Import-Module "$PSScriptRoot\..\..\PSAppDeployToolkit\PSAppDeployToolkit.psd1" -Force
 }
 Describe 'Test-ADTServiceExists' {
     BeforeAll {
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'realServiceName', Justification = 'This variable is used within scriptblocks that PSScriptAnalyzer has no visibility of.')]
-        $realServiceName = Get-Service | Select-Object -First 1 -ExpandProperty Name
 
-        while ($true)
-        {
-            $fakeServiceName = [System.Guid]::NewGuid().ToString()
+        # This is the service name for the Workstation service, which is present on all Windows machines.
+        $realServiceName = "LanmanWorkstation"
 
-            try
-            {
-                Get-Service -Name $fakeServiceName
-            }
-            catch [Microsoft.PowerShell.Commands.ServiceCommandException]
-            {
-                if ($_.CategoryInfo.Category -eq [System.Management.Automation.ErrorCategory]::ObjectNotFound)
-                {
-                    break
-                }
-
-                throw
-            }
-        }
-
+        # Mock Set-ADTPreferenceVariables to avoid changing preference state during tests.
+        Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
         # Mock Write-ADTLogEntry due to its expense when running via Pester.
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry { }
     }
@@ -36,6 +21,9 @@ Describe 'Test-ADTServiceExists' {
             Test-ADTServiceExists -Name $realServiceName -UseCIM | Should -BeTrue
         }
         It 'Should return $false' {
+            # A GUID is effectively guaranteed not to match any real Windows service name.
+            $fakeServiceName = [System.Guid]::NewGuid().ToString()
+
             Test-ADTServiceExists -Name $fakeServiceName | Should -BeFalse
             Test-ADTServiceExists -Name $fakeServiceName -UseCIM | Should -BeFalse
             Test-ADTServiceExists -Name $fakeServiceName -PassThru | Should -BeFalse

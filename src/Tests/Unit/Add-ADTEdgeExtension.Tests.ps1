@@ -1,4 +1,4 @@
-﻿BeforeAll {
+BeforeAll {
     Remove-Module PSAppDeployToolkit -Force -ErrorAction SilentlyContinue
     Import-Module "$PSScriptRoot\..\..\PSAppDeployToolkit\PSAppDeployToolkit.psd1" -Force
 }
@@ -20,8 +20,9 @@ Describe 'Add-ADTEdgeExtension' {
             return "Microsoft.PowerShell.Core\Registry::$testRegistryRoot\$normalizedKey"
         }
 
-        # Mock Write-ADTLogEntry due to its expense when running via Pester.
+        # Mock Set-ADTPreferenceVariables to avoid changing preference state during tests.
         Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
+        # Mock Write-ADTLogEntry due to its expense when running via Pester.
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry { }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'RedirectedEdgeKey', Justification = "This variable is used within scriptblocks that PSScriptAnalyzer has no visibility of.")]

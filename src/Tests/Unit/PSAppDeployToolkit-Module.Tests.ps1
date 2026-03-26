@@ -1,4 +1,4 @@
-﻿BeforeAll {
+BeforeAll {
     #-------------------------------------------------------------------------
     Set-Location -Path $PSScriptRoot
     #-------------------------------------------------------------------------
@@ -11,6 +11,13 @@
     #-------------------------------------------------------------------------
 }
 Describe 'Module Tests' -Tag Unit {
+    BeforeAll {
+        # Mock Write-ADTLogEntry due to its expense when running via Pester.
+        Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry {}
+        # Mock Set-ADTPreferenceVariables to avoid changing preference state during tests.
+        Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
+    }
+
     Context "Module Tests" {
         $script:manifestEval = $null
         It 'Passes Test-ModuleManifest' {
