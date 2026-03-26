@@ -1,6 +1,7 @@
-﻿BeforeAll {
+BeforeAll {
     Remove-Module PSAppDeployToolkit -Force -ErrorAction SilentlyContinue
     Import-Module "$PSScriptRoot\..\..\PSAppDeployToolkit\PSAppDeployToolkit.psd1" -Force
+    $script:IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
 Describe 'Copy-ADTFile'-ForEach @(
@@ -34,9 +35,15 @@ Describe 'Copy-ADTFile'-ForEach @(
         Set-ItemProperty -Path "$SourcePath\SubfolderHidden" -Name Attributes -Value 'Hidden'
 
         # Mock Write-ADTLogEntry due to its expense when running via Pester.
+        Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry { }
     }
     BeforeEach {
+        if ($FileCopyMode -eq 'Robocopy' -and !$script:IsAdmin)
+        {
+            Set-ItResult -Skipped -Because 'Robocopy mode requires admin rights (AccountUtilities static constructor)'
+            return
+        }
         if (Test-Path -Path $DestinationPath -PathType Container)
         {
             Remove-Item -Path $DestinationPath -Recurse -Force
