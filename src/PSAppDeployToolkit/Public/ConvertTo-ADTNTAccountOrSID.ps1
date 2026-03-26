@@ -108,7 +108,7 @@ function ConvertTo-ADTNTAccountOrSID
 
         [Parameter(Mandatory = $true, ParameterSetName = 'WellKnownNameLdap')]
         [ValidateSet('LDAP://', 'LDAPS://')]
-        [System.String]$LdapUri = 'LDAP://'
+        [System.String]$LdapUri
     )
 
     begin
