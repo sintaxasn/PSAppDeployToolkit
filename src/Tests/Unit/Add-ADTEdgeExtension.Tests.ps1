@@ -5,14 +5,23 @@
 Describe 'Add-ADTEdgeExtension' {
     BeforeAll {
         # Mock Convert-ADTRegistryPath to redirect registry paths to TestRegistry:\
+        # Inline the path normalization to avoid calling the real function (which triggers
+        # PSADT.AccountManagement.AccountUtilities static constructor requiring admin rights).
         Mock -ModuleName PSAppDeployToolkit Convert-ADTRegistryPath {
-            $output = & (Get-Command -Source PSAppDeployToolkit -CommandType Function -Name 'Convert-ADTRegistryPath') @PesterBoundParameters
+            param([string]$Key, [string]$SID, [switch]$Wow6432Node)
+            $null = $SID, $Wow6432Node
             $testRegistryRoot = (Get-PSDrive -Name TestRegistry).Root
-            $mockedOutput = $output -replace '^Microsoft\.PowerShell\.Core\\Registry::', "Microsoft.PowerShell.Core\Registry::$testRegistryRoot\"
-            return $mockedOutput
+            $normalizedKey = $Key -replace '^.+::' `
+                -replace '^HKLM:?\\', 'HKEY_LOCAL_MACHINE\' `
+                -replace '^HKCU:?\\', 'HKEY_CURRENT_USER\' `
+                -replace '^HKCR:?\\', 'HKEY_CLASSES_ROOT\' `
+                -replace '^HKU:?\\', 'HKEY_USERS\' `
+                -replace '^HKCC:?\\', 'HKEY_CURRENT_CONFIG\'
+            return "Microsoft.PowerShell.Core\Registry::$testRegistryRoot\$normalizedKey"
         }
 
         # Mock Write-ADTLogEntry due to its expense when running via Pester.
+        Mock -ModuleName PSAppDeployToolkit Set-ADTPreferenceVariables {}
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry { }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'RedirectedEdgeKey', Justification = "This variable is used within scriptblocks that PSScriptAnalyzer has no visibility of.")]
