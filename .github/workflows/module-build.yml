@@ -78,7 +78,7 @@ jobs:
         & (Import-Module -Name .\src\PSAppDeployToolkit.Build -PassThru) { Invoke-ADTCustomModuleBuild -Actions 'Export-ADTScriptTemplate', 'Compress-ADTBuildAssetContent' }
 
     - name: Upload module
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e26b76fdaad77386f024f  # https://github.com/actions/upload-artifact/releases/tag/v7.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # https://github.com/actions/upload-artifact/releases/tag/v7.0.0
       with:
         path: ${{ steps.exports.outputs.ModuleOnly }}
         if-no-files-found: error
