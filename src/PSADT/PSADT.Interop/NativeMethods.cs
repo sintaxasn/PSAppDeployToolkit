@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Threading;
@@ -21,6 +22,7 @@ using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.Security;
 using Windows.Win32.Security.Authentication.Identity;
 using Windows.Win32.Security.Authorization;
+using Windows.Win32.Security.WinTrust;
 using Windows.Win32.Storage.FileSystem;
 using Windows.Win32.System.ApplicationInstallationAndServicing;
 using Windows.Win32.System.Com;
@@ -293,6 +295,11 @@ namespace PSADT.Interop
                     {
                         throw ExceptionUtilities.GetExceptionForLastWin32Error();
                     }
+                    WIN32_ERROR lastError = ExceptionUtilities.GetLastWin32Error();
+                    if (lastError == WIN32_ERROR.ERROR_NOT_ALL_ASSIGNED)
+                    {
+                        throw ExceptionUtilities.GetException(lastError);
+                    }
                 }
             }
             if (PreviousState.Length != 0)
@@ -369,6 +376,7 @@ namespace PSADT.Interop
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="lpEnvironment"/> is null, closed, or invalid.</exception>
         internal static BOOL CreateProcessWithToken(SafeHandle hToken, CREATE_PROCESS_LOGON_FLAGS dwLogonFlags, string? lpApplicationName, ref Span<char> lpCommandLine, PROCESS_CREATION_FLAGS dwCreationFlags, SafeEnvironmentBlockHandle? lpEnvironment, string? lpCurrentDirectory, in STARTUPINFOW lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation)
         {
+            ArgumentException.ThrowIfNullOrInvalid(hToken);
             if (lpApplicationName is not null)
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(lpApplicationName);
@@ -377,7 +385,9 @@ namespace PSADT.Interop
             {
                 lpCurrentDirectory = lpCurrentDirectory.ThrowIfDirectoryDoesNotExist();
             }
-            ArgumentException.ThrowIfNullOrInvalid(hToken);
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdOutput, "The hStdOutput handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdError, "The hStdError handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdInput, "The hStdInput handle in the STARTUPINFO structure is invalid.");
             bool lpEnvironmentAddRef = false;
             try
             {
@@ -426,6 +436,7 @@ namespace PSADT.Interop
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="lpEnvironment"/> is null or closed.</exception>
         internal static BOOL CreateProcessAsUser(SafeHandle hToken, string? lpApplicationName, ref Span<char> lpCommandLine, in SECURITY_ATTRIBUTES? lpProcessAttributes, in SECURITY_ATTRIBUTES? lpThreadAttributes, in BOOL bInheritHandles, PROCESS_CREATION_FLAGS dwCreationFlags, SafeEnvironmentBlockHandle? lpEnvironment, string? lpCurrentDirectory, in STARTUPINFOW lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation)
         {
+            ArgumentException.ThrowIfNullOrInvalid(hToken);
             if (lpApplicationName is not null)
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(lpApplicationName);
@@ -434,7 +445,9 @@ namespace PSADT.Interop
             {
                 lpCurrentDirectory = lpCurrentDirectory.ThrowIfDirectoryDoesNotExist();
             }
-            ArgumentException.ThrowIfNullOrInvalid(hToken);
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdOutput, "The hStdOutput handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdError, "The hStdError handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdInput, "The hStdInput handle in the STARTUPINFO structure is invalid.");
             bool lpEnvironmentAddRef = false;
             try
             {
@@ -486,6 +499,7 @@ namespace PSADT.Interop
         /// <exception cref="ArgumentException">Thrown if <paramref name="lpCommandLine"/> is not null-terminated.</exception>
         internal static BOOL CreateProcessAsUser(SafeHandle hToken, string? lpApplicationName, ref Span<char> lpCommandLine, in SECURITY_ATTRIBUTES? lpProcessAttributes, in SECURITY_ATTRIBUTES? lpThreadAttributes, in BOOL bInheritHandles, PROCESS_CREATION_FLAGS dwCreationFlags, SafeEnvironmentBlockHandle? lpEnvironment, string? lpCurrentDirectory, in STARTUPINFOEXW lpStartupInfoEx, out PROCESS_INFORMATION lpProcessInformation)
         {
+            ArgumentException.ThrowIfNullOrInvalid(hToken);
             if (lpApplicationName is not null)
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(lpApplicationName);
@@ -498,7 +512,9 @@ namespace PSADT.Interop
             {
                 lpCurrentDirectory = lpCurrentDirectory.ThrowIfDirectoryDoesNotExist();
             }
-            ArgumentException.ThrowIfNullOrInvalid(hToken);
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfoEx.StartupInfo.hStdOutput, "The hStdOutput handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfoEx.StartupInfo.hStdError, "The hStdError handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfoEx.StartupInfo.hStdInput, "The hStdInput handle in the STARTUPINFO structure is invalid.");
             bool hTokenAddRef = false;
             bool lpEnvironmentAddRef = false;
             try
@@ -899,7 +915,7 @@ namespace PSADT.Interop
         /// leave the SACL unchanged.</param>
         /// <returns>A <see cref="WIN32_ERROR"/> value indicating the result of the operation. Returns <see
         /// cref="WIN32_ERROR.ERROR_SUCCESS"/> if the operation succeeds.</returns>
-        internal static WIN32_ERROR SetNamedSecurityInfo(string pObjectName, SE_OBJECT_TYPE ObjectType, OBJECT_SECURITY_INFORMATION SecurityInfo, SafeNoReleaseHandle? psidOwner, SafeNoReleaseHandle? psidGroup, [Optional] LocalFreeSafeHandle? pDacl, [Optional] LocalFreeSafeHandle? pSacl)
+        internal static WIN32_ERROR SetNamedSecurityInfo(string pObjectName, SE_OBJECT_TYPE ObjectType, OBJECT_SECURITY_INFORMATION SecurityInfo, SafeNoReleaseHandle? psidOwner, SafeNoReleaseHandle? psidGroup, LocalFreeSafeHandle? pDacl = null, LocalFreeSafeHandle? pSacl = null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(pObjectName);
             bool psidOwnerAddRef = false;
@@ -990,7 +1006,7 @@ namespace PSADT.Interop
         /// <param name="Args">An optional pointer to additional arguments passed to the progress callback function.</param>
         /// <returns>A <see cref="WIN32_ERROR"/> value indicating the result of the operation.  Returns <see
         /// cref="WIN32_ERROR.ERROR_SUCCESS"/> if the operation completes successfully.</returns>
-        internal static WIN32_ERROR TreeResetNamedSecurityInfo(string pObjectName, SE_OBJECT_TYPE ObjectType, OBJECT_SECURITY_INFORMATION SecurityInfo, SafeNoReleaseHandle? pOwner, SafeNoReleaseHandle? pGroup, [Optional] LocalFreeSafeHandle? pDacl, [Optional] LocalFreeSafeHandle? pSacl, BOOL KeepExplicit, FN_PROGRESS? fnProgress, PROG_INVOKE_SETTING ProgressInvokeSetting, [Optional] nint? Args)
+        internal static WIN32_ERROR TreeResetNamedSecurityInfo(string pObjectName, SE_OBJECT_TYPE ObjectType, OBJECT_SECURITY_INFORMATION SecurityInfo, SafeNoReleaseHandle? pOwner, SafeNoReleaseHandle? pGroup, [Optional] LocalFreeSafeHandle? pDacl, [Optional] LocalFreeSafeHandle? pSacl, BOOL KeepExplicit, FN_PROGRESS? fnProgress, PROG_INVOKE_SETTING ProgressInvokeSetting, nint Args = 0)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(pObjectName);
             bool pOwnerAddRef = false;
@@ -1007,7 +1023,7 @@ namespace PSADT.Interop
                 {
                     fixed (char* pObjectNameLocal = pObjectName)
                     {
-                        return PInvoke.TreeResetNamedSecurityInfo(pObjectNameLocal, ObjectType, SecurityInfo, pOwner is not null ? (PSID)pOwner.DangerousGetHandle() : (PSID)null, pGroup is not null ? (PSID)pGroup.DangerousGetHandle() : (PSID)null, pDacl is not null ? (ACL*)pDacl.DangerousGetHandle() : (ACL*)null, pSacl is not null ? (ACL*)pSacl.DangerousGetHandle() : (ACL*)null, KeepExplicit, fnProgress, ProgressInvokeSetting, Args is not null ? (void*)Args.Value : null).ThrowOnFailure();
+                        return PInvoke.TreeResetNamedSecurityInfo(pObjectNameLocal, ObjectType, SecurityInfo, pOwner is not null ? (PSID)pOwner.DangerousGetHandle() : (PSID)null, pGroup is not null ? (PSID)pGroup.DangerousGetHandle() : (PSID)null, pDacl is not null ? (ACL*)pDacl.DangerousGetHandle() : (ACL*)null, pSacl is not null ? (ACL*)pSacl.DangerousGetHandle() : (ACL*)null, KeepExplicit, fnProgress, ProgressInvokeSetting, (void*)Args).ThrowOnFailure();
                     }
                 }
             }
@@ -1675,6 +1691,9 @@ namespace PSADT.Interop
             {
                 lpCurrentDirectory = lpCurrentDirectory.ThrowIfDirectoryDoesNotExist();
             }
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdOutput, "The hStdOutput handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdError, "The hStdError handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfo.hStdInput, "The hStdInput handle in the STARTUPINFO structure is invalid.");
             bool lpEnvironmentAddRef = false;
             try
             {
@@ -1739,6 +1758,9 @@ namespace PSADT.Interop
             {
                 lpCurrentDirectory = lpCurrentDirectory.ThrowIfDirectoryDoesNotExist();
             }
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfoEx.StartupInfo.hStdOutput, "The hStdOutput handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfoEx.StartupInfo.hStdError, "The hStdError handle in the STARTUPINFO structure is invalid.");
+            InvalidOperationException.ThrowIfInvalid(lpStartupInfoEx.StartupInfo.hStdInput, "The hStdInput handle in the STARTUPINFO structure is invalid.");
             bool lpEnvironmentAddRef = false;
             try
             {
@@ -1997,8 +2019,7 @@ namespace PSADT.Interop
         /// langword="false"/>.</returns>
         [DllImport("kernel32.dll", SetLastError = false, ExactSpelling = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool TermsrvAppInstallMode();
+        internal static extern BOOL TermsrvAppInstallMode();
 
         /// <summary>
         /// Retrieves system firmware table data for the specified firmware table provider and table ID.
@@ -2310,7 +2331,7 @@ namespace PSADT.Interop
         /// require arguments.</param>
         /// <returns>The number of characters stored in the output buffer, excluding the terminating null character.</returns>
         /// <exception cref="Win32Exception">Thrown if the message formatting operation fails.</exception>
-        internal static uint FormatMessage(FORMAT_MESSAGE_OPTIONS dwFlags, [Optional] FreeLibrarySafeHandle? lpSource, uint dwMessageId, Span<char> lpBuffer, uint dwLanguageId = 0, in nint Arguments = default)
+        internal static uint FormatMessage(FORMAT_MESSAGE_OPTIONS dwFlags, [Optional] FreeLibrarySafeHandle? lpSource, uint dwMessageId, Span<char> lpBuffer, uint dwLanguageId = 0, nint Arguments = default)
         {
             unsafe
             {
@@ -2625,7 +2646,7 @@ namespace PSADT.Interop
         /// <exception cref="ArgumentNullException">Thrown if ProcessHandle is null or closed, or if StartRoutine is null, closed, or invalid.</exception>
         internal static NTSTATUS NtCreateThreadEx(out SafeThreadHandle ThreadHandle, THREAD_ACCESS_RIGHTS DesiredAccess, SafeProcessHandle ProcessHandle, SafeVirtualAllocHandle StartRoutine, nint? Argument = null, THREAD_CREATE_FLAGS CreateFlags = 0, uint ZeroBits = 0, uint StackSize = 0, uint MaximumStackSize = 0)
         {
-            [DllImport("ntdll.dll", ExactSpelling = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [DllImport("ntdll.dll", ExactSpelling = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
             static extern NTSTATUS NtCreateThreadEx(out nint ThreadHandle, THREAD_ACCESS_RIGHTS DesiredAccess, nint ObjectAttributes, nint ProcessHandle, nint StartRoutine, nint Argument, THREAD_CREATE_FLAGS CreateFlags, uint ZeroBits, uint StackSize, uint MaximumStackSize, nint AttributeList);
             ArgumentException.ThrowIfNullOrClosed(ProcessHandle);
             ArgumentException.ThrowIfNullOrInvalid(StartRoutine);
@@ -2667,7 +2688,7 @@ namespace PSADT.Interop
         /// <exception cref="ArgumentNullException">Thrown if ThreadHandle is null or has already been closed.</exception>
         internal static NTSTATUS NtTerminateThread(SafeThreadHandle ThreadHandle, in NTSTATUS ExitStatus)
         {
-            [DllImport("ntdll.dll", ExactSpelling = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [DllImport("ntdll.dll", ExactSpelling = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
             static extern NTSTATUS NtTerminateThread(nint ThreadHandle, NTSTATUS ExitStatus);
             ArgumentException.ThrowIfNullOrInvalid(ThreadHandle);
             bool ThreadHandleAddRef = false;
@@ -2923,7 +2944,7 @@ namespace PSADT.Interop
         /// interpretation depends on the values of wEventId and uFlags. This parameter is optional and may be
         /// default if not required.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SHChangeNotify([MarshalAs(UnmanagedType.I4)] SHCNE_ID wEventId, SHCNF_FLAGS uFlags, [Optional] nint dwItem1, [Optional] nint dwItem2)
+        internal static void SHChangeNotify(SHCNE_ID wEventId, SHCNF_FLAGS uFlags, nint dwItem1 = 0, nint dwItem2 = 0)
         {
             unsafe
             {
@@ -2945,7 +2966,7 @@ namespace PSADT.Interop
         /// <returns>An HRESULT value indicating the success or failure of the operation.</returns>
         internal static HRESULT SHGetStockIconInfo(SHSTOCKICONID siid, SHGSI_FLAGS uFlags, out SHSTOCKICONINFO psii)
         {
-            [DllImport("shell32.dll", CharSet = CharSet.Unicode), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [DllImport("shell32.dll", CharSet = CharSet.Unicode), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
             static extern HRESULT SHGetStockIconInfo(SHSTOCKICONID siid, SHGSI_FLAGS uFlags, ref SHSTOCKICONINFO psii);
             psii = new() { cbSize = (uint)Marshal.SizeOf<SHSTOCKICONINFO>() };
             HRESULT res = SHGetStockIconInfo(siid, uFlags, ref psii);
@@ -2960,9 +2981,10 @@ namespace PSADT.Interop
                     InvalidOperationException.ThrowIfZeroOrInvalid((nint)psii.hIcon, "The icon handle returned from 'SHGetStockIconInfo()' is null or invalid.");
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 psii.Dispose();
+                ExceptionDispatchInfo.Capture(ex).Throw();
                 throw;
             }
             return res;
@@ -3004,7 +3026,10 @@ namespace PSADT.Interop
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static BOOL EnableMenuItem(SafeHandle hMenu, WM_SYSCOMMAND uIDEnableItem, MENU_ITEM_FLAGS uEnable)
         {
-            return PInvoke.EnableMenuItem(hMenu, (uint)uIDEnableItem, uEnable);
+            BOOL res = PInvoke.EnableMenuItem(hMenu, (uint)uIDEnableItem, uEnable);
+            return res == -1
+                ? throw ExceptionUtilities.GetException(WIN32_ERROR.ERROR_GEN_FAILURE, "The specified menu item does not exist.")
+                : res;
         }
 
         /// <summary>
@@ -3064,7 +3089,7 @@ namespace PSADT.Interop
         /// exception is thrown if a Windows error code is set.</returns>
         internal static int LoadString(SafeHandle hInstance, uint uID, out nint lpBuffer)
         {
-            [DllImport("USER32.dll", ExactSpelling = true, EntryPoint = "LoadStringW", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [DllImport("USER32.dll", ExactSpelling = true, EntryPoint = "LoadStringW", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
             static extern int LoadString(HINSTANCE hInstance, uint uID, out nint lpBuffer, int cchBufferMax);
             ArgumentException.ThrowIfNullOrInvalid(hInstance);
             bool hInstanceAddRef = false;
@@ -3204,7 +3229,7 @@ namespace PSADT.Interop
                 ArgumentNullException.ThrowIfNull(hWnd.Value, nameof(hWnd));
                 fixed (uint* p = &lpdwProcessId)
                 {
-                    [DllImport("USER32.dll", ExactSpelling = true, SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+                    [DllImport("USER32.dll", ExactSpelling = true, SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
                     static extern uint GetWindowThreadProcessId(HWND hWnd, uint* lpdwProcessId);
                     if ((res = GetWindowThreadProcessId(hWnd, p)) == 0)
                     {
@@ -3232,7 +3257,7 @@ namespace PSADT.Interop
         /// mechanisms were successfully attached or detached; otherwise, <see langword="false"/>.</returns>
         internal static BOOL AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach)
         {
-            [DllImport("USER32.dll", ExactSpelling = true, SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [DllImport("USER32.dll", ExactSpelling = true, SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
             static extern BOOL AttachThreadInput(uint idAttach, uint idAttachTo, BOOL fAttach);
             BOOL res = AttachThreadInput(idAttach, idAttachTo, fAttach);
             return !res ? throw ExceptionUtilities.GetExceptionForLastWin32Error() : res;
@@ -3471,7 +3496,9 @@ namespace PSADT.Interop
                 ArgumentException.ThrowIfNullOrWhiteSpace(lpWindowName);
             }
             HWND res = PInvoke.FindWindow(lpClassName, lpWindowName);
-            return res.IsNull ? throw ExceptionUtilities.GetExceptionForLastWin32Error() : res;
+            return res.IsNull
+                ? throw ExceptionUtilities.GetException(WIN32_ERROR.ERROR_GEN_FAILURE, "The specified window could not be found.")
+                : res;
         }
 
         /// <summary>
@@ -3517,7 +3544,7 @@ namespace PSADT.Interop
         /// <returns>A <see cref="MESSAGEBOX_RESULT"/> value indicating the user's response to the message box.</returns>
         internal static MESSAGEBOX_RESULT MessageBoxTimeout(HWND? hWnd, string lpText, string lpCaption, MESSAGEBOX_STYLE uType, ushort wLanguageId, uint dwTimeout)
         {
-            [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
             static extern MESSAGEBOX_RESULT MessageBoxTimeoutW(HWND hWnd, string lpText, string lpCaption, MESSAGEBOX_STYLE uType, ushort wLanguageId, uint dwMilliseconds);
             ArgumentException.ThrowIfNullOrWhiteSpace(lpText); ArgumentException.ThrowIfNullOrWhiteSpace(lpCaption);
             MESSAGEBOX_RESULT res = MessageBoxTimeoutW(hWnd ?? default, lpText, lpCaption, uType, wLanguageId, dwTimeout);
@@ -3639,44 +3666,21 @@ namespace PSADT.Interop
         /// <remarks>If the trust verification fails or if the provided parameters are invalid, an
         /// exception is thrown. Ensure that the action identifier and verification data are valid and appropriate for
         /// the intended verification operation.</remarks>
-        /// <param name="hwnd">A handle to the parent window to be used for any user interface that may be displayed during the trust
-        /// verification process.</param>
         /// <param name="pgActionID">A reference to a GUID that specifies the action to be performed during the trust verification.</param>
         /// <param name="pWVTData">A pointer to a structure containing additional data required for the trust verification. The structure and
         /// its contents depend on the action specified by the action identifier.</param>
         /// <returns>An integer value indicating the result of the trust verification. A value of 0 indicates that the
         /// verification succeeded.</returns>
-        internal static unsafe HRESULT WinVerifyTrust(HWND hwnd, ref Guid pgActionID, void* pWVTData)
+        internal static HRESULT WinVerifyTrust(in Guid pgActionID, in WINTRUST_DATA pWVTData)
         {
-            HRESULT res = (HRESULT)PInvoke.WinVerifyTrust(hwnd, ref pgActionID, pWVTData);
-            return res != HRESULT.S_OK ? throw ExceptionUtilities.GetException(res) : res;
-        }
-
-        /// <summary>
-        /// Enumerates the sessions on the specified Remote Desktop Session Host (RD Session Host) server.
-        /// </summary>
-        /// <remarks>If the method returns <see langword="false"/>, an exception is thrown containing the
-        /// relevant Win32 error information. The returned SafeWtsHandle must be disposed to free the associated
-        /// unmanaged resources.</remarks>
-        /// <param name="hServer">A handle to an RD Session Host server. This handle must be opened with appropriate access rights.</param>
-        /// <param name="pSessionInfo">When this method returns, contains a SafeWtsHandle that encapsulates the session information buffer. The
-        /// caller is responsible for releasing the handle when it is no longer needed.</param>
-        /// <returns>A value that is <see langword="true"/> if the session enumeration succeeds; otherwise, <see
-        /// langword="false"/>.</returns>
-        internal static BOOL WTSEnumerateSessions(HANDLE hServer, out SafeWtsHandle pSessionInfo)
-        {
-            ArgumentOutOfRangeException.ThrowIfInvalid(hServer);
             unsafe
             {
-                BOOL res = PInvoke.WTSEnumerateSessions(hServer, 0, 1, out WTS_SESSION_INFOW* ppSessionInfo, out uint pCount);
-                if (!res)
+                fixed (WINTRUST_DATA* pWVTDataPtr = &pWVTData)
+                fixed (Guid* pgActionIDPtr = &pgActionID)
                 {
-                    throw ExceptionUtilities.GetExceptionForLastWin32Error();
+                    HRESULT res = (HRESULT)PInvoke.WinVerifyTrust((HWND)(nint)HANDLE.INVALID_HANDLE_VALUE, pgActionIDPtr, pWVTDataPtr);
+                    return res != HRESULT.S_OK ? throw ExceptionUtilities.GetException(res) : res;
                 }
-                InvalidOperationException.ThrowIfZeroOrInvalid((nint)ppSessionInfo, "The session information buffer returned from 'WTSEnumerateSessions()' is null or invalid.");
-                InvalidOperationException.ThrowIfZero(pCount, "The session count returned from 'WTSEnumerateSessions()' is zero.");
-                pSessionInfo = new((nint)ppSessionInfo, (int)pCount * sizeof(WTS_SESSION_INFOW), true);
-                return res;
             }
         }
 
@@ -3686,8 +3690,6 @@ namespace PSADT.Interop
         /// <remarks>If the operation fails, an exception is thrown containing the relevant Win32 error
         /// information. The format and content of the returned buffer depend on the value of the WTSInfoClass
         /// parameter.</remarks>
-        /// <param name="hServer">A handle to the server from which to retrieve session information. This handle must be obtained by calling
-        /// the WTSOpenServer function.</param>
         /// <param name="SessionId">The identifier of the session for which information is being requested. This value is typically obtained
         /// from a previous call to WTSEnumerateSessions.</param>
         /// <param name="WTSInfoClass">A value that specifies the type of session information to retrieve. The value must be a member of the
@@ -3696,10 +3698,9 @@ namespace PSADT.Interop
         /// information. The caller is responsible for disposing of this handle when it is no longer needed.</param>
         /// <returns>A value that indicates whether the operation succeeded. Returns <see langword="true"/> if the information
         /// was retrieved successfully; otherwise, <see langword="false"/>.</returns>
-        internal static BOOL WTSQuerySessionInformation(HANDLE hServer, uint SessionId, WTS_INFO_CLASS WTSInfoClass, out SafeWtsHandle pBuffer)
+        internal static BOOL WTSQuerySessionInformation(uint SessionId, WTS_INFO_CLASS WTSInfoClass, out SafeWtsHandle pBuffer)
         {
-            ArgumentOutOfRangeException.ThrowIfInvalid(hServer);
-            BOOL res = PInvoke.WTSQuerySessionInformation(hServer, SessionId, WTSInfoClass, out PWSTR ppBuffer, out uint bytesReturned);
+            BOOL res = PInvoke.WTSQuerySessionInformation(HANDLE.WTS_CURRENT_SERVER_HANDLE, SessionId, WTSInfoClass, out PWSTR ppBuffer, out uint bytesReturned);
             if (!res)
             {
                 throw ExceptionUtilities.GetExceptionForLastWin32Error();
@@ -4171,36 +4172,15 @@ namespace PSADT.Interop
         /// </summary>
         /// <remarks>The caller must release the buffer referenced by lpNameBuffer to avoid memory leaks.
         /// This method throws an exception if the underlying Windows API call fails.</remarks>
-        /// <param name="lpServer">The name of the remote server to query, or null to specify the local computer. The name must begin with \\
-        /// if specified.</param>
         /// <param name="lpNameBuffer">When this method returns, contains a handle to a buffer that receives the name of the domain or workgroup.
         /// The caller is responsible for releasing this handle.</param>
         /// <param name="BufferType">When this method returns, contains a value that indicates the join status of the computer.</param>
         /// <returns>A WIN32_ERROR value that indicates the result of the operation. Returns NERR_Success if successful.</returns>
-        internal static WIN32_ERROR NetGetJoinInformation(string? lpServer, out SafeNetApiBufferFreeHandle lpNameBuffer, out Windows.Win32.NetworkManagement.NetManagement.NETSETUP_JOIN_STATUS BufferType)
-        {
-            if (lpServer is not null)
-            {
-                ArgumentException.ThrowIfNullOrWhiteSpace(lpServer);
-            }
-            WIN32_ERROR res = ((WIN32_ERROR)PInvoke.NetGetJoinInformation(lpServer, out PWSTR lpNameBufferLocal, out BufferType)).ThrowOnFailure();
-            InvalidOperationException.ThrowIfNullOrInvalid(lpNameBufferLocal, "The name buffer returned from 'NetGetJoinInformation()' is null or invalid.");
-            lpNameBuffer = new(lpNameBufferLocal, true);
-            return res;
-        }
-
-        /// <summary>
-        /// Retrieves information about the join status of the local computer to a domain or workgroup.
-        /// </summary>
-        /// <param name="lpNameBuffer">When this method returns, contains a handle to a buffer that receives the name of the domain or workgroup.
-        /// The caller is responsible for freeing this buffer.</param>
-        /// <param name="BufferType">When this method returns, contains a value that specifies the join status of the local computer.</param>
-        /// <returns>A WIN32_ERROR value that indicates the result of the operation. Returns ERROR_SUCCESS if the information is
-        /// retrieved successfully; otherwise, returns a system error code.</returns>
         internal static WIN32_ERROR NetGetJoinInformation(out SafeNetApiBufferFreeHandle lpNameBuffer, out Windows.Win32.NetworkManagement.NetManagement.NETSETUP_JOIN_STATUS BufferType)
         {
-            WIN32_ERROR res = NetGetJoinInformation(null, out lpNameBuffer, out BufferType).ThrowOnFailure();
-            InvalidOperationException.ThrowIfNullOrInvalid(lpNameBuffer, "The name buffer returned from 'NetGetJoinInformation()' is null or invalid.");
+            WIN32_ERROR res = ((WIN32_ERROR)PInvoke.NetGetJoinInformation(null, out PWSTR lpNameBufferLocal, out BufferType)).ThrowOnFailure();
+            InvalidOperationException.ThrowIfNullOrInvalid(lpNameBufferLocal, "The name buffer returned from 'NetGetJoinInformation()' is null or invalid.");
+            lpNameBuffer = new(lpNameBufferLocal, true);
             return res;
         }
 
@@ -4248,9 +4228,10 @@ namespace PSADT.Interop
                 InvalidOperationException.ThrowIfNullOrInvalid(ppszPathLocal, "The path returned from 'SHGetKnownFolderPath()' is null or invalid.");
                 ppszPath = new(ppszPathLocal, true);
             }
-            catch
+            catch (Exception ex)
             {
                 Marshal.FreeCoTaskMem(ppszPathLocal.ToIntPtr());
+                ExceptionDispatchInfo.Capture(ex).Throw();
                 throw;
             }
             return res;
@@ -4273,7 +4254,7 @@ namespace PSADT.Interop
         /// other codes indicate errors or special conditions.</returns>
         internal static NTSTATUS RtlExpandEnvironmentStrings_U(SafeEnvironmentBlockHandle Environment, in UNICODE_STRING SourceString, ref UNICODE_STRING DestinationString, out uint RequiredBytes)
         {
-            [DllImport("ntdll.dll", ExactSpelling = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [DllImport("ntdll.dll", ExactSpelling = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)][MethodImpl(MethodImplOptions.AggressiveInlining)]
             static extern NTSTATUS RtlExpandEnvironmentStrings_U(IntPtr Environment, in UNICODE_STRING SourceString, ref UNICODE_STRING DestinationString, out uint RequiredBytes);
             ArgumentException.ThrowIfNullOrInvalid(Environment); ArgumentException.ThrowIfNullOrInvalid(SourceString); ArgumentException.ThrowIfInvalid(DestinationString);
             bool EnvironmentAddRef = false;
@@ -4313,6 +4294,31 @@ namespace PSADT.Interop
         {
             HRESULT res = PInvoke.PropVariantClear(ref pvar);
             return res != HRESULT.S_OK ? throw ExceptionUtilities.GetException(res) : res;
+        }
+
+        /// <summary>
+        /// Enumerates the sessions on the Remote Desktop Session Host server and retrieves extended session
+        /// information.
+        /// </summary>
+        /// <remarks>This method wraps the native WTSEnumerateSessionsEx function and throws an exception
+        /// if the underlying call fails or returns invalid data. The returned session information provides details
+        /// about each session, such as session ID, user name, and session state.</remarks>
+        /// <param name="pSessionInfo">When this method returns, contains a handle to a buffer that receives an array of session information
+        /// structures. The caller is responsible for releasing the handle when it is no longer needed.</param>
+        internal static BOOL WTSEnumerateSessionsEx(out SafeWtsExHandle pSessionInfo)
+        {
+            unsafe
+            {
+                uint pLevel = 1; BOOL res = PInvoke.WTSEnumerateSessionsEx(null, ref pLevel, 0, out WTS_SESSION_INFO_1W* ppSessionInfo, out uint pCount);
+                if (!res)
+                {
+                    throw ExceptionUtilities.GetExceptionForLastWin32Error();
+                }
+                InvalidOperationException.ThrowIfZeroOrInvalid((nint)ppSessionInfo, "The session information buffer returned from 'WTSEnumerateSessionsEx()' is null or invalid.");
+                InvalidOperationException.ThrowIfZero(pCount, "The session count returned from 'WTSEnumerateSessionsEx()' is zero.");
+                pSessionInfo = new((nint)ppSessionInfo, WTS_TYPE_CLASS.WTSTypeSessionInfoLevel1, (int)pCount * sizeof(WTS_SESSION_INFO_1W), true);
+                return res;
+            }
         }
 
         /// <summary>

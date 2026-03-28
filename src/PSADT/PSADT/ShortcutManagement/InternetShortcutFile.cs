@@ -1,19 +1,19 @@
 ﻿/*
  * Copyright (C) 2026 Devicie Pty Ltd. All rights reserved.
- * 
- * This file is part of PSAppDeployToolkit. 
- * 
+ *
+ * This file is part of PSAppDeployToolkit.
+ *
  * PSAppDeployToolkit is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3
  * of the License, or (at your option) any later version.
- * 
+ *
  * PSAppDeployToolkit is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * 
+ *
  * See the GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with PSAppDeployToolkit. If not, see <https://www.gnu.org/licenses/>.
  */
@@ -21,6 +21,7 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using PSADT.Interop;
 using PSADT.Interop.Extensions;
@@ -103,9 +104,10 @@ namespace PSADT.ShortcutManagement
                 _internetShortcut = internetShortcut;
                 _storageMode = storageMode;
             }
-            catch
+            catch (Exception ex)
             {
                 _ = Marshal.FinalReleaseComObject(internetShortcut);
+                ExceptionDispatchInfo.Capture(ex).Throw();
                 throw;
             }
         }
@@ -560,7 +562,7 @@ namespace PSADT.ShortcutManagement
                         {
                             return null;
                         }
-                        string? bstrValStr = Marshal.PtrToStringBSTR(bstrVal);
+                        string bstrValStr = Marshal.PtrToStringBSTR(bstrVal);
                         return !string.IsNullOrWhiteSpace(bstrValStr) ? bstrValStr : null;
                     }
                     if (vt != VARENUM.VT_LPWSTR)

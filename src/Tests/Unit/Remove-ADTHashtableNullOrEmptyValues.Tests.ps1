@@ -38,9 +38,21 @@ Describe 'Remove-ADTHashtableNullOrEmptyValues' {
                         return $false
                     }
 
-                    if (($section.Value -is [System.Collections.Hashtable]) -and !(& $MyInvocation.MyCommand -Left $section.Value -Right $Right.($section.Key)))
+                    if ($section.Value -is [System.Collections.Hashtable])
                     {
-                        return $false
+                        # If the corresponding value on the right is not a hashtable, structures differ
+                        if (-not ($Right.($section.Key) -is [System.Collections.Hashtable]))
+                        {
+                            return $false
+                        }
+
+                        # Both sides are hashtables; compare them recursively
+                        if (-not (& $MyInvocation.MyCommand -Left $section.Value -Right $Right.($section.Key)))
+                        {
+                            return $false
+                        }
+
+                        continue
                     }
 
                     if ($section.Value -ne $Right.($section.Key))
@@ -109,7 +121,7 @@ Describe 'Remove-ADTHashtableNullOrEmptyValues' {
             Remove-ADTHashtableNullOrEmptyValues -Hashtable $TestData -Recurse -Depth 1 | Compare-ADTHashtable -Right $NoRecurse | Should -BeTrue
         }
         It 'Should remove null values recursively' {
-            Remove-ADTHashtableNullOrEmptyValues -Hashtable $TestData -Recurse -Depth 5 | Compare-ADTHashtable -Right $Recurse5 | Should -BeFalse
+            Remove-ADTHashtableNullOrEmptyValues -Hashtable $TestData -Recurse -Depth 5 | Compare-ADTHashtable -Right $Recurse5 | Should -BeTrue
             Remove-ADTHashtableNullOrEmptyValues -Hashtable $TestData -Recurse -Depth 6 | Compare-ADTHashtable -Right @{ } | Should -BeTrue
         }
     }

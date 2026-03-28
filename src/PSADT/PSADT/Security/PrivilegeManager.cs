@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
-using PSADT.AccountManagement;
 using PSADT.Interop;
 using PSADT.Interop.Extensions;
 using Windows.Win32.Foundation;
@@ -87,15 +86,17 @@ namespace PSADT.Security
         /// <remarks>This method queries the current process's token to determine its associated
         /// privileges. The returned collection is immutable and reflects the privileges at the time of the
         /// query.</remarks>
+        /// <param name="attributes">Optional attributes used to filter the privileges. If specified, only privileges matching the given <see
+        /// cref="TOKEN_PRIVILEGES_ATTRIBUTES"/> will be included in the result.</param>
         /// <returns>A <see cref="ReadOnlyCollection{T}"/> containing the privileges of the current process. If no privileges are
         /// available, the collection will be empty.</returns>
-        internal static ReadOnlyCollection<SE_PRIVILEGE> GetPrivileges()
+        internal static ReadOnlyCollection<SE_PRIVILEGE> GetPrivileges(TOKEN_PRIVILEGES_ATTRIBUTES? attributes = null)
         {
-            using SafeProcessHandle cProcessSafeHandle = NativeMethods.GetCurrentProcess();
-            _ = NativeMethods.OpenProcessToken(cProcessSafeHandle, TOKEN_ACCESS_MASK.TOKEN_QUERY, out SafeFileHandle hProcessToken);
-            using (hProcessToken)
+            using SafeProcessHandle hProcess = NativeMethods.GetCurrentProcess();
+            _ = NativeMethods.OpenProcessToken(hProcess, TOKEN_ACCESS_MASK.TOKEN_QUERY, out SafeFileHandle hToken);
+            using (hToken)
             {
-                return GetPrivileges(hProcessToken);
+                return GetPrivileges(hToken, attributes);
             }
         }
 
@@ -125,7 +126,7 @@ namespace PSADT.Security
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool HasPrivilege(SE_PRIVILEGE privilege)
         {
-            return AccountUtilities.CallerPrivileges.Contains(privilege);
+            return GetPrivileges().Contains(privilege);
         }
 
         /// <summary>
@@ -151,14 +152,10 @@ namespace PSADT.Security
         /// the process token. It uses the current process's token to check the privilege status.</remarks>
         /// <param name="privilege">The privilege to check for its enabled status in the current process.</param>
         /// <returns>true if the specified privilege is enabled; otherwise, false.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool IsPrivilegeEnabled(SE_PRIVILEGE privilege)
         {
-            using SafeProcessHandle cProcessSafeHandle = NativeMethods.GetCurrentProcess();
-            _ = NativeMethods.OpenProcessToken(cProcessSafeHandle, TOKEN_ACCESS_MASK.TOKEN_QUERY, out SafeFileHandle hProcessToken);
-            using (hProcessToken)
-            {
-                return IsPrivilegeEnabled(hProcessToken, privilege);
-            }
+            return GetPrivileges(TOKEN_PRIVILEGES_ATTRIBUTES.SE_PRIVILEGE_ENABLED).Contains(privilege);
         }
 
         /// <summary>
@@ -200,11 +197,29 @@ namespace PSADT.Security
         /// <param name="privilege">The privilege to enable, specified as a value of the SE_PRIVILEGE enumeration.</param>
         internal static void EnablePrivilege(SE_PRIVILEGE privilege)
         {
-            using SafeProcessHandle cProcessSafeHandle = NativeMethods.GetCurrentProcess();
-            _ = NativeMethods.OpenProcessToken(cProcessSafeHandle, TOKEN_ACCESS_MASK.TOKEN_QUERY | TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out SafeFileHandle hProcessToken);
-            using (hProcessToken)
+            using SafeProcessHandle hProcess = NativeMethods.GetCurrentProcess();
+            _ = NativeMethods.OpenProcessToken(hProcess, TOKEN_ACCESS_MASK.TOKEN_QUERY | TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out SafeFileHandle hToken);
+            using (hToken)
             {
-                EnablePrivilege(hProcessToken, privilege);
+                EnablePrivilege(hToken, privilege);
+            }
+        }
+
+        /// <summary>
+        /// Enables the specified privilege for the current process if it is not already enabled.
+        /// </summary>
+        /// <remarks>This method checks whether the given privilege is enabled for the current process and
+        /// enables it if it is not. The caller must have appropriate access rights to adjust process privileges. This
+        /// operation may require administrative permissions depending on the privilege being enabled.</remarks>
+        /// <param name="token">A handle to the access token for which the privilege will be enabled if it is not already enabled.
+        /// The token must have the specified privilege available and appropriate access rights to adjust privileges.</param>
+        /// <param name="privilege">The privilege to enable for the current process. This value specifies which system privilege should be
+        /// checked and enabled if necessary.</param>
+        internal static void EnablePrivilegeIfDisabled(SafeFileHandle token, SE_PRIVILEGE privilege)
+        {
+            if (!IsPrivilegeEnabled(token, privilege))
+            {
+                EnablePrivilege(token, privilege);
             }
         }
 
@@ -218,14 +233,11 @@ namespace PSADT.Security
         /// checked and enabled if necessary.</param>
         internal static void EnablePrivilegeIfDisabled(SE_PRIVILEGE privilege)
         {
-            using SafeProcessHandle cProcessSafeHandle = NativeMethods.GetCurrentProcess();
-            _ = NativeMethods.OpenProcessToken(cProcessSafeHandle, TOKEN_ACCESS_MASK.TOKEN_QUERY | TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out SafeFileHandle hProcessToken);
-            using (hProcessToken)
+            using SafeProcessHandle hProcess = NativeMethods.GetCurrentProcess();
+            _ = NativeMethods.OpenProcessToken(hProcess, TOKEN_ACCESS_MASK.TOKEN_QUERY | TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out SafeFileHandle hToken);
+            using (hToken)
             {
-                if (!IsPrivilegeEnabled(hProcessToken, privilege))
-                {
-                    EnablePrivilege(hProcessToken, privilege);
-                }
+                EnablePrivilegeIfDisabled(hToken, privilege);
             }
         }
     }
