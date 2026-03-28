@@ -1,4 +1,4 @@
-BeforeAll {
+﻿BeforeAll {
     Remove-Module PSAppDeployToolkit -Force -ErrorAction SilentlyContinue
     Import-Module "$PSScriptRoot\..\..\PSAppDeployToolkit\PSAppDeployToolkit.psd1" -Force
     # Stable PE fixtures present on every 64-bit Windows installation.
