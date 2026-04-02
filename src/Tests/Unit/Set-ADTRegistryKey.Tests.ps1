@@ -94,7 +94,7 @@ Describe 'Set-ADTRegistryKey' {
             $result | Should -Contain 'A'
             $result | Should -Contain 'B'
             $result | Should -Contain 'C'
-            ($result | Where-Object { $_ -eq 'B' }).Count | Should -Be 1
+            @($result | Where-Object { $_ -eq 'B' }).Count | Should -Be 1
         }
 
         It 'Removes specific entries with Remove mode' {
@@ -116,7 +116,7 @@ Describe 'Set-ADTRegistryKey' {
 
         It 'Does not set a value when -WhatIf is specified' {
             Set-ADTRegistryKey -LiteralPath $script:TestKey -Name 'WiVal' -Value 'nope' -Type String -WhatIf
-            $props = (Get-ItemProperty -LiteralPath $script:TestKey -ErrorAction SilentlyContinue).PSObject.Properties.Name
+            $props = (Get-ItemProperty -LiteralPath $script:TestKey -ErrorAction SilentlyContinue).PSObject.Properties | Select-Object -ExpandProperty Name
             $props | Should -Not -Contain 'WiVal'
         }
     }
