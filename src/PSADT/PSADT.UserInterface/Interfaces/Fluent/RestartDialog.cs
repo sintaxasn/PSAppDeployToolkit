@@ -4,7 +4,7 @@ using System.Windows.Automation;
 using System.Windows.Threading;
 using PSADT.DeviceManagement;
 using PSADT.UserInterface.DialogOptions;
-using iNKORE.UI.WPF.Modern.Controls.Primitives;
+using Fluence.Wpf;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
@@ -44,7 +44,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Configure right button
             SetButtonContentWithAccelerator(ButtonRight, options.Strings.ButtonRestartLater);
             AutomationProperties.SetName(ButtonRight, options.Strings.ButtonRestartLater);
-            SetMinimizeButtonAvailability(TitleBarButtonAvailability.Enabled);
+            SetMinimizeButtonAvailability(CaptionButtonOverride.Enable);
             ButtonRight.Visibility = Visibility.Visible;
             SetCancelButton(ButtonRight);
         }
@@ -98,7 +98,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 Dispatcher.Invoke(() =>
                 {
-                    SetMinimizeButtonAvailability(TitleBarButtonAvailability.Disabled);
+                    SetMinimizeButtonAvailability(CaptionButtonOverride.Disable);
                     ButtonRight.IsEnabled = false;
                     RestoreWindow();
                 });
