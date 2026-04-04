@@ -7,7 +7,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using PSADT.DeviceManagement;
 using PSADT.UserInterface.DialogOptions;
-using iNKORE.UI.WPF.Modern.Controls.Primitives;
+using Fluence.Wpf;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
@@ -25,7 +25,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             UpdateProgressImpl(options.ProgressMessageText, options.ProgressDetailMessageText, options.ProgressPercentage);
             if (_dialogPosition != DialogPosition.Oobe || (!DeviceUtilities.IsOOBEComplete() && !_dialogAllowMove))
             {
-                SetMinimizeButtonAvailability(TitleBarButtonAvailability.Enabled);
+                SetMinimizeButtonAvailability(CaptionButtonOverride.Enable);
             }
             ProgressStackPanel.Visibility = Visibility.Visible;
         }
