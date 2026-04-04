@@ -24,24 +24,25 @@ using PSADT.Interop;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
 using PSADT.Utilities;
-using iNKORE.UI.WPF.Modern;
-using iNKORE.UI.WPF.Modern.Controls;
-using iNKORE.UI.WPF.Modern.Controls.Primitives;
+using Fluence.Wpf;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
     /// <summary>
     /// Unified dialog for PSAppDeployToolkit that consolidates all dialog types into one
     /// </summary>
-    internal abstract partial class FluentDialog : Window, IBaseDialog
+    internal abstract partial class FluentDialog : Fluence.Wpf.Controls.FluentWindow, IBaseDialog
     {
         /// <summary>
         /// Static constructor to set up the theme and resources for the dialog.
         /// </summary>
         static FluentDialog()
         {
-            Application.Current.Resources.MergedDictionaries.Add(new ThemeResources());
-            Application.Current.Resources.MergedDictionaries.Add(new XamlControlsResources());
+            ApplicationThemeManager.Apply(
+                ApplicationTheme.Auto,
+                BackdropType.Acrylic,
+                updateAccent: true);
+            ApplicationThemeManager.EnableInkoreCompatibility(true);
         }
 
         /// <summary>
@@ -77,7 +78,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // If the accent color is passed through, update via ThemeManager
             if (options.FluentAccentColor is not null)
             {
-                ThemeManager.Current.AccentColor = IntToColor(options.FluentAccentColor.Value);
+                ApplicationAccentColorManager.ApplyCustomAccent(IntToColor(options.FluentAccentColor.Value));
             }
 
             // Set the language and flow direction for the dialog.
@@ -155,7 +156,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 { ApplicationTheme.Light, GetIcon(options.AppIconImage) },
                 { ApplicationTheme.Dark, GetIcon(options.AppIconDarkImage ?? options.AppIconImage) },
             });
-            ThemeManager.AddActualThemeChangedHandler(this, ThemeManager_ActualThemeChanged);
+            ApplicationThemeManager.Changed += ThemeManager_ActualThemeChanged;
             SetDialogIcon();
 
             // Set the expiry timer if specified.
@@ -404,7 +405,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data associated with the theme change.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ThemeManager_ActualThemeChanged(object sender, RoutedEventArgs e)
+        private void ThemeManager_ActualThemeChanged(object? sender, ThemeChangedEventArgs e)
         {
             SetDialogIcon();
         }
@@ -589,7 +590,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 {
                     run.FontWeight = FontWeights.Bold;
                 }
-                run.SetResourceReference(ForegroundProperty, ThemeKeys.AccentTextFillColorPrimaryBrushKey);
+                run.SetResourceReference(ForegroundProperty, "AccentTextFillColorPrimaryBrush");
             }
 
             textBlock.Inlines.Add(run);
@@ -637,7 +638,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="button">The button to which the accent style will be applied. This parameter must not be null.</param>
         private protected static void SetAccentButton(Button button)
         {
-            button.SetResourceReference(StyleProperty, ThemeKeys.AccentButtonStyleKey);
+            button.SetResourceReference(StyleProperty, "AccentButtonStyle");
         }
 
         /// <summary>
@@ -750,7 +751,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// displaying the application icon.</remarks>
         private void SetDialogIcon()
         {
-            AppIconImage.Source = _dialogBitmapCache[ThemeManager.Current.ActualApplicationTheme];
+            AppIconImage.Source = _dialogBitmapCache[ApplicationThemeManager.CurrentTheme];
             if (_appTaskbarIcon is null)
             {
                 Icon = AppIconImage.Source;
@@ -866,10 +867,10 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Sets the minimize button availability based on specific conditions.
         /// </summary>
-        /// <param name="availability">The desired button availability state.</param>
-        private protected void SetMinimizeButtonAvailability(TitleBarButtonAvailability availability)
+        /// <param name="override">The desired button override state.</param>
+        private protected void SetMinimizeButtonAvailability(CaptionButtonOverride @override)
         {
-            TitleBar.SetMinimizeButtonAvailability(this, availability);
+            MinimizeButtonOverride = @override;
         }
 
         /// <summary>
@@ -1137,7 +1138,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 }
 
                 // Clean up resources.
-                ThemeManager.RemoveActualThemeChangedHandler(this, ThemeManager_ActualThemeChanged);
+                ApplicationThemeManager.Changed -= ThemeManager_ActualThemeChanged;
                 _hwndSource?.RemoveHook(WndProc);
                 _hwndSource?.Dispose();
                 _countdownTimer?.Dispose();
