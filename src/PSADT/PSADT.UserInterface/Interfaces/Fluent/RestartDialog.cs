@@ -43,7 +43,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Configure right button
             SetButtonContentWithAccelerator(ButtonRight, options.Strings.ButtonRestartLater);
             AutomationProperties.SetName(ButtonRight, options.Strings.ButtonRestartLater);
-            SetMinimizeButtonAvailability(true);
+            IsMinimizeButtonVisible = Visibility.Visible;
             ButtonRight.Visibility = Visibility.Visible;
             SetCancelButton(ButtonRight);
         }
@@ -97,7 +97,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 Dispatcher.Invoke(() =>
                 {
-                    SetMinimizeButtonAvailability(false);
+                    IsMinimizeButtonVisible = Visibility.Collapsed;
                     ButtonRight.IsEnabled = false;
                     RestoreWindow();
                 });
