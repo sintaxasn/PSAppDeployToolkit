@@ -1,0 +1,3662 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Fluence.Wpf</name>
+    </assembly>
+    <members>
+        <member name="T:Fluence.Wpf.ApplicationAccentColorManager">
+            <summary>
+            Manages system and custom accent colors and publishes them as <c>DynamicResource</c> brush keys aligned with Windows 11.
+            </summary>
+            <remarks>
+            Call <see cref="M:Fluence.Wpf.ApplicationAccentColorManager.ApplySystemAccent"/>, <see cref="M:Fluence.Wpf.ApplicationAccentColorManager.ApplyApplicationAccent"/>, or <see cref="M:Fluence.Wpf.ApplicationAccentColorManager.ApplyCustomAccent(System.Windows.Media.Color)"/> after
+            <see cref="M:Fluence.Wpf.ApplicationThemeManager.Apply(Fluence.Wpf.ApplicationTheme,Fluence.Wpf.BackdropType,System.Boolean)"/> so theme-dependent primary/secondary/tertiary accents resolve correctly.
+            </remarks>
+            <example>
+            <code>
+            ApplicationThemeManager.Apply(ApplicationTheme.Auto, BackdropType.Mica, updateAccent: true);
+            ApplicationAccentColorManager.ApplySystemAccent();
+            </code>
+            </example>
+        </member>
+        <member name="E:Fluence.Wpf.ApplicationAccentColorManager.AccentColorChanged">
+            <summary>
+            Occurs after accent ramp colors and application resources have been updated.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColor">
+            <summary>
+            Gets the current base system accent color (ARGB). Default is a Windows blue until <see cref="M:Fluence.Wpf.ApplicationAccentColorManager.ApplySystemAccent"/> runs.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorLight1">
+            <summary>
+            Gets the lightest tint on the generated accent ramp. Default matches <see cref="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColor"/> until the ramp is loaded.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorLight2">
+            <summary>
+            Gets the second lightest tint on the generated accent ramp.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorLight3">
+            <summary>
+            Gets the lightest tint on the generated accent ramp.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorDark1">
+            <summary>
+            Gets the first dark shade on the generated accent ramp.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorDark2">
+            <summary>
+            Gets the second dark shade on the generated accent ramp.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorDark3">
+            <summary>
+            Gets the darkest shade on the generated accent ramp.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorPrimary">
+            <summary>
+            Gets the primary accent color used for emphasis surfaces.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorSecondary">
+            <summary>
+            Gets the secondary accent color used for layered emphasis.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.SystemAccentColorTertiary">
+            <summary>
+            Gets the tertiary accent color used for subtle accent fills.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled">
+            <summary>
+            Gets a value indicating whether Windows is configured to show accent color on title bars and window borders.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.TitleBarActiveColor">
+            <summary>Gets the active titlebar color (from DWM AccentColor or default gray).</summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.TitleBarInactiveColor">
+            <summary>Gets the inactive titlebar color (from DWM AccentColorInactive or default gray).</summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationAccentColorManager.WindowBorderColor">
+            <summary>Gets the window border color (titlebar active on Win11, blended on Win10).</summary>
+        </member>
+        <member name="M:Fluence.Wpf.ApplicationAccentColorManager.ApplySystemAccent">
+            <summary>
+            Loads the current Windows accent palette from the registry or DWM and updates application resources.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.ApplicationAccentColorManager.ApplyApplicationAccent">
+            <summary>
+            Applies the default application accent (Windows blue) and regenerates the accent ramp.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.ApplicationAccentColorManager.ApplyCustomAccent(System.Windows.Media.Color)">
+            <summary>
+            Applies a custom base accent color and regenerates the accent ramp and theme resources.
+            </summary>
+            <param name="color">The accent color to use as the ramp base.</param>
+        </member>
+        <member name="T:Fluence.Wpf.ApplicationThemeManager">
+            <summary>
+            Manages theme initialization and switching for the Fluence.Wpf control library.
+            Call <see cref="M:Fluence.Wpf.ApplicationThemeManager.Apply(Fluence.Wpf.ApplicationTheme,Fluence.Wpf.BackdropType,System.Boolean)"/> once at application startup to initialize all resource dictionaries.
+            Subsequent calls swap only the theme color dictionary.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationThemeManager.CurrentTheme">
+            <summary>Gets the currently requested theme (may be <see cref="F:Fluence.Wpf.ApplicationTheme.Auto"/>).</summary>
+        </member>
+        <member name="P:Fluence.Wpf.ApplicationThemeManager.CurrentBackdrop">
+            <summary>Gets the currently requested backdrop type.</summary>
+        </member>
+        <member name="E:Fluence.Wpf.ApplicationThemeManager.Changed">
+            <summary>Raised after a theme or accent change has been applied.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.ApplicationThemeManager.Apply(Fluence.Wpf.ApplicationTheme,Fluence.Wpf.BackdropType,System.Boolean)">
+            <summary>
+            Initialize the theme system and apply the specified theme.
+            The first call loads all resource dictionaries (Colors, Accent, Brushes, Typography, Controls).
+            Subsequent calls only swap the theme color dictionary.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.ApplicationThemeManager.ApplySystemTheme">
+            <summary>Re-applies with <see cref="F:Fluence.Wpf.ApplicationTheme.Auto"/> to pick up system changes.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.ApplicationThemeManager.ReloadAndPromoteBrushes(System.Collections.ObjectModel.Collection{System.Windows.ResourceDictionary})">
+            <summary>
+            Replaces the Brushes dictionary with a freshly loaded copy, then promotes
+            every brush key into top-level <see cref="P:System.Windows.Application.Resources"/>.
+            This is necessary because <c>DynamicResource</c> bindings on
+            <see cref="T:System.Windows.Freezable"/> properties (e.g. <c>SolidColorBrush.Color</c>)
+            do not reliably re-evaluate when the target Color resource changes in a
+            different scope after a dictionary swap.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.ApplicationThemeManager.PromoteThemeColors(Fluence.Wpf.ApplicationTheme)">
+            <summary>
+            Copies all keys from the active theme dictionary into the top-level
+            <see cref="P:System.Windows.Application.Resources"/> so that <c>DynamicResource</c> bindings
+            in sibling MergedDictionaries (Brushes.xaml, Typography.xaml, etc.) reliably
+            resolve to the current theme values after a dictionary swap.
+            For HighContrast, Brush keys are also promoted; when leaving HighContrast,
+            stale Brush overrides are removed.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Automation.DropDownButtonAutomationPeer">
+            <summary>
+            Exposes <see cref="P:Fluence.Wpf.Automation.DropDownButtonAutomationPeer.DropDownButton"/> to UI Automation with the ExpandCollapse pattern.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.DropDownButtonAutomationPeer.#ctor(Fluence.Wpf.Controls.DropDownButton)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.DropDownButtonAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.DropDownButtonAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.DropDownButtonAutomationPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Automation.InfoBarAutomationPeer">
+            <summary>
+            Exposes <see cref="T:Fluence.Wpf.Controls.InfoBar"/> to UI Automation as a status bar element.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.InfoBarAutomationPeer.#ctor(Fluence.Wpf.Controls.InfoBar)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.InfoBarAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.InfoBarAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.InfoBarAutomationPeer.GetNameCore">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Automation.NavigationViewAutomationPeer">
+            <summary>
+            Exposes <see cref="P:Fluence.Wpf.Automation.NavigationViewAutomationPeer.NavigationView"/> to UI Automation as a selection list.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewAutomationPeer.#ctor(Fluence.Wpf.Controls.NavigationView)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewAutomationPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Automation.NavigationViewItemAutomationPeer">
+            <summary>
+            Exposes <see cref="P:Fluence.Wpf.Automation.NavigationViewItemAutomationPeer.NavigationViewItem"/> to UI Automation as a selectable list item.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewItemAutomationPeer.#ctor(Fluence.Wpf.Controls.NavigationViewItem)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewItemAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewItemAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NavigationViewItemAutomationPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Automation.NumberBoxAutomationPeer">
+            <summary>
+            Exposes <see cref="P:Fluence.Wpf.Automation.NumberBoxAutomationPeer.NumberBox"/> to UI Automation as a spinner with range value.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NumberBoxAutomationPeer.#ctor(Fluence.Wpf.Controls.NumberBox)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NumberBoxAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NumberBoxAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.NumberBoxAutomationPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Automation.ProgressRingAutomationPeer">
+            <summary>
+            Exposes <see cref="P:Fluence.Wpf.Automation.ProgressRingAutomationPeer.ProgressRing"/> to UI Automation as a progress indicator.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ProgressRingAutomationPeer.#ctor(Fluence.Wpf.Controls.ProgressRing)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ProgressRingAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ProgressRingAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ProgressRingAutomationPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Automation.SplitButtonAutomationPeer">
+            <summary>
+            Exposes <see cref="P:Fluence.Wpf.Automation.SplitButtonAutomationPeer.SplitButton"/> to UI Automation with the Invoke pattern
+            (primary half) and the ExpandCollapse pattern (flyout half).
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.SplitButtonAutomationPeer.#ctor(Fluence.Wpf.Controls.SplitButton)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.SplitButtonAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.SplitButtonAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.SplitButtonAutomationPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Automation.ToggleSwitchAutomationPeer">
+            <summary>
+            Exposes <see cref="P:Fluence.Wpf.Automation.ToggleSwitchAutomationPeer.ToggleSwitch"/> to UI Automation with the Toggle pattern.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ToggleSwitchAutomationPeer.#ctor(Fluence.Wpf.Controls.ToggleSwitch)">
+            <summary>Initializes a new instance.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ToggleSwitchAutomationPeer.GetClassNameCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ToggleSwitchAutomationPeer.GetAutomationControlTypeCore">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Automation.ToggleSwitchAutomationPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.Border">
+            <summary>
+            Border with optional Fluent visual presets applied via theme resources.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Border.VariantProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Border.Variant"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Border.Variant">
+            <summary>
+            Gets or sets the visual preset variant (None, Card, Subtle, Divider).
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.Button">
+            <summary>
+            A Fluent Design styled button with multiple appearance modes.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Button.AppearanceProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Button.Appearance"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Button.Appearance">
+            <summary>
+            Gets or sets the visual appearance of the button.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Button.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Button.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Button.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the button.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Button.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Button.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Button.Icon">
+            <summary>
+            Gets or sets the icon displayed in the button.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Button.IconPlacementProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Button.IconPlacement"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Button.IconPlacement">
+            <summary>
+            Gets or sets the placement of the icon relative to the content.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Button.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Button.OnContentChanged(System.Object,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.Card">
+            <summary>
+            Fluent-styled card container with optional header, footer, and icon.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.VariantProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.Variant"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.Variant">
+            <summary>
+            Gets or sets the visual variant of the card (Default, Outlined, Filled, Subtle).
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the card.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.Icon">
+            <summary>
+            Gets or sets the icon displayed in the card header.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.HeaderProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.Header"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.Header">
+            <summary>
+            Gets or sets the header content of the card.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.HeaderTemplateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.HeaderTemplate"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.HeaderTemplate">
+            <summary>
+            Gets or sets the data template for the header content.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.FooterProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.Footer"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.Footer">
+            <summary>
+            Gets or sets the footer content of the card.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.FooterTemplateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.FooterTemplate"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.FooterTemplate">
+            <summary>
+            Gets or sets the data template for the footer content.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.IsClickableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.IsClickable"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.IsClickable">
+            <summary>
+            Gets or sets whether the card responds to mouse click interactions.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.IsPressedProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Card.IsPressed"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Card.IsPressed">
+            <summary>
+            Gets whether the card is currently pressed.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Card.ClickEvent">
+            <summary>
+            Identifies the <see cref="E:Fluence.Wpf.Controls.Card.Click"/> routed event.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.Card.Click">
+            <summary>
+            Occurs when a clickable card is activated by a mouse left-button release
+            that began with a press inside the card bounds.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Card.OnKeyDown(System.Windows.Input.KeyEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Card.OnKeyUp(System.Windows.Input.KeyEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Card.OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Card.OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Card.OnLostMouseCapture(System.Windows.Input.MouseEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Card.OnMouseLeave(System.Windows.Input.MouseEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.CheckBox">
+            <summary>
+            Fluent-styled check box with optional description and rounded indicator.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.CheckBox.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.CheckBox.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.CheckBox.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the check box indicator.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.CheckBox.DescriptionProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.CheckBox.Description"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.CheckBox.Description">
+            <summary>
+            Gets or sets the description text displayed below the check box content.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ComboBox">
+            <summary>
+            Fluent-styled combo box with placeholder, icon, and rounded dropdown.
+            Authority: WinUI 3 ComboBox_themeresources.xaml (FocusedStates / EditableFocusedStates VSM groups — WI-3 C18).
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ComboBox.SelectedContentProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ComboBox.SelectedContent"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ComboBox.SelectedTextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ComboBox.SelectedText"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ComboBox.PlaceholderTextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ComboBox.PlaceholderText"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ComboBox.PlaceholderText">
+            <summary>
+            Gets or sets the placeholder text displayed when no item is selected.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ComboBox.SelectedContent">
+            <summary>
+            Gets the content of the currently selected item.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ComboBox.SelectedText">
+            <summary>
+            Gets the text representation of the currently selected item.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ComboBox.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ComboBox.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ComboBox.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the combo box.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ComboBox.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ComboBox.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ComboBox.Icon">
+            <summary>
+            Gets or sets the icon displayed in the combo box.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ComboBox.DropdownCornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ComboBox.DropdownCornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ComboBox.DropdownCornerRadius">
+            <summary>
+            Gets or sets the corner radius of the dropdown popup.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ComboBox.IsDropDownOpenedUpwardProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ComboBox.IsDropDownOpenedUpward"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ComboBox.IsDropDownOpenedUpward">
+            <summary>
+            Gets whether the dropdown is currently displayed above the control.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ComboBox.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ComboBox.OnDropDownOpened(System.EventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ComboBox.OnDropDownClosed(System.EventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ComboBox.OnSelectionChanged(System.Windows.Controls.SelectionChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ComboBox.OnItemsChanged(System.Collections.Specialized.NotifyCollectionChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ComboBox.OnGotFocus(System.Windows.RoutedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ComboBox.OnLostFocus(System.Windows.RoutedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ContextMenu">
+            <summary>
+            A Fluent Design context menu with a solid background, 8 px corner radius, and a
+            1 px flyout-stroke border. Drop shadow is applied at the system popup level via
+            <see cref="P:System.Windows.Controls.ContextMenu.HasDropShadow"/>.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.DockPanel">
+            <summary>
+            Dock panel with uniform spacing between consecutive docked children.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.DockPanel.SpacingProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.DockPanel.Spacing"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.DockPanel.Spacing">
+            <summary>
+            Gets or sets the uniform spacing between consecutive docked children.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.DockPanel.LastChildFillProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.DockPanel.LastChildFill"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.DockPanel.LastChildFill">
+            <summary>
+            Gets or sets whether the last child element stretches to fill the remaining space.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.DockPanel.MeasureOverride(System.Windows.Size)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.DockPanel.ArrangeOverride(System.Windows.Size)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.DropDownButton">
+            <summary>
+            A toggle button that displays a flyout in a popup when checked.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.DropDownButton.FlyoutProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.DropDownButton.Flyout"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.DropDownButton.Flyout">
+            <summary>
+            Gets or sets the content displayed in the dropdown popup.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.DropDownButton.FlyoutTemplateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.DropDownButton.FlyoutTemplate"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.DropDownButton.FlyoutTemplate">
+            <summary>
+            Gets or sets the <see cref="T:System.Windows.DataTemplate"/> used to render <see cref="P:Fluence.Wpf.Controls.DropDownButton.Flyout"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.DropDownButton.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.DropDownButton.CornerRadius"/> dependency property.
+            </summary>
+            <remarks>
+            Shadows the <c>Control.CornerRadiusProperty</c> introduced in net6+ so the property
+            is also available on net472 where <c>Control</c> does not declare it.
+            </remarks>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.DropDownButton.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the button border.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.DropDownButton.DropdownCornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.DropDownButton.DropdownCornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.DropDownButton.DropdownCornerRadius">
+            <summary>
+            Gets or sets the corner radius of the dropdown popup surface.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.DropDownButton.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.DropDownButton.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.DropDownButton.OnPropertyChanged(System.Windows.DependencyPropertyChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.DropDownButton.AttachPopupHandlers(System.Windows.Controls.Primitives.Popup)">
+            <summary>
+            Configures popup behavior: it does not stay open without focus, and closing unchecks the button.
+            </summary>
+            <param name="popup">The template <see cref="T:System.Windows.Controls.Primitives.Popup"/> (PART_Popup).</param>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.Expander">
+            <summary>
+            A Fluent Design styled Expander with animated expand/collapse.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.Expander.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.Expander.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.Expander.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the expander chrome.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.FluenceWindow">
+            <summary>
+            A window with Windows 11 Fluent Design chrome, backdrop support, and custom caption buttons.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsNotNullConverter">
+            <summary>
+            Converts a value to <c>true</c> when it is not null; used by caption button visibility bindings.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.SystemBackdropTypeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.SystemBackdropType"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.CornerStyleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.CornerStyle"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.MarginMaximizedProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.MarginMaximized"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.ExtendsContentIntoTitleBarProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.ExtendsContentIntoTitleBar"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.TitleBarProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.TitleBar"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.TitleBarHeightProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.TitleBarHeight"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.ShowIconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.ShowIcon"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.ShowTitleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.ShowTitle"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsMinimizeButtonVisibleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.IsMinimizeButtonVisible"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsMaximizeButtonVisibleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.IsMaximizeButtonVisible"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsCloseButtonVisibleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.IsCloseButtonVisible"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.MinimizeButtonVisibilityProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.MinimizeButtonVisibility"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.MaximizeButtonVisibilityProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.MaximizeButtonVisibility"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.CloseButtonVisibilityProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.CloseButtonVisibility"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsMinimizableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.IsMinimizable"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsMaximizableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.IsMaximizable"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsClosableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.IsClosable"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.IsMoveableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.IsMoveable"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.CanMoveProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.CanMove"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.HasShadowProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.HasShadow"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FluenceWindow.TitleBarLeftIndentProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FluenceWindow.TitleBarLeftIndent"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.SystemBackdropType">
+            <summary>
+            Gets or sets the requested system backdrop (Mica, Acrylic, Tabbed, or none).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.CornerStyle">
+            <summary>
+            Gets or sets the preferred window corner rounding policy for DWM.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.MarginMaximized">
+            <summary>
+            Gets or sets extra margin applied when the window is maximized to avoid overlap with the work area.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.ExtendsContentIntoTitleBar">
+            <summary>
+            Gets or sets whether the window content extends into the title bar area,
+            replacing the system title bar with a custom one rendered by the control template.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.TitleBar">
+            <summary>
+            Gets or sets custom content displayed in the title bar region.
+            When null and <see cref="P:Fluence.Wpf.Controls.FluenceWindow.ExtendsContentIntoTitleBar"/> is true, a default title bar with icon and title is shown.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.TitleBarHeight">
+            <summary>
+            Gets or sets the height of the title bar region. Standard = 48, compact = 32.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.ShowIcon">
+            <summary>
+            Gets or sets whether the window icon is shown in the title bar.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.ShowTitle">
+            <summary>
+            Gets or sets whether the window title text is shown in the title bar.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.IsMinimizeButtonVisible">
+            <summary>
+            Gets or sets the visibility of the minimize button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.IsMaximizeButtonVisible">
+            <summary>
+            Gets or sets the visibility of the maximize button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.IsCloseButtonVisible">
+            <summary>
+            Gets or sets the visibility of the close button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.MinimizeButtonVisibility">
+            <summary>
+            Gets or sets the visibility of the minimize button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.MaximizeButtonVisibility">
+            <summary>
+            Gets or sets the visibility of the maximize button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.CloseButtonVisibility">
+            <summary>
+            Gets or sets the visibility of the close button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.IsMinimizable">
+            <summary>
+            Gets or sets whether the minimize button is enabled.
+            When false, the button is visible but grayed out.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.IsMaximizable">
+            <summary>
+            Gets or sets whether the maximize button is enabled.
+            When false, the button is visible but grayed out.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.IsClosable">
+            <summary>
+            Gets or sets whether the close button is enabled.
+            When false, the button is visible but grayed out.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.IsMoveable">
+            <summary>
+            Gets or sets whether the window can be moved by title-bar dragging or the system move command.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.CanMove">
+            <summary>
+            Gets or sets whether the window can be moved by title-bar dragging or the system move command.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.HasShadow">
+            <summary>
+            Gets or sets whether the window has a drop shadow. Defaults to true.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FluenceWindow.TitleBarLeftIndent">
+            <summary>
+            Gets or sets the left inset (device-independent pixels) applied to the title bar icon
+            and title text.  Set this to the navigation pane width when
+            <see cref="P:Fluence.Wpf.Controls.FluenceWindow.ExtendsContentIntoTitleBar"/> is <c>true</c> and a left-side navigation pane
+            occupies the leftmost portion of the window (e.g. 48 for a compact left pane).
+            The default value is 0.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.FluenceWindow"/> class, loads the default style, and wires theme and accent updates.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.SetTitleBar(System.Windows.UIElement)">
+            <summary>
+            Sets a UIElement as the custom title bar content. The element becomes the
+            drag region for the window. Call with null to revert to the default title bar.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.SetMinimizeButtonVisibility(System.Windows.Visibility)">
+            <summary>
+            Sets the minimize button visibility.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.SetMaximizeButtonVisibility(System.Windows.Visibility)">
+            <summary>
+            Sets the maximize/restore button visibility.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.SetCloseButtonVisibility(System.Windows.Visibility)">
+            <summary>
+            Sets the close button visibility.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.OnSourceInitialized(System.EventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.OnStateChanged(System.EventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.OnActivated(System.EventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.OnDeactivated(System.EventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.OnPropertyChanged(System.Windows.DependencyPropertyChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.OnClosed(System.EventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.IsCaptionChromeOverrideExplicit(System.Windows.DependencyProperty)">
+            <summary>
+            Returns <c>true</c> when the caption-chrome override property has been explicitly assigned
+            (via code, XAML local value, style, binding, etc.) rather than left at its declared default.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FluenceWindow.IsOverInteractiveContent(System.Windows.Point)">
+            <summary>
+            Returns <c>true</c> when the element under <paramref name="windowPoint"/> (or any of its
+            visual ancestors) has <see cref="F:System.Windows.Shell.WindowChrome.IsHitTestVisibleInChromeProperty"/> set to
+            <c>true</c>.  Used by <see cref="M:Fluence.Wpf.Controls.FluenceWindow.HitTestTitleBar(System.IntPtr)"/> to let clicks on interactive controls
+            inside the title bar (e.g. a search TextBox or ToggleSwitch) fall through to WPF instead
+            of being swallowed as caption-area drag gestures.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.FontIcon">
+            <summary>
+            Represents an icon that uses a glyph from a font.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FontIcon.GlyphProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FontIcon.Glyph"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FontIcon.Glyph">
+            <summary>
+            Gets or sets the glyph character to display.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FontIcon.IconFontFamilyProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FontIcon.IconFontFamily"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FontIcon.IconFontFamily">
+            <summary>
+            Gets or sets the font family used for the icon glyph.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FontIcon.IconFontSizeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FontIcon.IconFontSize"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FontIcon.IconFontSize">
+            <summary>
+            Gets or sets the font size of the icon glyph.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FontIcon.RotationProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FontIcon.Rotation"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FontIcon.Rotation">
+            <summary>
+            Gets or sets the rotation angle in degrees.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FontIcon.MirroredWhenRightToLeftProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FontIcon.MirroredWhenRightToLeft"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FontIcon.MirroredWhenRightToLeft">
+            <summary>
+            Gets or sets whether the glyph is horizontally flipped when
+            <see cref="P:System.Windows.FrameworkElement.FlowDirection"/> is <see cref="F:System.Windows.FlowDirection.RightToLeft"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FontIcon.EnableTransitionsProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FontIcon.EnableTransitions"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FontIcon.EnableTransitions">
+            <summary>
+            Gets or sets whether high-quality bitmap scaling is used during transitions.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.FontIcon.IsSpinningProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.FontIcon.IsSpinning"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.FontIcon.IsSpinning">
+            <summary>
+            Gets or sets whether the icon continuously spins.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FontIcon.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.FontIcon.OnPropertyChanged(System.Windows.DependencyPropertyChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.HyperlinkButton">
+            <summary>
+            A hyperlink-styled button that can optionally navigate to a URI.
+            </summary>
+            <remarks>Inspired by WInUI's HyperlinkButton.</remarks>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.HyperlinkButton.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.HyperlinkButton"/> class.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.HyperlinkButton.NavigateUriProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.HyperlinkButton.NavigateUri"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.HyperlinkButton.NavigateUri">
+            <summary>
+            Gets or sets the URI to navigate to when the button is clicked.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.HyperlinkButton.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.HyperlinkButton.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.HyperlinkButton.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the button.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.HyperlinkButton.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.HyperlinkButton.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.HyperlinkButton.Icon">
+            <summary>
+            Gets or sets the icon displayed in the button.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.HyperlinkButton.IconPlacementProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.HyperlinkButton.IconPlacement"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.HyperlinkButton.IconPlacement">
+            <summary>
+            Gets or sets the placement of the icon relative to the content.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.HyperlinkButton.OnClick">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.InfoBadge">
+            <summary>
+            A small badge overlay that displays a numeric value, icon, or dot indicator.
+            Typically attached to a <see cref="T:Fluence.Wpf.Controls.NavigationViewItem"/> or other control.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBadge.ValueProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBadge.Value"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBadge.Value">
+            <summary>
+            Gets or sets the numeric value displayed. Set to -1 to show a dot instead.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBadge.BadgeStyleProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBadge.BadgeStyle"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBadge.BadgeStyle">
+            <summary>
+            Gets or sets the severity style of the badge.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBadge.IconSourceProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBadge.IconSource"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBadge.IconSource">
+            <summary>
+            Gets or sets an icon element to display inside the badge (overrides Value text).
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.InfoBadge.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.InfoBar">
+            <summary>
+            An inline notification bar for displaying status messages with severity levels.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.TitleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.Title"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.Title">
+            <summary>
+            Gets or sets the title text displayed in the info bar.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.MessageProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.Message"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.Message">
+            <summary>
+            Gets or sets the message text displayed in the info bar.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.SeverityProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.Severity"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.Severity">
+            <summary>
+            Gets or sets the severity level that determines the visual style of the info bar.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.IsOpenProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.IsOpen"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.IsOpen">
+            <summary>
+            Gets or sets a value indicating whether the info bar is visible.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.IsClosableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.IsClosable"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.IsClosable">
+            <summary>
+            Gets or sets a value indicating whether the close button is displayed.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.IsIconVisibleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.IsIconVisible"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.IsIconVisible">
+            <summary>
+            Gets or sets a value indicating whether the severity icon is displayed.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.Icon">
+            <summary>
+            Gets or sets a custom icon that overrides the default severity icon.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.ActionButtonProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.ActionButton"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.ActionButton">
+            <summary>
+            Gets or sets the content placed in the action button slot.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.InfoBar.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.InfoBar.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBar.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the info bar.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.InfoBar.Closing">
+            <summary>
+            Occurs before the info bar closes. Set <see cref="P:Fluence.Wpf.Controls.InfoBarClosingEventArgs.Cancel"/>
+            to <see langword="true"/> to prevent closing.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.InfoBar.Closed">
+            <summary>
+            Occurs after the info bar has closed.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.InfoBar.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.InfoBar.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.InfoBar.UpdateSeverityState(System.Boolean)">
+            <summary>
+            Transitions the control to the visual state matching the current <see cref="P:Fluence.Wpf.Controls.InfoBar.Severity"/>.
+            Called without transitions on initial template application; with transitions on runtime changes.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.InfoBar.OnCloseButtonClick">
+            <summary>
+            Raises the <see cref="E:Fluence.Wpf.Controls.InfoBar.Closing"/> event. If not canceled, sets <see cref="P:Fluence.Wpf.Controls.InfoBar.IsOpen"/>
+            to <see langword="false"/> and raises the <see cref="E:Fluence.Wpf.Controls.InfoBar.Closed"/> event.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.InfoBarClosingEventArgs">
+            <summary>
+            Provides data for the <see cref="E:Fluence.Wpf.Controls.InfoBar.Closing"/> event.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.InfoBarClosingEventArgs.Cancel">
+            <summary>
+            Gets or sets a value indicating whether the close operation should be canceled.
+            Set to <see langword="true"/> to prevent the <see cref="T:Fluence.Wpf.Controls.InfoBar"/> from closing.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ListBox">
+            <summary>
+            A Fluent Design styled ListBox with rounded corners and selection indicator.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListBox.CornerRadiusProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.ListBox.CornerRadius"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ListBox.CornerRadius">
+            <summary>Gets or sets the corner radius of the ListBox border.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListBox.GetContainerForItemOverride">
+            <inheritdoc/>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListBox.IsItemItsOwnContainerOverride(System.Object)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ListBoxItem">
+            <summary>
+            A Fluent Design styled ListBoxItem with accent selection indicator.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ListView">
+            <summary>
+            A Fluent Design styled list view with animated item states.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListView.ItemAnimationsEnabledProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ListView.ItemAnimationsEnabled"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ListView.ItemAnimationsEnabled">
+            <summary>
+            Gets or sets whether item animations are enabled.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListView.HoverHighlightEnabledProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ListView.HoverHighlightEnabled"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ListView.HoverHighlightEnabled">
+            <summary>
+            Gets or sets whether hover highlighting is enabled.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListView.ViewStateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ListView.ViewState"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ListView.ViewState">
+            <summary>
+            Gets or sets the view state of the list view.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListView.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ListView.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ListView.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the list view.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListView.EmptyContentProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ListView.EmptyContent"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ListView.EmptyContent">
+            <summary>
+            Content displayed when the list has no items.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListView.ParentIsItemSelectableProperty">
+            <summary>
+            Attached property mirrored from the parent <see cref="T:Fluence.Wpf.Controls.ListView"/> so item templates can use
+            <c>MultiDataTrigger</c> (each condition must use a <c>Binding</c>, not <c>Property</c>, in WPF).
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.SetParentIsItemSelectable(System.Windows.DependencyObject,System.Boolean)">
+            <summary>
+            Sets the parent list's <see cref="P:Fluence.Wpf.Controls.ListView.IsItemSelectable"/> value on an item container for template triggers.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.GetParentIsItemSelectable(System.Windows.DependencyObject)">
+            <summary>
+            Gets whether the parent list allows item selection (for template triggers).
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ListView.IsItemSelectableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ListView.IsItemSelectable"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ListView.IsItemSelectable">
+            <summary>
+            Gets or sets whether items can be selected and show hover/selection visuals.
+            When false, rows are display-only; scrolling and item animations are unchanged.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.ListView"/> class and wires the loaded event for default group styling.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.OnSelectionChanged(System.Windows.Controls.SelectionChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.GetContainerForItemOverride">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.IsItemItsOwnContainerOverride(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.PrepareContainerForItemOverride(System.Windows.DependencyObject,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ListView.AnimateRemove(System.Object,System.Action)">
+            <summary>
+            Animates out the item and then calls the provided callback.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.Menu">
+            <summary>
+            A Fluent Design horizontal menu bar. The menu bar itself is transparent; each
+            top-level <see cref="T:Fluence.Wpf.Controls.MenuItem"/> entry receives the shared Fluent <c>MenuItem</c>
+            style and opens a flyout-styled popup for its sub-items.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Menu.GetContainerForItemOverride">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.Menu.IsItemItsOwnContainerOverride(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.MenuItem">
+            <summary>
+            A Fluent Design menu item for use inside <see cref="T:Fluence.Wpf.Controls.ContextMenu"/> or
+            <see cref="T:System.Windows.Controls.Menu"/>. Supports icon, header, keyboard
+            shortcut display, checkmark, and nested submenu.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NavigationView">
+            <summary>
+            A navigation control with a collapsible pane and content area, similar to WinUI NavigationView.
+            Uses a single shared selection indicator that animates between items.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PartBackButton">
+            <summary>Name of the back button template part.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PartContentPresenter">
+            <summary>Name of the main content presenter template part.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PartPaneItemsScrollViewer">
+            <summary>Name of the scroll viewer that hosts pane items.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PartPaneToggleButton">
+            <summary>Name of the pane collapse/expand toggle button.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PartSelectionIndicator">
+            <summary>Name of the shared selection indicator element.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PaneDisplayModeProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.PaneDisplayMode"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.SelectionFollowsFocusProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.SelectionFollowsFocus"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.IsBackButtonVisibleProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.IsBackButtonVisible"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.IsBackEnabledProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.IsBackEnabled"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.HeaderProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.Header"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.HeaderTemplateProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.HeaderTemplate"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PaneHeaderProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.PaneHeader"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.PaneFooterProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.PaneFooter"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.ContentBackgroundProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.ContentBackground"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.IsPaneOpenProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.IsPaneOpen"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.ContentProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.Content"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationView.SelectedContentProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationView.SelectedContent"/> dependency property.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.NavigationView"/> class.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.NavigationView.NavSelectionChanged">
+            <summary>
+            Occurs when the selected navigation item changes.
+            </summary>
+            <remarks>The routed <see cref="E:System.Windows.Controls.Primitives.Selector.SelectionChanged"/> event also fires.</remarks>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.NavigationView.BackRequested">
+            <summary>
+            Occurs when the back button is invoked.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.NavigationView.PaneOpening">
+            <summary>
+            Occurs when the pane is opening (expanded in left mode).
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.NavigationView.PaneClosed">
+            <summary>
+            Occurs when the pane has closed (collapsed in left mode).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.PaneDisplayMode">
+            <summary>Gets or sets whether the pane is shown on the left or across the top.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.SelectionFollowsFocus">
+            <summary>Gets or sets whether keyboard focus on an item selects it immediately.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.IsBackButtonVisible">
+            <summary>Gets or sets whether the back button is shown.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.IsBackEnabled">
+            <summary>Gets or sets whether the back button can be invoked.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.Header">
+            <summary>Gets or sets header content displayed beside the navigation chrome.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.HeaderTemplate">
+            <summary>Gets or sets the DataTemplate used to display the <see cref="P:Fluence.Wpf.Controls.NavigationView.Header"/>.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.PaneHeader">
+            <summary>Gets or sets content at the start of the pane chrome (title area).</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.PaneFooter">
+            <summary>Gets or sets content at the end of the pane (footer).</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.ContentBackground">
+            <summary>Gets or sets the background brush for the content area.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.IsPaneOpen">
+            <summary>Gets or sets whether the left pane is expanded.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.Content">
+            <summary>Gets or sets the content hosted in the main area.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationView.SelectedContent">
+            <summary>Gets or sets content bound to the current selection.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.OnSelectionChanged(System.Windows.Controls.SelectionChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.OnPreviewGotKeyboardFocus(System.Windows.Input.KeyboardFocusChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.IsItemItsOwnContainerOverride(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.GetContainerForItemOverride">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.PrepareContainerForItemOverride(System.Windows.DependencyObject,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.ClearContainerForItemOverride(System.Windows.DependencyObject,System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.RaiseBackRequestedForTesting">
+            <summary>
+            Raises <see cref="E:Fluence.Wpf.Controls.NavigationView.BackRequested"/> as the back button would. Used by unit tests.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.GetSelectionIndicatorForTesting">
+            <summary>
+            Returns the shared selection indicator element from the current template, if resolved.
+            Used by unit tests.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.UpdateBackButtonState(System.Boolean)">
+            <summary>
+            Transitions the back button to the correct <c>BackButtonStates</c> VSM state
+            based on <see cref="P:Fluence.Wpf.Controls.NavigationView.IsBackButtonVisible"/>. Called without transitions on
+            initial template application; with transitions on runtime changes.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.PositionIndicator(System.Boolean)">
+            <summary>
+            Positions the shared indicator at the currently selected item.
+            When <paramref name="animate"/> is true and the indicator was previously positioned,
+            runs a depart/arrive animation sequence.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.CalculateIndicatorPosition(Fluence.Wpf.Controls.NavigationViewItem,System.Boolean)">
+            <summary>
+            Calculates the translate position for the indicator relative to its host Grid.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.SnapIndicator(System.Windows.Point)">
+            <summary>
+            Immediately places the indicator at the target offset with no animation.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationView.EnsureMutableTransform">
+            <summary>
+            Replaces frozen XAML-defined transforms with mutable instances.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NavigationViewBackRequestedEventArgs">
+            <summary>
+            Provides data for the <see cref="E:Fluence.Wpf.Controls.NavigationView.BackRequested"/> event.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NavigationViewItem">
+            <summary>
+            Represents an entry inside a <see cref="T:Fluence.Wpf.Controls.NavigationView"/> pane.
+            </summary>
+            <remarks>Inspired by WinUI3's NavigationView.</remarks>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationViewItem.IsPressedProperty">
+            <summary>Identifies the read-only <see cref="P:Fluence.Wpf.Controls.NavigationViewItem.IsPressed"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationViewItem.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationViewItem.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationViewItem.InfoBadgeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationViewItem.InfoBadge"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationViewItem.IsChildItemProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationViewItem.IsChildItem"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NavigationViewItem.PageContentProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NavigationViewItem.PageContent"/> dependency property.
+            </summary>
+            <remarks>
+            When set, the parent <see cref="T:Fluence.Wpf.Controls.NavigationView"/> shows this in the main content area while
+            <see cref="P:System.Windows.Controls.ContentControl.Content"/> remains the pane label (typically a short string).
+            </remarks>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationViewItem.Icon">
+            <summary>
+            Gets or sets the icon content for this item (typically a <see cref="T:Fluence.Wpf.Controls.FontIcon"/>).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationViewItem.InfoBadge">
+            <summary>
+            Gets or sets an <see cref="T:Fluence.Wpf.Controls.InfoBadge"/> element shown on this item.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationViewItem.IsChildItem">
+            <summary>
+            Gets or sets whether this item is a child entry in an expanded navigation section.
+            Child entries keep their selection indicator aligned with the content column.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationViewItem.PageContent">
+            <summary>
+            Gets or sets content shown in the <see cref="T:Fluence.Wpf.Controls.NavigationView"/> frame when this item is selected.
+            When null, the frame uses <see cref="P:System.Windows.Controls.ContentControl.Content"/> (e.g. a string label for simple demos).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationViewItem.IsPressed">
+            <summary>Gets whether the item is currently being pressed by a pointer.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationViewItem.OnKeyDown(System.Windows.Input.KeyEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationViewItem.OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationViewItem.OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationViewItem.OnMouseLeave(System.Windows.Input.MouseEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationViewItem.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationViewItem.OnPreviewMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs)">
+            <inheritdoc />
+            <remarks>
+            Parent <see cref="T:Fluence.Wpf.Controls.NavigationView"/> derives from <see cref="T:System.Windows.Controls.Primitives.Selector"/> (not <see cref="T:Fluence.Wpf.Controls.ListBox"/>).
+            <see cref="T:Fluence.Wpf.Controls.ListBoxItem"/> handles mouse on the bubbling route and may mark the event handled before selection sync runs;
+            we handle preview mouse and sync selection on the parent so clicks always update selection.
+            </remarks>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NavigationViewItemHeader">
+            <summary>
+            A section header element for use inside a <see cref="T:Fluence.Wpf.Controls.NavigationView"/> pane.
+            Not selectable -- passes through the item container generator unmodified.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NavigationViewItemSeparator">
+            <summary>
+            A divider line element for use inside a <see cref="T:Fluence.Wpf.Controls.NavigationView"/> pane.
+            Not selectable -- passes through the item container generator unmodified.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NavigationViewSelectionChangedEventArgs">
+            <summary>
+            Provides data for the <see cref="E:Fluence.Wpf.Controls.NavigationView.NavSelectionChanged"/> event.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NavigationViewSelectionChangedEventArgs.#ctor(System.Object,System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.NavigationViewSelectionChangedEventArgs"/> class.
+            </summary>
+            <param name="selectedItem">The newly selected item, if any.</param>
+            <param name="isSettingsSelected">Reserved for future use (settings entry).</param>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationViewSelectionChangedEventArgs.SelectedItem">
+            <summary>
+            Gets the selected navigation item (typically a <see cref="T:Fluence.Wpf.Controls.NavigationViewItem"/>).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NavigationViewSelectionChangedEventArgs.IsSettingsSelected">
+            <summary>
+            Gets a value indicating whether the settings item is selected; reserved for future use.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NumberBoxValueChangedEventArgs">
+            <summary>
+            Event data for <see cref="E:Fluence.Wpf.Controls.NumberBox.ValueChanged"/>.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBoxValueChangedEventArgs.#ctor(System.Double,System.Double)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.NumberBoxValueChangedEventArgs"/> class.
+            </summary>
+            <param name="oldValue">The previous value.</param>
+            <param name="newValue">The new value.</param>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBoxValueChangedEventArgs.OldValue">
+            <summary>
+            Gets the previous value.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBoxValueChangedEventArgs.NewValue">
+            <summary>
+            Gets the new value.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.NumberBox">
+            <summary>
+            A numeric input control with optional spin buttons and min/max clamping.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.ValueProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.Value"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.MinimumProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.Minimum"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.MaximumProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.Maximum"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.SmallChangeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.SmallChange"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.LargeChangeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.LargeChange"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.HeaderProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.Header"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.SpinButtonPlacementModeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.SpinButtonPlacementMode"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.AcceptsExpressionProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.AcceptsExpression"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.PlaceholderTextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.PlaceholderText"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.DescriptionProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.Description"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.NumberBox.TextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.NumberBox.Text"/> dependency property.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.NumberBox.ValueChanged">
+            <summary>
+            Occurs when <see cref="P:Fluence.Wpf.Controls.NumberBox.Value"/> changes after coercion.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.Value">
+            <summary>
+            Gets or sets the numeric value.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.Minimum">
+            <summary>
+            Gets or sets the minimum allowed value.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.Maximum">
+            <summary>
+            Gets or sets the maximum allowed value.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.SmallChange">
+            <summary>
+            Gets or sets the increment used by spin buttons.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.LargeChange">
+            <summary>
+            Gets or sets the large increment (reserved for keyboard/page navigation).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.Header">
+            <summary>
+            Gets or sets an optional header displayed above the input.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.SpinButtonPlacementMode">
+            <summary>
+            Gets or sets where spin buttons are shown.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.AcceptsExpression">
+            <summary>
+            Gets or sets whether the control may parse simple expressions (reserved).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.PlaceholderText">
+            <summary>
+            Gets or sets watermark text shown when the text box is empty.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.Description">
+            <summary>
+            Gets or sets helper text displayed below the control.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.NumberBox.Text">
+            <summary>
+            Gets or sets the text representation of the value.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.TryParseText">
+            <summary>
+            Updates <see cref="P:Fluence.Wpf.Controls.NumberBox.Value"/> from <see cref="P:Fluence.Wpf.Controls.NumberBox.Text"/> if parsing succeeds.
+            </summary>
+            <returns><c>true</c> if a number was parsed and applied; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.OnValueChanged(System.Double,System.Double)">
+            <summary>
+            Raises the <see cref="E:Fluence.Wpf.Controls.NumberBox.ValueChanged"/> event.
+            </summary>
+            <param name="oldValue">The previous value.</param>
+            <param name="newValue">The new value.</param>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.OnUpClick">
+            <summary>
+            Increments <see cref="P:Fluence.Wpf.Controls.NumberBox.Value"/> by <see cref="P:Fluence.Wpf.Controls.NumberBox.SmallChange"/> with clamping.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.OnDownClick">
+            <summary>
+            Decrements <see cref="P:Fluence.Wpf.Controls.NumberBox.Value"/> by <see cref="P:Fluence.Wpf.Controls.NumberBox.SmallChange"/> with clamping.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.OnGotKeyboardFocus(System.Windows.Input.KeyboardFocusChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.OnPreviewMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.NumberBox.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.PasswordBox">
+            <summary>
+            A Fluent Design styled password box with reveal toggle support.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.PasswordBox.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.PasswordBox"/> class.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.PasswordProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.Password"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.Password">
+            <summary>
+            Gets or sets the password.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.PasswordCharProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.PasswordChar"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.PasswordChar">
+            <summary>
+            Gets or sets the masking character for the password.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.RevealButtonEnabledProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.RevealButtonEnabled"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.RevealButtonEnabled">
+            <summary>
+            Gets or sets whether the reveal button is enabled.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.IsPasswordRevealedProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.IsPasswordRevealed"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.IsPasswordRevealed">
+            <summary>
+            Gets whether the password is currently revealed.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.PlaceholderTextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.PlaceholderText"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.PlaceholderText">
+            <summary>
+            Gets or sets the placeholder text.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.MaxLengthProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.MaxLength"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.MaxLength">
+            <summary>
+            Gets or sets the maximum length of the password.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.CornerRadius">
+            <summary>
+            Gets or sets the corner radius.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.ShowCapsLockIndicatorProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.ShowCapsLockIndicator"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.ShowCapsLockIndicator">
+            <summary>
+            Gets or sets whether the Caps Lock indicator is shown when Caps Lock is active.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.ShowPasswordStrengthProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.ShowPasswordStrength"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.ShowPasswordStrength">
+            <summary>
+            Gets or sets whether the password strength meter is displayed.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PasswordBox.PasswordStrengthProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.PasswordBox.PasswordStrength"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PasswordBox.PasswordStrength">
+            <summary>
+            Strength score from 0 (weakest) to 4 (strongest). Updated when <see cref="P:Fluence.Wpf.Controls.PasswordBox.Password"/> changes unless overridden by binding.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.PasswordBox.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.PasswordBox.SelectAll">
+            <summary>
+            Selects all text in the password field.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.PersonPicture">
+            <summary>
+            A Fluent Design circular avatar control that displays a profile photo, initials,
+            or a placeholder glyph, with an optional badge.
+            Authority: WinUI 3 PersonPicture.xaml + PersonPicture_themeresources.xaml.
+            Visual states: Photo, Initials, NoPhotoOrInitials, Group (CommonStates);
+            NoBadge, BadgeWithoutImageSource (BadgeStates).
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PersonPicture.DisplayNameProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.PersonPicture.DisplayName"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PersonPicture.DisplayName">
+            <summary>
+            Gets or sets the person's display name. Up to two initials are derived automatically
+            unless <see cref="P:Fluence.Wpf.Controls.PersonPicture.Initials"/> is set explicitly.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PersonPicture.InitialsProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.PersonPicture.Initials"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PersonPicture.Initials">
+            <summary>
+            Gets or sets explicit initials to display. When set, overrides the initials
+            derived from <see cref="P:Fluence.Wpf.Controls.PersonPicture.DisplayName"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PersonPicture.ProfilePictureProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.PersonPicture.ProfilePicture"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PersonPicture.ProfilePicture">
+            <summary>Gets or sets the profile photo image source.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PersonPicture.IsGroupProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.PersonPicture.IsGroup"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PersonPicture.IsGroup">
+            <summary>
+            Gets or sets whether the avatar represents a group rather than an individual.
+            When <see langword="true"/>, the Group (people) glyph is displayed.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PersonPicture.BadgeNumberProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.PersonPicture.BadgeNumber"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PersonPicture.BadgeNumber">
+            <summary>
+            Gets or sets a numeric badge displayed in the bottom-right corner.
+            Set to 0 (default) to hide the badge.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.PersonPicture.BadgeGlyphProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.PersonPicture.BadgeGlyph"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.PersonPicture.BadgeGlyph">
+            <summary>
+            Gets or sets a Segoe Fluent Icons glyph shown in the badge.
+            Takes precedence over <see cref="P:Fluence.Wpf.Controls.PersonPicture.BadgeNumber"/> when both are set.
+            Set to <see langword="null"/> (default) to show no glyph badge.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.PersonPicture.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ProgressBar">
+            <summary>
+            Fluent-styled progress bar with standard, indeterminate, and step modes.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressBar.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressBar.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressBar.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the progress bar track and fill.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressBar.ProgressModeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressBar.ProgressMode"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressBar.ProgressMode">
+            <summary>
+            Gets or sets the progress mode (Standard, Indeterminate, or StepProgress).
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressBar.StepsProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressBar.Steps"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressBar.Steps">
+            <summary>
+            Gets or sets the total number of steps in StepProgress mode.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressBar.CurrentStepProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressBar.CurrentStep"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressBar.CurrentStep">
+            <summary>
+            Gets or sets the current step in StepProgress mode.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressBar.ShowStepMarkersProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressBar.ShowStepMarkers"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressBar.ShowStepMarkers">
+            <summary>
+            Gets or sets whether step markers are shown in StepProgress mode.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressBar.TrackHeightProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressBar.TrackHeight"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressBar.TrackHeight">
+            <summary>
+            Gets or sets the height of the progress bar track.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressBar.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.ProgressBar"/> class and subscribes to size changes for layout updates.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressBar.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressBar.OnValueChanged(System.Double,System.Double)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressBar.OnMinimumChanged(System.Double,System.Double)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressBar.OnMaximumChanged(System.Double,System.Double)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ProgressRing">
+            <summary>
+            A circular progress indicator that supports both determinate and indeterminate modes.
+            </summary>
+            <remarks>
+            <para>
+            Indeterminate animation renders a single rounded "caterpillar" arc through
+            <see cref="T:System.Windows.Media.ArcSegment"/> and animates private start/sweep angle dependency properties.
+            This keeps the newer Fluent continuous-arc feel without taking a dependency on WinUI's
+            animated visual infrastructure.
+            </para>
+            <para>
+            The legacy orbit-dot template settings (<see cref="P:Fluence.Wpf.Controls.ProgressRing.EllipseDiameter"/> /
+            <see cref="P:Fluence.Wpf.Controls.ProgressRing.EllipseOffset"/>) are retained for custom templates and compatibility with
+            earlier Fluence versions. The default template no longer consumes them.
+            </para>
+            <para>
+            Determinate mode renders a stroked arc through <see cref="T:System.Windows.Media.ArcSegment"/>; the arc end-angle
+            tweens for 150 ms when <see cref="P:Fluence.Wpf.Controls.ProgressRing.Value"/> changes.
+            </para>
+            </remarks>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressRing.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.ProgressRing"/> class.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.IsActiveProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressRing.IsActive"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.IsActive">
+            <summary>Gets or sets whether the progress ring is active and visible.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.IsIndeterminateProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressRing.IsIndeterminate"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.IsIndeterminate">
+            <summary>Gets or sets whether the ring operates in indeterminate (spinning) mode.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.ValueProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressRing.Value"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.Value">
+            <summary>Gets or sets the current progress value in determinate mode.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.MinimumProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressRing.Minimum"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.Minimum">
+            <summary>Gets or sets the minimum value.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.MaximumProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressRing.Maximum"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.Maximum">
+            <summary>Gets or sets the maximum value.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.StrokeThicknessProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.ProgressRing.StrokeThickness"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.StrokeThickness">
+            <summary>Gets or sets the thickness of the progress arc stroke.</summary>
+            <remarks>Applies to both determinate and indeterminate arc visuals in the default template.</remarks>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.EllipseDiameterProperty">
+            <summary>Identifies the read-only <see cref="P:Fluence.Wpf.Controls.ProgressRing.EllipseDiameter"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.EllipseDiameter">
+            <summary>
+            Gets the diameter that earlier orbit-dot templates use for each indeterminate-mode dot.
+            The default Fluence template now uses an arc, but this value is retained for custom
+            templates and compatibility.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ProgressRing.EllipseOffsetProperty">
+            <summary>Identifies the read-only <see cref="P:Fluence.Wpf.Controls.ProgressRing.EllipseOffset"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ProgressRing.EllipseOffset">
+            <summary>
+            Gets the top-margin offset used by earlier orbit-dot templates to position each dot on
+            the orbit radius. The default Fluence template now uses an arc, but this value is retained
+            for custom templates and compatibility.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressRing.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressRing.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ProgressRing.OnRenderSizeChanged(System.Windows.SizeChangedInfo)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.RadioButton">
+            <summary>A Fluent Design styled radio button with optional description text.</summary>
+            <remarks>Inspired by WInUI's RadioButton.</remarks>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RadioButton.DescriptionProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.RadioButton.Description"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RadioButton.Description">
+            <summary>
+            Gets or sets the description text displayed below the radio button content.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RadioButton.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.RadioButton.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RadioButton.CornerRadius">
+            <summary>
+            Gets or sets the corner radius. Defaults to 10 for a round indicator.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.RatingControl">
+            <summary>
+            A Fluent Design star-based rating control.
+            Renders up to <see cref="P:Fluence.Wpf.Controls.RatingControl.MaxRating"/> star glyphs using Segoe Fluent Icons
+            (U+E734 StarEmpty / U+E735 StarFilled).
+            Authority: WinUI 3 RatingControl_themeresources.xaml + RatingControl.xaml.
+            Brush states: <c>AccentFillColorDefaultBrush</c> (filled),
+            <c>TextFillColorSecondaryBrush</c> (unset), <c>TextFillColorDisabledBrush</c> (disabled).
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RatingControl.ValueProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.RatingControl.Value"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RatingControl.Value">
+            <summary>Gets or sets the current rating value (0 to <see cref="P:Fluence.Wpf.Controls.RatingControl.MaxRating"/>).</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RatingControl.MaxRatingProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.RatingControl.MaxRating"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RatingControl.MaxRating">
+            <summary>Gets or sets the maximum number of stars displayed. Default is 5.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RatingControl.IsReadOnlyProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.RatingControl.IsReadOnly"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RatingControl.IsReadOnly">
+            <summary>
+            Gets or sets whether the user can change the rating.
+            When <see langword="true"/>, the control is display-only.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RatingControl.CaptionProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.RatingControl.Caption"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RatingControl.Caption">
+            <summary>Gets or sets the optional caption text shown after the stars.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.RatingControl.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.RepeatButton">
+            <summary>
+            A Fluent Design styled RepeatButton with Button-like visual template.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RepeatButton.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.RepeatButton.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.RepeatButton.AppearanceProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.RepeatButton.Appearance"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RepeatButton.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the repeat button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.RepeatButton.Appearance">
+            <summary>
+            Gets or sets the visual appearance of the repeat button.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.Separator">
+            <summary>
+            A Fluent Design horizontal separator that uses <c>DividerStrokeColorDefaultBrush</c>
+            for standalone content-area use.
+            Authority: .NET 10 WPF PresentationFramework.Fluent/Styles/Separator.xaml.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.Slider">
+            <summary>
+            Fluent-styled slider control.
+            </summary>
+            <remarks>Inspired by WInUI's Slider.</remarks>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.SmoothScrollViewer">
+            <summary>
+            A scroll viewer that animates scrolling with easing for a smooth experience.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SmoothScrollViewer.ScrollDurationProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SmoothScrollViewer.ScrollDuration"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SmoothScrollViewer.ScrollDuration">
+            <summary>
+            Gets or sets the duration of the smooth scroll animation.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.SmoothScrollViewer.OnMouseWheel(System.Windows.Input.MouseWheelEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.SmoothScrollViewer.OnScrollChanged(System.Windows.Controls.ScrollChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.SmoothScrollViewer.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.SplitButton">
+            <summary>
+            A button that combines a primary action (<see cref="E:System.Windows.Controls.Primitives.ButtonBase.Click"/> /
+            <see cref="P:Fluence.Wpf.Controls.SplitButton.Command"/>) on its left half with a secondary "chevron" half that opens a flyout popup
+            containing arbitrary WPF content. The canonical WinUI 3 SplitButton pattern.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.ClickEvent">
+            <summary>
+            Identifies the <see cref="E:Fluence.Wpf.Controls.SplitButton.Click"/> routed event.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.SplitButton.Click">
+            <summary>
+            Raised when the primary half of the split button is clicked.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.CommandProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.Command"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.Command">
+            <summary>
+            Gets or sets the command to invoke when the primary half is clicked.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.CommandParameterProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.CommandParameter"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.CommandParameter">
+            <summary>
+            Gets or sets the parameter passed to <see cref="P:Fluence.Wpf.Controls.SplitButton.Command"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.CommandTargetProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.CommandTarget"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.CommandTarget">
+            <summary>
+            Gets or sets the element that the command is raised on.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.FlyoutProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.Flyout"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.Flyout">
+            <summary>
+            Gets or sets the content displayed in the secondary-half flyout popup.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.FlyoutTemplateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.FlyoutTemplate"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.FlyoutTemplate">
+            <summary>
+            Gets or sets the <see cref="T:System.Windows.DataTemplate"/> used to render <see cref="P:Fluence.Wpf.Controls.SplitButton.Flyout"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.DropdownCornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.DropdownCornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.DropdownCornerRadius">
+            <summary>
+            Gets or sets the corner radius of the flyout popup surface.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.CornerRadius">
+            <summary>
+            Gets or sets the outer corner radius. Note that the inner halves are split
+            by a 1 px divider; the left half rounds its left corners only and the right
+            half rounds its right corners only using this radius.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.AppearanceProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.Appearance"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.Appearance">
+            <summary>
+            Gets or sets the visual appearance of the split button.
+            Set to <see cref="F:Fluence.Wpf.ControlAppearance.Accent"/> to apply the accent-colored variant;
+            the divider stroke will automatically switch to
+            <c>ControlStrokeColorOnAccentSecondaryBrush</c> per WinUI 3 canonical styling.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.SplitButton.IsFlyoutOpenProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.SplitButton.IsFlyoutOpen"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.SplitButton.IsFlyoutOpen">
+            <summary>
+            Gets a value indicating whether the secondary-half flyout popup is currently open.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.SplitButton.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.SplitButton.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.StackPanel">
+            <summary>
+            Stack panel with uniform spacing between children.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.StackPanel.SpacingProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.StackPanel.Spacing"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.StackPanel.Spacing">
+            <summary>
+            Gets or sets the uniform spacing between children.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.StackPanel.MeasureOverride(System.Windows.Size)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.StackPanel.ArrangeOverride(System.Windows.Size)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TabView">
+            <summary>
+            A <see cref="T:System.Windows.Controls.TabControl"/> aligned with the WinUI 3 TabView: per-tab close buttons, a trailing
+            "add" (+) button, horizontally scrollable tab strip with scroll navigation buttons, and
+            WinUI-styled selection indicator.
+            </summary>
+            <remarks>
+            <para>
+            <see cref="T:Fluence.Wpf.Controls.TabView"/> produces <see cref="T:Fluence.Wpf.Controls.TabViewItem"/> containers by default. Consumers can bind
+            to <see cref="P:System.Windows.Controls.ItemsControl.ItemsSource"/> and optionally supply an <see cref="P:System.Windows.Controls.ItemsControl.ItemTemplate"/>
+            to render header content for each item; the icon and close-button chrome are always supplied by the
+            container template.
+            </para>
+            <para>
+            Listen to <see cref="E:Fluence.Wpf.Controls.TabView.AddTabButtonClick"/> to create new tabs and to <see cref="E:Fluence.Wpf.Controls.TabView.TabCloseRequested"/>
+            to remove a tab; this control does not itself mutate the items collection so applications remain in
+            full control of their data model.
+            </para>
+            <para>
+            <c>PART_ScrollBackButton</c> and <c>PART_ScrollForwardButton</c> are automatically
+            shown or hidden based on whether the tab strip overflows the available width.
+            </para>
+            </remarks>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabView.IsAddTabButtonVisibleProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TabView.IsAddTabButtonVisible"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabView.TabWidthModeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TabView.TabWidthMode"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabView.CloseButtonOverlayModeProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TabView.CloseButtonOverlayMode"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabView.AddTabButtonClickEvent">
+            <summary>
+            Identifies the <see cref="E:Fluence.Wpf.Controls.TabView.AddTabButtonClick"/> routed event.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabView.TabCloseRequestedEvent">
+            <summary>
+            Identifies the <see cref="E:Fluence.Wpf.Controls.TabView.TabCloseRequested"/> routed event.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TabView.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.TabView"/> class and subscribes to child
+            <see cref="E:Fluence.Wpf.Controls.TabViewItem.CloseRequested"/> events for aggregation.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TabView.IsAddTabButtonVisible">
+            <summary>
+            Gets or sets whether the trailing add-tab (+) button is shown.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TabView.TabWidthMode">
+            <summary>
+            Gets or sets how tab widths are distributed in the tab strip.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TabView.CloseButtonOverlayMode">
+            <summary>
+            Gets or sets when per-tab close buttons are shown on this control's items.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.TabView.AddTabButtonClick">
+            <summary>
+            Raised when the user clicks the add-tab (+) button. Consumers typically insert a new item
+            into their items collection and optionally select it.
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.TabView.TabCloseRequested">
+            <summary>
+            Raised when the user clicks the close (×) button of a <see cref="T:Fluence.Wpf.Controls.TabViewItem"/>. The event
+            args include the container and the bound item; consumers decide whether to remove it.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TabView.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TabView.GetContainerForItemOverride">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TabView.IsItemItsOwnContainerOverride(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TabViewItem">
+            <summary>
+            A <see cref="T:System.Windows.Controls.TabItem"/> container used by <see cref="T:Fluence.Wpf.Controls.TabView"/> that renders an icon, a header,
+            and an optional close button aligned with the WinUI 3 TabView visual language.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabViewItem.IsClosableProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TabViewItem.IsClosable"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabViewItem.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TabViewItem.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TabViewItem.CloseRequestedEvent">
+            <summary>
+            Identifies the <see cref="E:Fluence.Wpf.Controls.TabViewItem.CloseRequested"/> routed event.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TabViewItem.IsClosable">
+            <summary>
+            Gets or sets whether the per-tab close button is shown for this item.
+            Note the effective visibility still follows the owning <see cref="P:Fluence.Wpf.Controls.TabView.CloseButtonOverlayMode"/>.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TabViewItem.Icon">
+            <summary>
+            Gets or sets the icon shown at the leading edge of the tab header.
+            Accepts any element (typically a <see cref="T:Fluence.Wpf.Controls.FontIcon"/> or <see cref="T:System.Windows.Controls.Image"/>).
+            </summary>
+        </member>
+        <member name="E:Fluence.Wpf.Controls.TabViewItem.CloseRequested">
+            <summary>
+            Raised when the user clicks the per-tab close button. The parent <see cref="T:Fluence.Wpf.Controls.TabView"/>
+            aggregates this into <see cref="E:Fluence.Wpf.Controls.TabView.TabCloseRequested"/> for convenience.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TabViewItem.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TabViewTabCloseRequestedEventArgs">
+            <summary>
+            Event data for <see cref="E:Fluence.Wpf.Controls.TabView.TabCloseRequested"/> and <see cref="E:Fluence.Wpf.Controls.TabViewItem.CloseRequested"/>.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TabViewTabCloseRequestedEventArgs.#ctor(System.Windows.RoutedEvent,System.Object,Fluence.Wpf.Controls.TabViewItem,System.Object)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.TabViewTabCloseRequestedEventArgs"/> class.
+            </summary>
+            <param name="routedEvent">The routed event being raised.</param>
+            <param name="source">The element raising the event.</param>
+            <param name="tab">The <see cref="T:Fluence.Wpf.Controls.TabViewItem"/> the user has asked to close.</param>
+            <param name="item">The bound data item, or the <see cref="T:Fluence.Wpf.Controls.TabViewItem"/> itself if no data was bound.</param>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TabViewTabCloseRequestedEventArgs.Tab">
+            <summary>
+            Gets the tab container the user asked to close.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TabViewTabCloseRequestedEventArgs.Item">
+            <summary>
+            Gets the data item bound to <see cref="P:Fluence.Wpf.Controls.TabViewTabCloseRequestedEventArgs.Tab"/>, or the tab itself when items are declared inline.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TextBlock">
+            <summary>
+            A Fluent Design enhanced TextBlock that supports the FluentTypography type ramp.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlock.TextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBlock.Text"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlock.TypographyProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBlock.Typography"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlock.TextWrappingProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBlock.TextWrapping"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlock.TextTrimmingProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBlock.TextTrimming"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBlock.Text">
+            <summary>
+            Gets or sets the text displayed by the inner <see cref="T:System.Windows.Controls.TextBlock"/>.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBlock.Typography">
+            <summary>
+            Gets or sets the Fluent typography style applied to the inner text.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBlock.TextWrapping">
+            <summary>
+            Gets or sets how text wraps within the inner <see cref="T:System.Windows.Controls.TextBlock"/>.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBlock.TextTrimming">
+            <summary>
+            Gets or sets how text is trimmed when it overflows the layout area.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlock.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TextBlockExtensions">
+            <summary>
+            Provides attached properties for extending TextBlock with Fluent Design features.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlockExtensions.TypographyProperty">
+            <summary>
+            Identifies the Typography attached property.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.GetTypography(System.Windows.DependencyObject)">
+            <summary>
+            Gets the typography style for the specified TextBlock.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.SetTypography(System.Windows.DependencyObject,Fluence.Wpf.FluentTypography)">
+            <summary>
+            Sets the typography style for the specified TextBlock.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlockExtensions.TextTrimmingProperty">
+            <summary>
+            Identifies the TextTrimming attached property.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.GetTextTrimming(System.Windows.DependencyObject)">
+            <summary>
+            Gets the value of the <see cref="F:Fluence.Wpf.Controls.TextBlockExtensions.TextTrimmingProperty"/> attached property for the specified object.
+            </summary>
+            <param name="obj">The target <see cref="T:System.Windows.Controls.TextBlock"/>.</param>
+            <returns>The requested text trimming mode.</returns>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.SetTextTrimming(System.Windows.DependencyObject,System.Windows.TextTrimming)">
+            <summary>
+            Sets the value of the <see cref="F:Fluence.Wpf.Controls.TextBlockExtensions.TextTrimmingProperty"/> attached property for the specified object.
+            </summary>
+            <param name="obj">The target <see cref="T:System.Windows.Controls.TextBlock"/>.</param>
+            <param name="value">The text trimming mode to apply.</param>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlockExtensions.IsTextSelectionEnabledProperty">
+            <summary>
+            Identifies the IsTextSelectionEnabled attached property.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.GetIsTextSelectionEnabled(System.Windows.DependencyObject)">
+            <summary>
+            Gets the value of the <see cref="F:Fluence.Wpf.Controls.TextBlockExtensions.IsTextSelectionEnabledProperty"/> attached property for the specified object.
+            </summary>
+            <param name="obj">The target <see cref="T:System.Windows.Controls.TextBlock"/>.</param>
+            <returns><c>true</c> if selection is enabled; otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.SetIsTextSelectionEnabled(System.Windows.DependencyObject,System.Boolean)">
+            <summary>
+            Sets the value of the <see cref="F:Fluence.Wpf.Controls.TextBlockExtensions.IsTextSelectionEnabledProperty"/> attached property for the specified object.
+            </summary>
+            <param name="obj">The target <see cref="T:System.Windows.Controls.TextBlock"/>.</param>
+            <param name="value"><c>true</c> to enable text selection; otherwise <c>false</c>.</param>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlockExtensions.PlaceholderTextProperty">
+            <summary>
+            Identifies the PlaceholderText attached property.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.GetPlaceholderText(System.Windows.DependencyObject)">
+            <summary>
+            Gets the placeholder text for the specified element.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.SetPlaceholderText(System.Windows.DependencyObject,System.String)">
+            <summary>
+            Sets the placeholder text for the specified element.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlockExtensions.ShowPlaceholderProperty">
+            <summary>
+            Identifies the ShowPlaceholder attached property.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.GetShowPlaceholder(System.Windows.DependencyObject)">
+            <summary>
+            Gets whether the placeholder should be shown.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.SetShowPlaceholder(System.Windows.DependencyObject,System.Boolean)">
+            <summary>
+            Sets whether the placeholder should be shown.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlockExtensions.IconProperty">
+            <summary>
+            Identifies the Icon attached property.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.GetIcon(System.Windows.DependencyObject)">
+            <summary>
+            Gets the icon for the specified element.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.SetIcon(System.Windows.DependencyObject,System.Object)">
+            <summary>
+            Sets the icon for the specified element.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBlockExtensions.IconPlacementProperty">
+            <summary>
+            Identifies the IconPlacement attached property.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.GetIconPlacement(System.Windows.DependencyObject)">
+            <summary>
+            Gets the icon placement for the specified element.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBlockExtensions.SetIconPlacement(System.Windows.DependencyObject,Fluence.Wpf.ElementPlacement)">
+            <summary>
+            Sets the icon placement for the specified element.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TextBox">
+            <summary>
+            A Fluent Design styled text box with placeholder, clear button, and icon support.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.PlaceholderTextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.PlaceholderText"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.PlaceholderText">
+            <summary>
+            Gets or sets the placeholder text displayed when the text box is empty.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.PlaceholderEnabledProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.PlaceholderEnabled"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.PlaceholderEnabled">
+            <summary>
+            Gets or sets whether the placeholder text is enabled.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.IconProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.Icon"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.Icon">
+            <summary>
+            Gets or sets the icon displayed in the text box.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.IconPlacementProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.IconPlacement"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.IconPlacement">
+            <summary>
+            Gets or sets the placement of the icon relative to the text.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.ClearButtonEnabledProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.ClearButtonEnabled"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.ClearButtonEnabled">
+            <summary>
+            Gets or sets whether the clear button is shown when the text box has content and focus.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the text box.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.HelperTextProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.HelperText"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.HelperText">
+            <summary>
+            Gets or sets the helper text displayed below the text box.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.ValidationMessageProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.ValidationMessage"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.ValidationMessage">
+            <summary>
+            Gets or sets the validation message displayed when a validation state is active.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TextBox.ValidationStateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.TextBox.ValidationState"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TextBox.ValidationState">
+            <summary>
+            Gets or sets the current validation state of the text box.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBox.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.Controls.TextBox"/> class and wires text-changed handling.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBox.OnPropertyChanged(System.Windows.DependencyPropertyChangedEventArgs)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TextBox.OnApplyTemplate">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TitleBar">
+            <summary>
+            A Fluent Design title bar control with optional back button, icon, title, and custom content area.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TitleBar.TitleProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.TitleBar.Title"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TitleBar.IconProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.TitleBar.Icon"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TitleBar.IsBackButtonVisibleProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.TitleBar.IsBackButtonVisible"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TitleBar.IsCompactProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.TitleBar.IsCompact"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TitleBar.CustomContentProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.TitleBar.CustomContent"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TitleBar.BackCommandProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.TitleBar.BackCommand"/> dependency property.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.TitleBar.BackCommandParameterProperty">
+            <summary>Identifies the <see cref="P:Fluence.Wpf.Controls.TitleBar.BackCommandParameter"/> dependency property.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TitleBar.Title">
+            <summary>Gets or sets the title text.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TitleBar.Icon">
+            <summary>Gets or sets the title bar icon content.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TitleBar.IsBackButtonVisible">
+            <summary>Gets or sets whether the back button is visible.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TitleBar.IsCompact">
+            <summary>Gets or sets whether the title bar uses compact height (32px vs 48px).</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TitleBar.CustomContent">
+            <summary>Gets or sets custom content displayed in the title bar drag region.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TitleBar.BackCommand">
+            <summary>Gets or sets the command invoked when the back button is clicked.</summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.TitleBar.BackCommandParameter">
+            <summary>Gets or sets the parameter for <see cref="P:Fluence.Wpf.Controls.TitleBar.BackCommand"/>.</summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ToggleButton">
+            <summary>
+            A Fluent Design styled ToggleButton with accent checked state.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ToggleButton.CornerRadiusProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ToggleButton.CornerRadius"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ToggleButton.AppearanceProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ToggleButton.Appearance"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ToggleButton.CornerRadius">
+            <summary>
+            Gets or sets the corner radius of the toggle button.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ToggleButton.Appearance">
+            <summary>
+            Gets or sets the visual appearance of the toggle button.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ToggleSwitch">
+            <summary>A toggle switch control with On/Off content.</summary>
+            <remarks>Inspired by WInUI's ToggleSwitch.</remarks>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.ToggleSwitch.OnCreateAutomationPeer">
+            <inheritdoc />
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ToggleSwitch.OnContentProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ToggleSwitch.OnContent"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ToggleSwitch.OnContent">
+            <summary>
+            Gets or sets the content displayed when the switch is on.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ToggleSwitch.OffContentProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ToggleSwitch.OffContent"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ToggleSwitch.OffContent">
+            <summary>
+            Gets or sets the content displayed when the switch is off.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ToggleSwitch.OnContentTemplateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ToggleSwitch.OnContentTemplate"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ToggleSwitch.OnContentTemplate">
+            <summary>
+            Gets or sets the data template for the on-state content.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ToggleSwitch.OffContentTemplateProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ToggleSwitch.OffContentTemplate"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ToggleSwitch.OffContentTemplate">
+            <summary>
+            Gets or sets the data template for the off-state content.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Controls.ToggleSwitch.HeaderContentProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Controls.ToggleSwitch.HeaderContent"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Controls.ToggleSwitch.HeaderContent">
+            <summary>
+            Gets or sets the header content displayed above the switch.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.ToolTip">
+            <summary>
+            A Fluent Design tooltip with a solid background, 8 px corner radius, and a
+            1 px flyout-stroke border. Displayed via the standard <see cref="T:System.Windows.Controls.ToolTipService"/>.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TreeView">
+            <summary>
+            A Fluent Design tree view with Fluent hover, selection, and expand/collapse visuals.
+            Items are represented by <see cref="T:Fluence.Wpf.Controls.TreeViewItem"/> containers.
+            Authority: WinUI 3 TreeView_themeresources.xaml.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TreeView.GetContainerForItemOverride">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TreeView.IsItemItsOwnContainerOverride(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Controls.TreeViewItem">
+            <summary>
+            A Fluent Design tree view item with full-row hover highlight, animated chevron,
+            and WinUI 3-canonical background brush states.
+            Authority: WinUI 3 TreeView_themeresources.xaml + TreeViewItem.xaml.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TreeViewItem.GetContainerForItemOverride">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Controls.TreeViewItem.IsItemItsOwnContainerOverride(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.Converters.NavigationViewMainContentConverter">
+            <summary>
+            Chooses <see cref="P:Fluence.Wpf.Controls.NavigationView.Content"/> when non-null; otherwise
+            <see cref="P:Fluence.Wpf.Controls.NavigationView.SelectedContent"/> so inline demos can pin a static host while
+            the gallery shell uses item-driven pages.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Converters.NavigationViewMainContentConverter.Convert(System.Object[],System.Type,System.Object,System.Globalization.CultureInfo)">
+            <inheritdoc />
+        </member>
+        <member name="M:Fluence.Wpf.Converters.NavigationViewMainContentConverter.ConvertBack(System.Object,System.Type[],System.Object,System.Globalization.CultureInfo)">
+            <inheritdoc />
+        </member>
+        <member name="T:Fluence.Wpf.ApplicationTheme">
+            <summary>
+            High-level theme selection for <see cref="T:Fluence.Wpf.ApplicationThemeManager"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ApplicationTheme.Light">
+            <summary>Light surfaces and text colors.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ApplicationTheme.Dark">
+            <summary>Dark surfaces and text colors.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ApplicationTheme.HighContrast">
+            <summary>High contrast theme for accessibility.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ApplicationTheme.Auto">
+            <summary>Follow Windows app theme setting (resolved to Light or Dark at runtime).</summary>
+        </member>
+        <member name="T:Fluence.Wpf.BackdropType">
+            <summary>
+            DWM backdrop material applied to a <see cref="T:Fluence.Wpf.Controls.FluenceWindow"/> non-client area on Windows 11.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.BackdropType.None">
+            <summary>No Mica/Acrylic; standard solid backdrop.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.BackdropType.Auto">
+            <summary>Let the library pick the best supported backdrop for the OS version.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.BackdropType.Mica">
+            <summary>Mica (layered tint over wallpaper).</summary>
+        </member>
+        <member name="F:Fluence.Wpf.BackdropType.Acrylic">
+            <summary>Acrylic blur.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.BackdropType.Tabbed">
+            <summary>Tabbed Mica for tabbed window groups (Windows 11).</summary>
+        </member>
+        <member name="T:Fluence.Wpf.BorderVariant">
+            <summary>
+            Predefined visual preset for <see cref="T:Fluence.Wpf.Controls.Border"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.BorderVariant.None">
+            <summary>No themed border styling.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.BorderVariant.Card">
+            <summary>Card-style border and background.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.BorderVariant.Subtle">
+            <summary>Subtle outline suitable for grouped content.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.BorderVariant.Divider">
+            <summary>Thin divider line between sections.</summary>
+        </member>
+        <member name="T:Fluence.Wpf.CardVariant">
+            <summary>
+            Visual style variant for <see cref="T:Fluence.Wpf.Controls.Card"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.CardVariant.Default">
+            <summary>Default card elevation and stroke.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.CardVariant.Outlined">
+            <summary>Outlined card with transparent fill.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.CardVariant.Filled">
+            <summary>Solid filled card surface.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.CardVariant.Subtle">
+            <summary>Low-contrast subtle card surface.</summary>
+        </member>
+        <member name="T:Fluence.Wpf.ControlAppearance">
+            <summary>
+            Specifies the visual appearance of a Fluent control.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ControlAppearance.Standard">
+            <summary>
+            Standard control appearance with default fill and elevation border.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ControlAppearance.Accent">
+            <summary>
+            Accent-colored appearance for primary actions.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ControlAppearance.Subtle">
+            <summary>
+            Subtle appearance with transparent rest state.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.CornerPreference">
+            <summary>
+            Rounded corner preference for top-level windows (DWM), used with <see cref="T:Fluence.Wpf.Controls.FluenceWindow"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.CornerPreference.Default">
+            <summary>OS default rounding.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.CornerPreference.DoNotRound">
+            <summary>Sharp corners.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.CornerPreference.Round">
+            <summary>Large radius.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.CornerPreference.RoundSmall">
+            <summary>Smaller radius.</summary>
+        </member>
+        <member name="T:Fluence.Wpf.ElementPlacement">
+            <summary>
+            Specifies the placement of an element relative to content.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ElementPlacement.Left">
+            <summary>
+            Element is placed to the left of the content.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ElementPlacement.Right">
+            <summary>
+            Element is placed to the right of the content.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.FluentTypography">
+            <summary>
+            Specifies the typography style for text elements following Windows 11 Fluent Design.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.None">
+            <summary>
+            No typography style applied.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.Caption">
+            <summary>
+            Caption text: 12px, Regular.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.Body">
+            <summary>
+            Body text: 14px, Regular.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.BodyStrong">
+            <summary>
+            Body strong text: 14px, SemiBold.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.BodyLarge">
+            <summary>
+            Body large text: 18px, Regular.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.Subtitle">
+            <summary>
+            Subtitle text: 20px, SemiBold.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.Title">
+            <summary>
+            Title text: 28px, SemiBold.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.TitleLarge">
+            <summary>
+            Title large text: 40px, Regular.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.FluentTypography.Display">
+            <summary>
+            Display text: 68px, SemiBold.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.InfoBadgeStyle">
+            <summary>
+            Visual severity style for <see cref="T:Fluence.Wpf.Controls.InfoBadge"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBadgeStyle.Attention">
+            <summary>Accent-colored attention badge.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBadgeStyle.Informational">
+            <summary>Informational badge.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBadgeStyle.Success">
+            <summary>Success (green) badge.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBadgeStyle.Critical">
+            <summary>Critical (red) badge.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBadgeStyle.Caution">
+            <summary>Caution (yellow) badge.</summary>
+        </member>
+        <member name="T:Fluence.Wpf.InfoBarSeverity">
+            <summary>
+            Specifies the severity level of an <see cref="T:Fluence.Wpf.Controls.InfoBar"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBarSeverity.Informational">
+            <summary>Informational message requiring attention.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBarSeverity.Success">
+            <summary>Operation completed successfully.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBarSeverity.Warning">
+            <summary>A non-critical warning condition.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.InfoBarSeverity.Error">
+            <summary>A critical error condition.</summary>
+        </member>
+        <member name="T:Fluence.Wpf.ListViewState">
+            <summary>
+            Specifies the view state for a ListView.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ListViewState.Default">
+            <summary>
+            Default list view with vertical items.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ListViewState.GridView">
+            <summary>
+            Grid view with items arranged in a grid.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.NavigationViewPaneDisplayMode">
+            <summary>
+            Specifies how the pane of a <see cref="T:Fluence.Wpf.Controls.NavigationView"/> is arranged.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.NavigationViewPaneDisplayMode.Left">
+            <summary>A vertical pane on the left side of the control.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.NavigationViewPaneDisplayMode.Top">
+            <summary>A horizontal pane across the top of the control.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.NavigationViewPaneDisplayMode.LeftCompact">
+            <summary>
+            A compact vertical pane that starts collapsed (icons only, 48px) and
+            expands as an overlay without pushing content.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.ProgressBarMode">
+            <summary>
+            Display mode for <see cref="T:Fluence.Wpf.Controls.ProgressBar"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ProgressBarMode.Standard">
+            <summary>Determinate progress between minimum and maximum.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ProgressBarMode.Indeterminate">
+            <summary>Indeterminate animation when value is unknown.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ProgressBarMode.StepProgress">
+            <summary>Segmented step progress display.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ProgressBarMode.Error">
+            <summary>Error state with critical-severity fill color.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ProgressBarMode.Paused">
+            <summary>Paused state with caution-severity fill color.</summary>
+        </member>
+        <member name="T:Fluence.Wpf.SpinButtonPlacementMode">
+            <summary>
+            Defines where spin buttons are placed relative to the <see cref="T:Fluence.Wpf.Controls.NumberBox"/> input.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.SpinButtonPlacementMode.Hidden">
+            <summary>
+            Spin buttons are not shown.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.SpinButtonPlacementMode.Compact">
+            <summary>
+            Spin buttons appear when the control is hovered or keyboard-focused.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.SpinButtonPlacementMode.Inline">
+            <summary>
+            Spin buttons are always visible.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.TabViewWidthMode">
+            <summary>
+            Controls how tab item widths are distributed inside a <see cref="T:Fluence.Wpf.Controls.TabView"/>.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.TabViewWidthMode.SizeToContent">
+            <summary>
+            Each tab sizes to its content up to a maximum width.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.TabViewWidthMode.Equal">
+            <summary>
+            All tabs share the available horizontal space equally.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.TabViewWidthMode.Compact">
+            <summary>
+            Selected tab sizes to content; unselected tabs collapse to a compact width showing the icon only when present.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.TabViewCloseButtonOverlayMode">
+            <summary>
+            Controls when the per-tab close button is shown.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.TabViewCloseButtonOverlayMode.Auto">
+            <summary>
+            The close button is shown on the selected tab and on hovered unselected tabs.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.TabViewCloseButtonOverlayMode.OnPointerOver">
+            <summary>
+            The close button is shown only when the tab is hovered.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.TabViewCloseButtonOverlayMode.Always">
+            <summary>
+            The close button is always visible on every tab.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.ValidationState">
+            <summary>
+            Validation visual state for text input controls.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.ValidationState.None">
+            <summary>No validation state applied.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ValidationState.Success">
+            <summary>Input is valid.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ValidationState.Warning">
+            <summary>Non-blocking validation warning.</summary>
+        </member>
+        <member name="F:Fluence.Wpf.ValidationState.Error">
+            <summary>Blocking validation error.</summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.AcrylicNoiseHelper.GetNoiseBrush">
+            <summary>
+            Returns a frozen, tiled ImageBrush containing a 128x128 procedural
+            luminosity-noise texture.  The brush is created once and cached.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.Helpers.GridLengthAnimation">
+            <summary>
+            Animates a <see cref="T:System.Windows.GridLength"/> dependency property (such as
+            <see cref="T:System.Windows.Controls.ColumnDefinition"/>.<c>Width</c> or <see cref="T:System.Windows.Controls.RowDefinition"/>.<c>Height</c>)
+            between two absolute pixel values using a <see cref="T:System.Windows.Media.Animation.IEasingFunction"/>.
+            </summary>
+            <remarks>
+            WPF ships no GridLength animator because <see cref="T:System.Windows.GridLength"/> is a struct with
+            a <c>GridUnitType</c>. This implementation interpolates only the numeric value and
+            preserves <see cref="F:System.Windows.GridUnitType.Pixel"/>, which is sufficient for navigation
+            pane expand / collapse transitions.
+            </remarks>
+        </member>
+        <member name="F:Fluence.Wpf.Helpers.GridLengthAnimation.FromProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Helpers.GridLengthAnimation.From"/> dependency property. A sentinel
+            <see cref="T:System.Windows.GridLength"/> with <see cref="T:System.Windows.GridUnitType"/> = <see cref="F:System.Windows.GridUnitType.Auto"/>
+            means "use the animated property's current value" (the standard WPF
+            <c>Storyboard.To</c>-only pattern). Consumers who want an explicit
+            starting width set <c>From</c> to a pixel value.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Helpers.GridLengthAnimation.ToProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Helpers.GridLengthAnimation.To"/> dependency property.
+            </summary>
+        </member>
+        <member name="F:Fluence.Wpf.Helpers.GridLengthAnimation.EasingFunctionProperty">
+            <summary>
+            Identifies the <see cref="P:Fluence.Wpf.Helpers.GridLengthAnimation.EasingFunction"/> dependency property.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Helpers.GridLengthAnimation.From">
+            <summary>
+            Gets or sets the starting value of the animation.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Helpers.GridLengthAnimation.To">
+            <summary>
+            Gets or sets the ending value of the animation.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Helpers.GridLengthAnimation.EasingFunction">
+            <summary>
+            Gets or sets the easing function applied to the animation.
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.Helpers.GridLengthAnimation.TargetPropertyType">
+            <summary>
+            Gets the <see cref="T:System.Type"/> of value produced by this animation
+            (<see cref="T:System.Windows.GridLength"/>).
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.GridLengthAnimation.CreateInstanceCore">
+            <summary>
+            Creates a new, frozen clone of this animation.
+            </summary>
+            <returns>A fresh <see cref="T:Fluence.Wpf.Helpers.GridLengthAnimation"/> instance.</returns>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.GridLengthAnimation.GetCurrentValue(System.Object,System.Object,System.Windows.Media.Animation.AnimationClock)">
+            <summary>
+            Returns the interpolated <see cref="T:System.Windows.GridLength"/> for the current animation time.
+            </summary>
+            <param name="defaultOriginValue">Default origin (unused; <see cref="P:Fluence.Wpf.Helpers.GridLengthAnimation.From"/> wins).</param>
+            <param name="defaultDestinationValue">Default destination (unused; <see cref="P:Fluence.Wpf.Helpers.GridLengthAnimation.To"/> wins).</param>
+            <param name="animationClock">Clock providing the normalised progress.</param>
+            <returns>The interpolated current <see cref="T:System.Windows.GridLength"/>.</returns>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.HsvColorHelper.ShouldUseWhiteText(System.Windows.Media.Color)">
+            <summary>
+            Determines whether white text should be used on a given background color.
+            Uses the same weighted formula as Windows (winaccent): (5*G + 2*R + B) &lt;= 1024.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.HsvColorHelper.BlendColors(System.Windows.Media.Color,System.Windows.Media.Color,System.Double)">
+            <summary>
+            Linear RGB blend matching Windows' palette generation.
+            <paramref name="intensity"/> is 0-100 weight toward <paramref name="c1"/>.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.HsvColorHelper.IncreaseSaturationHls(System.Windows.Media.Color,System.Double)">
+            <summary>
+            Boosts saturation in HLS color space by the given factor (capped at 1.0).
+            Matches winaccent's increase_saturation which uses Python colorsys HLS (not HSV).
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.HsvColorHelper.GenerateAccentRampWinaccent(System.Windows.Media.Color,System.Windows.Media.Color@,System.Windows.Media.Color@,System.Windows.Media.Color@,System.Windows.Media.Color@,System.Windows.Media.Color@,System.Windows.Media.Color@)">
+            <summary>
+            Generates accent ramp using winaccent's algorithm: linear RGB blend toward white/black,
+            then HLS saturation doubled. Produces shades matching the Windows AccentPalette blob.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.RegistryHelper.TryGetDwmAccentColor(System.Windows.Media.Color@)">
+            <summary>
+            Reads DWM AccentColor (ABGR DWORD) used for the active titlebar when ColorPrevalence is on.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.RegistryHelper.TryGetDwmAccentColorInactive(System.Windows.Media.Color@)">
+            <summary>
+            Reads DWM AccentColorInactive (ABGR DWORD) for the inactive titlebar.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.Helpers.RegistryHelper.TryGetColorizationBalance(System.Windows.Media.Color@,System.Int32@)">
+            <summary>
+            Reads DWM ColorizationColor (ARGB) and ColorizationColorBalance for Win10 border blending.
+            </summary>
+        </member>
+        <member name="T:Fluence.Wpf.SystemThemeWatcher">
+            <summary>
+            Subscribes a <see cref="T:System.Windows.Window"/> to high-priority settings change notifications (theme, accent) with debouncing.
+            </summary>
+            <remarks>
+            Used with <see cref="T:Fluence.Wpf.ApplicationThemeManager"/> to refresh resources when the user changes Windows light/dark or contrast while the app runs.
+            </remarks>
+        </member>
+        <member name="M:Fluence.Wpf.SystemThemeWatcher.Watch(System.Windows.Window)">
+            <summary>
+            Begins watching the specified window for system theme and accent changes.
+            </summary>
+            <param name="window">The WPF window to associate with the watcher. Must not be <c>null</c>.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="window"/> is <c>null</c>.</exception>
+        </member>
+        <member name="M:Fluence.Wpf.SystemThemeWatcher.UnWatch(System.Windows.Window)">
+            <summary>
+            Stops watching the specified window and removes Win32 hooks.
+            </summary>
+            <param name="window">The window previously passed to <see cref="M:Fluence.Wpf.SystemThemeWatcher.Watch(System.Windows.Window)"/>.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="window"/> is <c>null</c>.</exception>
+        </member>
+        <member name="T:Fluence.Wpf.ThemeChangedEventArgs">
+            <summary>
+            Provides data for the <see cref="E:Fluence.Wpf.ApplicationThemeManager.Changed"/> event.
+            </summary>
+        </member>
+        <member name="M:Fluence.Wpf.ThemeChangedEventArgs.#ctor(Fluence.Wpf.ApplicationTheme,System.Windows.Media.Color)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fluence.Wpf.ThemeChangedEventArgs"/> class.
+            </summary>
+            <param name="theme">The resolved application theme after the change.</param>
+            <param name="accentColor">The accent color applied with the theme.</param>
+        </member>
+        <member name="P:Fluence.Wpf.ThemeChangedEventArgs.Theme">
+            <summary>
+            Gets the resolved theme (Light, Dark, HighContrast, or logical Auto resolved to a concrete theme).
+            </summary>
+        </member>
+        <member name="P:Fluence.Wpf.ThemeChangedEventArgs.AccentColor">
+            <summary>
+            Gets the accent color associated with this theme application.
+            </summary>
+        </member>
+    </members>
+</doc>
