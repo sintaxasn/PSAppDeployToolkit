@@ -23,7 +23,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             UpdateProgressImpl(options.ProgressMessageText, options.ProgressDetailMessageText, options.ProgressPercentage);
             if (_dialogPosition != DialogPosition.Oobe || (!DeviceUtilities.IsOOBEComplete() && !_dialogAllowMove))
             {
-                SetMinimizeButtonAvailability(true);
+                IsMinimizeButtonVisible = Visibility.Visible;
             }
             ProgressStackPanel.Visibility = Visibility.Visible;
         }

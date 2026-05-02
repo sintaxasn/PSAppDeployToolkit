@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -104,20 +104,17 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 _dialogAllowMove = options.DialogAllowMove.Value;
             }
-            if (_dialogAllowMove)
-            {
-                MouseLeftButtonDown += (sender, e) => DragMove();
-            }
+            IsMoveable = _dialogAllowMove;
 
             // Minimize caption-button support is off by default to preserve existing dialog behavior;
             // callers (and PSAppDeployToolkit's -AllowMinimize) must explicitly opt in by setting
             // DialogAllowMinimize=true in BaseDialogOptions. Because the base XAML for all fluent
             // dialogs uses ResizeMode="NoResize" (which normally collapses the minimize button), we
-            // rely on FluenceWindow's explicit-DP override behavior: assigning MinimizeButtonAvailability
-            // and IsMinimizable here takes precedence over the ResizeMode-derived defaults.
+            // rely on FluenceWindow's explicit-DP override behavior: assigning IsMinimizeButtonVisible
+            // here takes precedence over the ResizeMode-derived defaults.
             if (options.DialogAllowMinimize == true)
             {
-                SetMinimizeButtonAvailability(true);
+                IsMinimizeButtonVisible = Visibility.Visible;
             }
 
             WindowStartupLocation = WindowStartupLocation.Manual;
@@ -221,31 +218,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             _persistTimer?.Stop();
             _expiryTimer?.Stop();
             Dispatcher.Invoke(Close);
-        }
-
-        /// <summary>
-        /// Processes Windows messages for the associated window and allows for custom handling of specific messages.
-        /// </summary>
-        /// <remarks>Override this method to implement custom message handling logic for the window. If
-        /// <paramref name="handled"/> is set to <see langword="true"/>, the message will not be passed to the default
-        /// window procedure.</remarks>
-        /// <param name="hwnd">The handle to the window that received the message.</param>
-        /// <param name="msg">The message identifier that specifies the type of message being sent.</param>
-        /// <param name="wParam">Additional message-specific information. The meaning depends on the value of the <paramref name="msg"/>
-        /// parameter.</param>
-        /// <param name="lParam">Additional message-specific information. The meaning depends on the value of the <paramref name="msg"/>
-        /// parameter.</param>
-        /// <param name="handled">When set to <see langword="true"/>, indicates that the message has been handled and should not be processed
-        /// further.</param>
-        /// <returns>A value that indicates the result of the message processing. Typically, this is a default value indicating
-        /// no specific result.</returns>
-        private nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
-        {
-            if (msg == (uint)WINDOW_MESSAGE.WM_SYSCOMMAND && ((int)wParam & 0xFFF0) == (uint)WM_SYSCOMMAND.SC_MOVE && !_dialogAllowMove)
-            {
-                handled = true;
-            }
-            return default;
         }
 
         /// <summary>
@@ -367,26 +339,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Handles the SizeChanged event for the FluentDialog window, repositioning the window as needed and ensuring
-        /// window movement is restricted appropriately.
+        /// Handles the SizeChanged event for the FluentDialog window, repositioning the window as needed.
         /// </summary>
-        /// <remarks>This method repositions the window without animations and sets up a window procedure
-        /// hook to prevent the window from being moved by the user if the hook has not already been
-        /// established.</remarks>
+        /// <remarks>This method repositions the window without animations.</remarks>
         /// <param name="sender">The source of the event, typically the FluentDialog instance whose size has changed.</param>
         /// <param name="e">An object that contains the event data, including information about the new size of the window.</param>
         private void FluentDialog_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             // Only reposition window - no animations
             PositionWindow();
-
-            // Add hook to prevent window movement
-            if (_hwndSource is null)
-            {
-                WindowInteropHelper helper = new(this);
-                _hwndSource = HwndSource.FromHwnd(helper.Handle);
-                _hwndSource.AddHook(WndProc);
-            }
         }
 
         /// <summary>
@@ -888,16 +849,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Sets the minimize button availability.
-        /// </summary>
-        /// <param name="enabled">Whether the minimize button should be enabled.</param>
-        private protected void SetMinimizeButtonAvailability(bool enabled)
-        {
-            MinimizeButtonAvailability = enabled ? Visibility.Visible : Visibility.Collapsed;
-            IsMinimizable = enabled;
-        }
-
-        /// <summary>
         /// Updates the layout of the action buttons based on which buttons are visible.
         /// </summary>
         private void UpdateButtonLayout()
@@ -1101,14 +1052,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private double _startingLeft;
 
         /// <summary>
-        /// Represents the underlying window handle source for a WPF application.
-        /// </summary>
-        /// <remarks>This field is used to manage the interoperation between WPF and Win32 by providing
-        /// access to the window handle source. It is typically used in scenarios involving advanced window management
-        /// or interoperation with native code.</remarks>
-        private HwndSource? _hwndSource;
-
-        /// <summary>
         /// The application tray icon bitmap source, if AppTaskbarIconImage was specified.
         /// </summary>
         private readonly BitmapSource? _appTaskbarIcon;
@@ -1212,8 +1155,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
 
                 // Clean up resources.
                 ApplicationThemeManager.Changed -= ThemeManager_ActualThemeChanged;
-                _hwndSource?.RemoveHook(WndProc);
-                _hwndSource?.Dispose();
                 _countdownTimer?.Dispose();
             }
             Disposed = true;
