@@ -100,7 +100,7 @@ namespace PSADT.UserInterface.TestHarness
 
             // Set up parameters for testing
             string appTitle = "Adobe Creative Suite 2.1.45 EN";
-            string subtitle = "EQ Bank Global IT Services - App Install";
+            string subtitle = "EQ Bank Global IT Services - App Installation";
             string appIconImage = (string?)assetsTable["Logo"]!;
             string appIconDarkImage = (string?)assetsTable["Logo"]!;
             string appBannerImage = (string?)assetsTable["Banner"]!;
@@ -109,6 +109,7 @@ namespace PSADT.UserInterface.TestHarness
             // DialogPosition dialogPosition = DialogPosition.Center;
             bool dialogTopMost = true;
             bool dialogAllowMove = true;
+            bool dialogAllowMinimize = true;
             DeploymentType deploymentType = DeploymentType.Install;
 
             ReadOnlyCollection<ProcessDefinition> appsToClose = new(
@@ -143,8 +144,8 @@ This is [bold]bold text[/bold] and [italic]italic text[/italic].
 Nested tags: [bold]Bold plus [italic]italic inside[/italic], with an [accent]accent[/accent][/bold].
 Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][/accent][/bold].";
 
-            uint deferralsRemaining = 3;
-            DateTime deferralDeadline = DateTime.Parse("2025-09-20T13:00:00", CultureInfo.InvariantCulture);
+            uint deferralsRemaining = 99;
+            DateTime deferralDeadline = DateTime.Parse("2026-06-04T13:00:00", CultureInfo.InvariantCulture);
 
             // DateTime? deferralDeadline = null;
             string progressMessageText = "Performing [accent]pre-flight checks[/accent]…";
@@ -176,6 +177,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 //{ "FluentAccentColor", ValueTypeConverter.ToInt(0xFF107C10) }, // Accent Color: Green #107C10
                 { "DialogPosition", dialogPosition },
                 { "DialogTopMost", dialogTopMost },
+                { "DialogAllowMinimize", dialogAllowMinimize },
                 { "DialogAllowMove", dialogAllowMove },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
@@ -185,11 +187,11 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "CountdownDuration", countdownDuration },
                 { "DeferralsRemaining", deferralsRemaining },
                 { "DeferralDeadline", deferralDeadline },
-                { "DialogAllowMinimize", true },
                 { "CustomMessageText", customMessageText },
                 { "Language", CultureInfo.CurrentCulture },
                 { "Strings", (Hashtable)stringTable["CloseAppsPrompt"]! },
             };
+
             ProgressDialogOptions progressDialogOptions = new(new Hashtable()
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
@@ -197,6 +199,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "DialogPosition", dialogPosition },
                 { "DialogTopMost", dialogTopMost },
                 { "DialogAllowMove", dialogAllowMove },
+                { "DialogAllowMinimize", dialogAllowMinimize },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -214,6 +217,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "DialogPosition", dialogPosition },
                 { "DialogTopMost", dialogTopMost },
                 { "DialogAllowMove", dialogAllowMove },
+                { "DialogAllowMinimize", dialogAllowMinimize },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -232,10 +236,11 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             ListSelectionDialogOptions listSelectionDialogOptions = new(new Hashtable()
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF00D326) }, // Accent Color: Blue #00D326
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF2AB243) }, // Accent Color: Blue #00D326
                 { "DialogPosition", dialogPosition },
                 { "DialogTopMost", dialogTopMost },
                 { "DialogAllowMove", dialogAllowMove },
+                { "DialogAllowMinimize", dialogAllowMinimize },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -259,6 +264,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "DialogPosition", dialogPosition },
                 { "DialogTopMost", dialogTopMost },
                 { "DialogAllowMove", dialogAllowMove },
+                { "DialogAllowMinimize", dialogAllowMinimize },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -276,10 +282,11 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             Hashtable restartDialogOptions = new()
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFE3008C) }, // Accent Color: Purple #E3008C
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF9C266F) }, // Accent Color: Purple #E3008C
                 { "DialogPosition", dialogPosition },
                 { "DialogTopMost", dialogTopMost },
                 { "DialogAllowMove", dialogAllowMove },
+                { "DialogAllowMinimize", dialogAllowMinimize },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
