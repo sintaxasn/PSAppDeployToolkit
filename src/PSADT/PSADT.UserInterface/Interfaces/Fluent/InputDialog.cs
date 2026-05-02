@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using PSADT.UserInterface.DialogOptions;
@@ -17,17 +19,18 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="options">Mandatory options needed to construct the window.</param>
         internal InputDialog(InputDialogOptions options) : base(options, InputDialogResult.DefaultResult)
         {
-            // Enable input box within the dialog
             InputBoxStackPanel.Visibility = Visibility.Visible;
             SetDefaultButton(ButtonLeft);
             SetAccentButton(ButtonLeft);
             SetCancelButton(ButtonRight);
 
-            // Configure based on secure input mode.
             if (_secureInput = options.SecureInput)
             {
                 InputBoxText.Visibility = Visibility.Collapsed;
                 InputBoxPassword.Visibility = Visibility.Visible;
+                DependencyPropertyDescriptor
+                    .FromProperty(Fluence.Wpf.Controls.PasswordBox.PasswordProperty, typeof(Fluence.Wpf.Controls.PasswordBox))
+                    ?.AddValueChanged(InputBoxPassword, OnInputChanged);
                 _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
                 {
                     _ = InputBoxPassword.Focus();
@@ -37,12 +40,30 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             else
             {
                 InputBoxText.Text = options.InitialInputText;
+                InputBoxText.TextChanged += OnTextInputChanged;
                 _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
                 {
                     _ = InputBoxText.Focus();
                     InputBoxText.SelectAll();
                 });
             }
+
+            UpdateContinueButtonState();
+        }
+
+        private void OnTextInputChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateContinueButtonState();
+        }
+
+        private void OnInputChanged(object? sender, EventArgs e)
+        {
+            UpdateContinueButtonState();
+        }
+
+        private void UpdateContinueButtonState()
+        {
+            ButtonLeft.IsEnabled = !string.IsNullOrWhiteSpace(CurrentInputValue);
         }
 
         /// <summary>

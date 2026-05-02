@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -25,25 +25,19 @@ using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
 using PSADT.Utilities;
 using Fluence.Wpf;
+using Fluence.Wpf.Controls;
+using Button = Fluence.Wpf.Controls.Button;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
     /// <summary>
     /// Unified dialog for PSAppDeployToolkit that consolidates all dialog types into one
     /// </summary>
-    internal abstract partial class FluentDialog : Fluence.Wpf.Controls.FluentWindow, IBaseDialog
+    internal abstract partial class FluentDialog : FluenceWindow, IBaseDialog
     {
         /// <summary>
         /// Static constructor to set up the theme and resources for the dialog.
         /// </summary>
-        static FluentDialog()
-        {
-            ApplicationThemeManager.Apply(
-                ApplicationTheme.Auto,
-                BackdropType.Acrylic,
-                updateAccent: true);
-            ApplicationThemeManager.EnableInkoreCompatibility(true);
-        }
 
         /// <summary>
         /// Initializes a new instance of the FluentDialog class with the specified dialog options, result, and optional
@@ -72,8 +66,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 ArgumentException.ThrowIfNullOrWhiteSpace(customMessageText);
             }
 
+            // Initialize the theme and accent color for the dialog based on the provided options, defaulting to automatic theming and accent if not specified.
+            ApplicationThemeManager.Apply(ApplicationTheme.Auto, BackdropType.Acrylic, true);
+
             // Initialize the window
             InitializeComponent();
+
+            // Apply ADT-specific background colors based on the resolved system theme.
+            // CurrentTheme is Auto after Apply(); detect actual system theme for initial colors.
+            ApplyAdtThemeColors(DetectSystemTheme());
 
             // If the accent color is passed through, update via ThemeManager
             if (options.FluentAccentColor is not null)
@@ -107,6 +108,18 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 MouseLeftButtonDown += (sender, e) => DragMove();
             }
+
+            // Minimize caption-button support is off by default to preserve existing dialog behavior;
+            // callers (and PSAppDeployToolkit's -AllowMinimize) must explicitly opt in by setting
+            // DialogAllowMinimize=true in BaseDialogOptions. Because the base XAML for all fluent
+            // dialogs uses ResizeMode="NoResize" (which normally collapses the minimize button), we
+            // rely on FluenceWindow's explicit-DP override behavior: assigning MinimizeButtonAvailability
+            // and IsMinimizable here takes precedence over the ResizeMode-derived defaults.
+            if (options.DialogAllowMinimize == true)
+            {
+                SetMinimizeButtonAvailability(true);
+            }
+
             WindowStartupLocation = WindowStartupLocation.Manual;
             Topmost = options.DialogTopMost;
 
@@ -152,6 +165,9 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 { ApplicationTheme.Light, GetIcon(options.AppIconImage) },
                 { ApplicationTheme.Dark, GetIcon(options.AppIconDarkImage ?? options.AppIconImage) },
+                { ApplicationTheme.HighContrast, GetIcon(options.AppIconImage) },
+                { ApplicationTheme.Auto, GetIcon(options.AppIconImage) },
+
             });
             ApplicationThemeManager.Changed += ThemeManager_ActualThemeChanged;
             SetDialogIcon();
@@ -413,6 +429,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private void ThemeManager_ActualThemeChanged(object? sender, ThemeChangedEventArgs e)
         {
             SetDialogIcon();
+            ApplyAdtThemeColors(e.Theme);
         }
 
         /// <summary>
@@ -454,7 +471,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// content is added.</param>
         /// <param name="message">The message string containing text and formatting tags to be processed. If the message is null or consists
         /// only of whitespace, no formatting is applied.</param>
-        private protected void FormatMessageWithHyperlinks(TextBlock textBlock, string message)
+        private protected void FormatMessageWithHyperlinks(System.Windows.Controls.TextBlock textBlock, string message)
         {
             // Don't waste time on an empty string.
             textBlock.Inlines.Clear();
@@ -495,7 +512,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="textBlock">The TextBlock to add content to.</param>
         /// <param name="match">The regex match to process.</param>
         /// <param name="formattingStack">The current formatting context stack.</param>
-        private void ProcessFormattingTag(TextBlock textBlock, Match match, Stack<FormattingContext> formattingStack)
+        private void ProcessFormattingTag(System.Windows.Controls.TextBlock textBlock, Match match, Stack<FormattingContext> formattingStack)
         {
             if (match.Groups["UrlLinkSimple"].Success)
             {
@@ -568,7 +585,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="textBlock">The TextBlock to add text to.</param>
         /// <param name="text">The text content to add.</param>
         /// <param name="formattingStack">The current formatting context stack.</param>
-        private static void AddFormattedText(TextBlock textBlock, string text, Stack<FormattingContext> formattingStack)
+        private static void AddFormattedText(System.Windows.Controls.TextBlock textBlock, string text, Stack<FormattingContext> formattingStack)
         {
             // Check for null only, not whitespace - we need to preserve whitespace-only
             // content (including line breaks) between formatting tags.
@@ -608,7 +625,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="textBlock">The TextBlock to add the hyperlink to.</param>
         /// <param name="url">The URL to navigate to when clicked.</param>
         /// <param name="displayText">The text to display for the hyperlink.</param>
-        private void ProcessUrlLink(TextBlock textBlock, string url, string displayText)
+        private void ProcessUrlLink(System.Windows.Controls.TextBlock textBlock, string url, string displayText)
         {
             // Ensure the URL has a scheme for Process.Start
             string navigateUrl = url;
@@ -625,6 +642,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                     NavigateUri = uri,
                     ToolTip = $"Open link: {url}"
                 };
+                link.SetResourceReference(ForegroundProperty, "AccentTextFillColorPrimaryBrush");
                 link.RequestNavigate += Hyperlink_RequestNavigate;
                 textBlock.Inlines.Add(link);
             }
@@ -643,7 +661,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="button">The button to which the accent style will be applied. This parameter must not be null.</param>
         private protected static void SetAccentButton(Button button)
         {
-            button.SetResourceReference(StyleProperty, "AccentButtonStyle");
+            button.Appearance = ControlAppearance.Accent;
         }
 
         /// <summary>
@@ -870,12 +888,13 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Sets the minimize button availability based on specific conditions.
+        /// Sets the minimize button availability.
         /// </summary>
-        /// <param name="override">The desired button override state.</param>
-        private protected void SetMinimizeButtonAvailability(CaptionButtonOverride @override)
+        /// <param name="enabled">Whether the minimize button should be enabled.</param>
+        private protected void SetMinimizeButtonAvailability(bool enabled)
         {
-            MinimizeButtonOverride = @override;
+            MinimizeButtonAvailability = enabled ? Visibility.Visible : Visibility.Collapsed;
+            IsMinimizable = enabled;
         }
 
         /// <summary>
@@ -1106,6 +1125,50 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Dialog icon cache for improved performance
         /// </summary>
         private static readonly Dictionary<string, BitmapSource> _dialogIconCache = [];
+
+        /// <summary>
+        /// Updates the ADT-specific background brushes (defined inline in XAML) to match the resolved theme.
+        /// Because the XAML elements reference these brushes via DynamicResource, changing
+        /// <see cref="SolidColorBrush.Color"/> triggers an immediate visual update.
+        /// </summary>
+        private void ApplyAdtThemeColors(ApplicationTheme resolvedTheme)
+        {
+            bool isDark = resolvedTheme != ApplicationTheme.Light;
+
+            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0x9A, 0x29, 0x29, 0x29) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
+            SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x36, 0x36, 0x36) : Color.FromArgb(0xFD, 0xF6, 0xF6, 0xF6));
+            SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7A, 0x48, 0x48, 0x48) : Color.FromArgb(0x7A, 0xEA, 0xEA, 0xEA));
+        }
+
+        private void SetBrushColor(string key, Color color)
+        {
+            Resources[key] = new SolidColorBrush(color);
+        }
+
+        private static ApplicationTheme DetectSystemTheme()
+        {
+            if (SystemParameters.HighContrast)
+            {
+                return ApplicationTheme.HighContrast;
+            }
+
+            try
+            {
+                using Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key?.GetValue("AppsUseLightTheme") is int val && val == 1)
+                {
+                    return ApplicationTheme.Light;
+                }
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+
+            return ApplicationTheme.Dark;
+        }
 
         /// <summary>
         /// Dispose managed resources
