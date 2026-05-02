@@ -1089,7 +1089,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             bool isDark = resolvedTheme != ApplicationTheme.Light;
 
-            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0x9A, 0x29, 0x29, 0x29) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
+            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0xA3, 0x10, 0x10, 0x10) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
             SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x36, 0x36, 0x36) : Color.FromArgb(0xFD, 0xF6, 0xF6, 0xF6));
             SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7A, 0x48, 0x48, 0x48) : Color.FromArgb(0x7A, 0xEA, 0xEA, 0xEA));
         }
