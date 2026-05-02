@@ -19,7 +19,6 @@ using PSADT.UserInterface.DialogState;
 using PSADT.UserInterface.Utilities;
 using PSAppDeployToolkit.Logging;
 using Windows.Win32;
-using Fluence.Wpf;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
@@ -163,11 +162,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             SetDefaultButton(ButtonLeft);
             SetAccentButton(ButtonLeft);
 
-            // Allow the dialog to be minimized if specified.
-            if (options.DialogAllowMinimize)
-            {
-                SetMinimizeButtonAvailability(CaptionButtonOverride.Enable);
-            }
+            // DialogAllowMinimize wiring is now performed centrally in the FluentDialog base
+            // constructor using the promoted BaseDialogOptions.DialogAllowMinimize property.
 
             // Set up/process optional values.
             if (state.RunningProcessService is not null)
