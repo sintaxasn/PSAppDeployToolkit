@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -106,11 +106,10 @@ namespace PSADT.UserInterface.TestHarness
             string appBannerImage = (string?)assetsTable["Banner"]!;
             // var FluentAccentColor = ValueTypeConverter.ToInt(0xFF01C9D9); // Cyan
             const DialogPosition dialogPosition = DialogPosition.BottomRight;
-            // const DialogPosition dialogPosition = DialogPosition.Center;
-            const bool dialogTopMost = true;
+            const bool dialogTopMost = false;
             const bool dialogAllowMove = true;
             const bool dialogAllowMinimize = true;
-            DeploymentType deploymentType = DeploymentType.Install;
+            const DeploymentType deploymentType = DeploymentType.Install;
 
             ReadOnlyCollection<ProcessDefinition> appsToClose = new(
             [
