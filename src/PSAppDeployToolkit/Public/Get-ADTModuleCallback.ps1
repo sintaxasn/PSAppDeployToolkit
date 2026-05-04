@@ -11,22 +11,22 @@ function Get-ADTModuleCallback
         Returns all callbacks from the nominated hooking point.
 
     .DESCRIPTION
-        This function returns all callbacks from the nominated hooking point.
+        The `Get-ADTModuleCallback` function returns all callbacks from the nominated hooking point.
 
     .PARAMETER Hookpoint
         The hook point to return the callbacks for.
 
-        Valid hookpoints are:
-        * OnInit (The callback is executed before the module is initialized)
-        * OnStart (The callback is executed before the first deployment session is opened)
-        * PreOpen (The callback is executed before a deployment session is opened)
-        * PostOpen (The callback is executed after a deployment session is opened)
-        * OnLogEntry (The callback is executed after a log entry has been written)
-        * OnDefer (The callback is executed when a user defers the active deployment)
-        * PreClose (The callback is executed before the deployment session is closed)
-        * PostClose (The callback is executed after the deployment session is closed)
-        * OnFinish (The callback is executed before the last deployment session is closed)
-        * OnExit (The callback is executed after the last deployment session is closed)
+        Valid values for this parameter are:
+        * `OnInit`: The callback is executed before the module is initialized in `Initialize-ADTModule`.
+        * `OnStart`: The callback is executed before the first deployment session is opened.
+        * `PreOpen`: The callback is executed before a deployment session is opened.
+        * `PostOpen`: The callback is executed after a deployment session is opened.
+        * `OnLogEntry`: The callback is executed after a log entry has been written.
+        * `OnDefer`: The callback is executed when a user defers the active deployment.
+        * `PreClose`: The callback is executed before the deployment session is closed.
+        * `PostClose`: The callback is executed after the deployment session is closed.
+        * `OnFinish`: The callback is executed before the last deployment session is closed.
+        * `OnExit`: The callback is executed after the last deployment session is closed.
 
     .INPUTS
         None
@@ -34,9 +34,9 @@ function Get-ADTModuleCallback
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        None
+        System.Collections.ObjectModel.ReadOnlyCollection[System.Management.Automation.CommandInfo]
 
-        This function does not generate any output.
+        The callback commands for the hookpoint specified.
 
     .EXAMPLE
         Get-ADTModuleCallback -Hookpoint PostOpen
@@ -58,6 +58,7 @@ function Get-ADTModuleCallback
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Collections.ObjectModel.ReadOnlyCollection[System.Management.Automation.CommandInfo]])]
     param
     (
         [Parameter(Mandatory = $true)]

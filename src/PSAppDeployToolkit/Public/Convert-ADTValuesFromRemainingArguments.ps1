@@ -11,7 +11,7 @@ function Convert-ADTValuesFromRemainingArguments
         Converts the collected values from a ValueFromRemainingArguments parameter value into a dictionary or PowerShell.exe command line arguments.
 
     .DESCRIPTION
-        This function converts the collected values from a ValueFromRemainingArguments parameter value into a dictionary or PowerShell.exe command line arguments.
+        The `Convert-ADTValuesFromRemainingArguments` function converts the collected values from a ValueFromRemainingArguments parameter value into a dictionary or PowerShell.exe command line arguments.
 
     .PARAMETER RemainingArguments
         The collected values to enumerate and process into a dictionary.
@@ -29,7 +29,7 @@ function Convert-ADTValuesFromRemainingArguments
     .EXAMPLE
         Convert-ADTValuesFromRemainingArguments -RemainingArguments $args
 
-        Converts an $args array into a $PSBoundParameters-compatible dictionary.
+        Converts an `$args` array into a $PSBoundParameters-compatible dictionary.
 
     .NOTES
         An active ADT session is NOT required to use this function.

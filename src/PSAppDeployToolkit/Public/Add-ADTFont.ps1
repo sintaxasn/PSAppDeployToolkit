@@ -8,10 +8,10 @@ function Add-ADTFont
 {
     <#
     .SYNOPSIS
-        Installs a font file to the system.
+        Installs font files to the system.
 
     .DESCRIPTION
-        Installs a font file to the system by copying it to the Windows Fonts directory, registering it with the system, and creating the registry entry.
+        The `Add-ADTFont` function installs font files to the system by copying them to the Windows Fonts directory, registering them with the system, and creating the appropriate registry entry(s).
 
         Supports .ttf, .ttc, and .otf file types.
 
@@ -24,8 +24,12 @@ function Add-ADTFont
     .INPUTS
         None
 
+        You cannot pipe objects to this function.
+
     .OUTPUTS
         None
+
+        This function does not generate any output.
 
     .EXAMPLE
         Add-ADTFont -Path "$($adtSession.DirFiles)\MyFont.ttf"
@@ -116,7 +120,7 @@ function Add-ADTFont
                             # Register font resource and set up the font name correctly in the registry.
                             $null = [PSADT.Utilities.FontUtilities]::AddFont($destPath)
                             $regName = "$([PSADT.Utilities.FontUtilities]::GetFontTitle($destPath))$($fontTypes[$extension])"
-                            Set-ADTRegistryKey -Key $fontsRegKeyPath -Name $regName -Value $fileItem.Name -InformationAction SilentlyContinue
+                            Set-ADTRegistryKey -LiteralPath $fontsRegKeyPath -Name $regName -Value $fileItem.Name -InformationAction SilentlyContinue
                             Write-ADTLogEntry -Message "Successfully installed font [$($fileItem.Name)] as [$regName]."
                         }
                         elseif (Test-Path -LiteralPath $resolvedPath -PathType Container)

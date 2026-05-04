@@ -11,7 +11,7 @@ function New-ADTZipFile
         Create a new zip archive or add content to an existing archive.
 
     .DESCRIPTION
-        Create a new zip archive or add content to an existing archive by using PowerShell's Compress-Archive.
+        The `New-ADTZipFile` function creates a new zip archive or add content to an existing archive by using PowerShell's Compress-Archive.
 
     .PARAMETER Path
         One or more paths to compress. Supports wildcards.
@@ -24,6 +24,11 @@ function New-ADTZipFile
 
     .PARAMETER CompressionLevel
         The level of compression to apply to the zip file.
+
+        Valid values for this parameter are:
+        - `Fastest`: Use the fastest compression method available to reduce processing time. Faster compression can result in larger file sizes.
+        - `NoCompression`: Doesn't compress the source files.
+        - `Optimal`: Processing time is dependent on file size.
 
     .PARAMETER Update
         Specifies whether to update an existing zip file or not.
@@ -50,7 +55,7 @@ function New-ADTZipFile
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -146,7 +151,7 @@ function New-ADTZipFile
                     {
                         try
                         {
-                            $null = Remove-Item -LiteralPath $Directory -Recurse -Force
+                            $null = Remove-Item -LiteralPath $sourcePath -Recurse -Force
                         }
                         catch
                         {

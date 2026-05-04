@@ -11,7 +11,7 @@ function Remove-ADTEnvironmentVariable
         Removes the specified environment variable.
 
     .DESCRIPTION
-        This function removes the specified environment variable.
+        The `Remove-ADTEnvironmentVariable` function removes the specified environment variable.
 
     .PARAMETER Variable
         The variable to remove.
@@ -42,7 +42,7 @@ function Remove-ADTEnvironmentVariable
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

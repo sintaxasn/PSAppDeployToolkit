@@ -11,7 +11,7 @@ function Remove-ADTIniValue
         Opens an INI file and removes the specified key or section.
 
     .DESCRIPTION
-        Opens an INI file and removes the specified key or section.
+        The `Remove-ADTIniValue` function opens an INI file and removes the specified key or section.
 
         Please note that the INI file provided cannot have a byte order mark (BOM) present as the underlying Win32 API cannot process it correctly.
 
@@ -47,7 +47,7 @@ function Remove-ADTIniValue
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -62,13 +62,7 @@ function Remove-ADTIniValue
     param
     (
         [Parameter(Mandatory = $true)]
-        [ValidateScript({
-                if (!(Test-Path -LiteralPath $_ -PathType Leaf))
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName FilePath -ProvidedValue $_ -ExceptionMessage 'The specified file does not exist.'))
-                }
-                return ![System.String]::IsNullOrWhiteSpace($_)
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateNotNullOrWhiteSpace()]
         [System.String]$FilePath,
 
         [Parameter(Mandatory = $true)]

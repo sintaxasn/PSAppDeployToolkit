@@ -11,7 +11,7 @@ function Unregister-ADTDll
         Unregister a DLL file.
 
     .DESCRIPTION
-        Unregister a DLL file using regsvr32.exe. This function takes the path to the DLL file and attempts to unregister it using the regsvr32.exe utility.
+        The `Unregister-ADTDll` function unregisters a DLL file using regsvr32.exe. This function takes the path to the DLL file and attempts to unregister it using the regsvr32.exe utility.
 
     .PARAMETER FilePath
         Path to the DLL file.
@@ -34,7 +34,7 @@ function Unregister-ADTDll
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

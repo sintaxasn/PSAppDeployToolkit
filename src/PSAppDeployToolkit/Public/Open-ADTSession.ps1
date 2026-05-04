@@ -11,10 +11,10 @@ function Open-ADTSession
         Opens a new ADT session.
 
     .DESCRIPTION
-        This function initializes and opens a new ADT session with the specified parameters. It handles the setup of the session environment and processes any callbacks defined for the session. If the session fails to open, it handles the error and closes the session if necessary.
+        The `Open-ADTSession` function initializes and opens a new ADT session with the specified parameters. It handles the setup of the session environment and processes any callbacks defined for the session. If the session fails to open, it handles the error and closes the session if necessary.
 
     .PARAMETER SessionState
-        Defaults to $PSCmdlet.SessionState to get the caller's SessionState, so only required if you need to override this.
+        Defaults to `$PSCmdlet.SessionState` to get the caller's SessionState, so only required if you need to override this.
 
     .PARAMETER DeploymentType
         Specifies the type of deployment.
@@ -119,7 +119,7 @@ function Open-ADTSession
         When DeployMode is not specified or is Auto, bypasses DeployMode adjustment when the device hasn't completed the OOBE or a user ESP is active.
 
     .PARAMETER NoProcessDetection
-        When DeployMode is not specified or is Auto, bypasses DeployMode adjustment when there's no processes to close in the specified AppProcessesToClose list.
+        When DeployMode is not specified or is Auto, bypasses DeployMode adjustment when there's no processes to close in the specified `-AppProcessesToClose` list.
 
     .PARAMETER ExitWithMsiCodes
         When specified, the session will always exit with 0 upon success and 3010 upon reboot required so Intune/ConfigMgr requires no specific adjustment.
@@ -148,9 +148,14 @@ function Open-ADTSession
         You cannot pipe objects to this function.
 
     .OUTPUTS
+        None
+
+        By default, this function returns no output.
+
+    .OUTPUTS
         PSAppDeployToolkit.Foundation.DeploymentSession
 
-        This function returns the session object if -PassThru is specified.
+        This function returns the session object if `-PassThru` is specified.
 
     .EXAMPLE
         Open-ADTSession -SessionState $ExecutionContext.SessionState -DeploymentType "Install" -DeployMode "Interactive"
@@ -170,6 +175,7 @@ function Open-ADTSession
     #>
 
     [CmdletBinding()]
+    [OutputType([PSAppDeployToolkit.Foundation.DeploymentSession])]
     param
     (
         [Parameter(Mandatory = $false)]

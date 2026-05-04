@@ -8,10 +8,10 @@ function Get-ADTStringTable
 {
     <#
     .SYNOPSIS
-        Retrieves the string database from the ADT module.
+        Gets the string database from the PSAppDeployToolkit module.
 
     .DESCRIPTION
-        The Get-ADTStringTable function returns the string database if it has been initialized. If the string database is not initialized, it throws an error indicating that Initialize-ADTModule should be called before using this function.
+        The `Get-ADTStringTable` function gets the module's string database, if it has been initialized. If the string database is not initialized, it throws an error indicating that `Initialize-ADTModule` should be called before using this function.
 
     .PARAMETER SessionState
         The SessionState in which to expand variables from if specified.
@@ -29,12 +29,12 @@ function Get-ADTStringTable
     .EXAMPLE
         Get-ADTStringTable
 
-        This example retrieves the string database from the ADT module.
+        This example retrieves the string database from the PSAppDeployToolkit module.
 
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        Requires: The module should be initialized using Initialize-ADTModule
+        Requires: The module should be initialized using `Initialize-ADTModule`
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -46,6 +46,7 @@ function Get-ADTStringTable
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
     param
     (
         [Parameter(Mandatory = $false)]

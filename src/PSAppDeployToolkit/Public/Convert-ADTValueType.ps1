@@ -11,7 +11,7 @@ function Convert-ADTValueType
         Casts the provided value to the requested type without range errors.
 
     .DESCRIPTION
-        This function uses C# code to cast the provided value to the requested type. This avoids errors from PowerShell when values exceed the casted value type's range.
+        The `Convert-ADTValueType` function uses C# code to cast the provided value to the requested type. This avoids errors from PowerShell when values exceed the casted value type's range.
 
     .PARAMETER Value
         The value to convert.
@@ -22,17 +22,17 @@ function Convert-ADTValueType
     .INPUTS
         System.Int64
 
-        Convert-ADTValueType will accept any value type as a signed 64-bit integer, then cast to the requested type.
+        This function accepts any value type as a signed 64-bit integer, then cast to the requested type.
 
     .OUTPUTS
         System.ValueType
 
-        Convert-ADTValueType will convert the piped input to this type if specified by the caller.
+        This function converts the provided input to the type specified in the `-To` parameter.
 
     .EXAMPLE
         Convert-ADTValueType -Value 256 -To SByte
 
-        Invokes the Convert-ADTValueType function and returns the value as a byte, which would equal 0.
+        Invokes the `Convert-ADTValueType` function and returns the value as a byte, which would equal 0.
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -47,6 +47,7 @@ function Convert-ADTValueType
     #>
 
     [CmdletBinding()]
+    [OutputType([System.ValueType])]
     param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]

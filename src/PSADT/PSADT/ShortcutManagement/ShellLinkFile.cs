@@ -106,7 +106,7 @@ namespace PSADT.ShortcutManagement
                 _shellLink = shellLink;
                 _storageMode = storageMode;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex.Message is not null)
             {
                 _ = Marshal.FinalReleaseComObject(shellLink);
                 ExceptionDispatchInfo.Capture(ex).Throw();
@@ -121,6 +121,18 @@ namespace PSADT.ShortcutManagement
         ~ShellLinkFile()
         {
             Dispose(false);
+        }
+
+        /// <summary>
+        /// Gets shortcut info for the current <see cref="ShellLinkFile"/>.
+        /// </summary>
+        /// <returns>
+        /// Returns a <see cref="ShellLinkInfo"/> object representing the current <see cref="ShellLinkFile"/>.
+        /// </returns>
+        public ShellLinkInfo GetInfoSnapshot()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return new(this);
         }
 
         /// <summary>
@@ -1144,7 +1156,7 @@ namespace PSADT.ShortcutManagement
             {
                 return;
             }
-            if (disposing && _shellLink != null)
+            if (disposing && _shellLink is not null)
             {
                 _ = Marshal.FinalReleaseComObject(_shellLink);
             }

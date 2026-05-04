@@ -11,19 +11,26 @@ function Start-ADTMsiProcessAsUser
         Executes msiexec.exe to perform actions such as install, uninstall, patch, repair, or active setup for MSI and MSP files or MSI product codes.
 
     .DESCRIPTION
-        This function utilizes msiexec.exe to handle various operations on MSI and MSP files, as well as MSI product codes. The operations include installation, uninstallation, patching, repair, and setting up active configurations.
+        The `Start-ADTMsiProcessAsUser` function utilizes msiexec.exe to handle various operations on MSI and MSP files, as well as MSI product codes. The operations include installation, uninstallation, patching, repair, and setting up active configurations.
 
-        If the -Action parameter is set to "Install" and the MSI is already installed, the function will terminate without performing any actions.
+        If the `-Action` parameter is set to `Install` and the MSI is already installed, the function will terminate without performing any actions.
 
-        The function automatically sets default switches for msiexec based on preferences defined in the config.psd1 file. Additionally, it generates a log file name and creates a verbose log for all msiexec operations, ensuring detailed tracking.
+        The function automatically sets default arguments for msiexec based on preferences defined in the `config.psd1` file. Additionally, it generates a log file name and creates a verbose log for all msiexec operations, ensuring detailed tracking.
 
         The MSI or MSP file is expected to reside in the "Files" subdirectory of the App Deploy Toolkit, with transform files expected to be in the same directory as the MSI file.
 
     .PARAMETER Action
-        Specifies the action to be performed. Available options: Install, Uninstall, Patch, Repair, ActiveSetup.
+        Specifies the action to be performed.
+
+        The valid values for this parameter are:
+        - `Install`: Installs a MSI. When this action is selected, the `-ProductCode` parameter cannot be used.
+        - `Uninstall`: Uninstalls an MSI.
+        - `Patch`: Patches a MSI by applying the MSP patch files specified to the `-Patches` parameter.
+        - `Repair`: Repairs a MSI using the repair mode specified in the `-RepairMode` parameter.
+        - `ActiveSetup`: Performs a partial repair of a MSI, repairing missing files, user-specific registry entries, and shortcuts. Equivalent to: `msiexec.exe /i /fups`
 
     .PARAMETER FilePath
-        The file path to the MSI/MSP file.
+        The file path to the MSI/MSP file. If the specified FilePath is just a file name, the function will look within `$adtSession.DirFiles` for the specified file, so long as a session is active.
 
     .PARAMETER ProductCode
         The product code of the installed MSI.
@@ -32,22 +39,22 @@ function Start-ADTMsiProcessAsUser
         The InstalledApplication object of the installed MSI.
 
     .PARAMETER ArgumentList
-        Overrides the default parameters specified in the config.psd1 file.
+        Overrides the default MSI arguments specified in the `config.psd1` file.
 
     .PARAMETER AdditionalArgumentList
-        Adds additional parameters to the default set specified in the config.psd1 file.
+        Adds additional arguments to the default MSI arguments specified in the `config.psd1` file.
 
     .PARAMETER SecureArgumentList
-        Hides all parameters passed to the MSI or MSP file from the toolkit log file.
+        Hides all arguments passed to the MSI or MSP file from the toolkit log file.
 
     .PARAMETER WorkingDirectory
-        Overrides the working directory. The working directory is set to the location of the MSI file.
+        Overrides the default working directory. The default working directory is the location of the MSI file.
 
     .PARAMETER Transforms
         The name(s) of the transform file(s) to be applied to the MSI. The transform files should be in the same directory as the MSI file.
 
     .PARAMETER Patches
-        The name(s) of the patch (MSP) file(s) to be applied to the MSI for the "Install" action. The patch files should be in the same directory as the MSI file.
+        The name(s) of the patch (MSP) file(s) to be applied to the MSI for the `Install` action. The patch files should be in the same directory as the MSI file.
 
     .PARAMETER Username
         A username to invoke the process as. Only supported while running as the SYSTEM account.
@@ -62,21 +69,27 @@ function Start-ADTMsiProcessAsUser
         Specifies whether the process running as a user should inherit the SYSTEM account's environment variables.
 
     .PARAMETER ExpandEnvironmentVariables
-        Specifies whether to expand any Windows/DOS-style environment variables in the specified FilePath/ArgumentList.
+        Specifies whether to expand any Windows/DOS-style environment variables in the specified `-FilePath`, `-ArgumentList`, and `-AdditionalArgumentList` parameters.
 
     .PARAMETER DenyUserTermination
-        Specifies that users cannot terminate the process started in their context. The user will still be able to terminate the process if they're an administrator, though.
+        Specifies that users cannot terminate the process started in their context.
+
+        Note: This will not prevent the user from terminating the process if they are a member of the built-in Administrators group.
 
     .PARAMETER LoggingOptions
-        Overrides the default logging options specified in the config.psd1 file.
+        Overrides the default logging options specified in the `config.psd1` file.
 
     .PARAMETER LogFileName
-        Overrides the default log file name. The default log file name is generated from the MSI file name. If LogFileName does not end in .log, it will be automatically appended.
+        Overrides the default log file name. The default log file name is generated from the MSI file name. If the value of `-LogFileName` does not end in a common log file extension (.log, .logx, .txt, or .out), '.log' will be automatically appended.
 
         For uninstallations, by default the product code is resolved to the DisplayName and version of the application.
 
     .PARAMETER RepairMode
-        Specifies the mode of repair. Choosing `Repair` will repair via `msiexec.exe /p` (which can trigger unsupressable reboots). Choosing `Reinstall` will reinstall by adding `REINSTALL=ALL REINSTALLMODE=omus` to the standard InstallParams.
+        Specifies the how the MSI will be repaired. The default value for this parameter is `Reinstall`.
+
+        Valid values for this parameter are:
+        - `Repair`: Repairs the MSI using the command `msiexec.exe /f`. Note: Repairing an MSI using this mode can trigger unsuppressable reboots.
+        - `Reinstall`: Reinstalls the MSI using the command `msiexec.exe /i` and appending `REINSTALL=ALL REINSTALLMODE=omus` to the default MSI InstallParams/SilentParams, configured in the `config.psd1` file.
 
     .PARAMETER RepairFromSource
         Specifies whether we should repair from source. Also rewrites local cache.
@@ -94,25 +107,25 @@ function Start-ADTMsiProcessAsUser
         List of exit codes to indicate a reboot is required. Defaults to values set during ADTSession initialization, otherwise: 1641, 3010
 
     .PARAMETER IgnoreExitCodes
-        List the exit codes to ignore or * to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
+        List the exit codes to ignore or `*` to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
 
     .PARAMETER PriorityClass
-        Specifies priority class for the process. Options: Idle, Normal, High, AboveNormal, BelowNormal, RealTime.
+        Specifies priority class for the process. Options: `Idle`, `Normal`, `High`, `AboveNormal`, `BelowNormal`, `RealTime`.
 
     .PARAMETER ExitOnProcessFailure
-        Automatically closes the active deployment session via Close-ADTSession in the event the process exits with a non-success or non-ignored exit code.
+        Automatically closes the active deployment session via `Close-ADTSession` in the event the process exits with a non-success or non-ignored exit code.
 
     .PARAMETER ContinueWhenNoUserLoggedOn
         When specified, if no user is logged on, the condition is logged and the function returns without throwing an exception.
 
     .PARAMETER NoDesktopRefresh
-        If specifies, doesn't refresh the desktop and environment after successful MSI installation.
+        If specified, doesn't refresh the desktop and environment after successful MSI installation.
 
     .PARAMETER NoWait
         Immediately continue after executing the process.
 
     .PARAMETER PassThru
-        Returns ExitCode, StdOut, and StdErr output from the process. Note that a failed execution will only return an object if either `-ErrorAction` is set to `SilentlyContinue`/`Ignore`, or if `-SuccessExitCodes` is used.
+        If `-NoWait` is not specified, returns an object with ExitCode, StdOut, and StdErr output from the process. If `-NoWait` is specified, returns a task that can be awaited. Note that a failed execution will only return an object if either `-ErrorAction` is set to `SilentlyContinue`/`Ignore`, or if `-SuccessExitCodes` is used.
 
     .INPUTS
         None
@@ -120,12 +133,30 @@ function Start-ADTMsiProcessAsUser
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        PSADT.Types.ProcessResult
+        None
 
-        Returns an object with the results of the installation if -PassThru is specified.
+        By default, this function returns no output.
+
+    .OUTPUTS
+        PSADT.ProcessManagement.ProcessResult
+
+        Returns an object with the results of the installation if `-PassThru` is specified.
+        - Process
+        - LaunchInfo
+        - CommandLine
         - ExitCode
         - StdOut
         - StdErr
+        - Interleaved
+
+    .OUTPUTS
+        PSADT.ProcessManagement.ProcessHandle
+
+        Returns an object with the handle of the installation process if `-PassThru` and `-NoWait` are specified.
+        - Process
+        - LaunchInfo
+        - CommandLine
+        - Task
 
     .EXAMPLE
         Start-ADTMsiProcessAsUser -Action 'Install' -FilePath 'Adobe_FlashPlayer_11.2.202.233_x64_EN.msi'
@@ -155,7 +186,7 @@ function Start-ADTMsiProcessAsUser
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -167,6 +198,8 @@ function Start-ADTMsiProcessAsUser
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([PSADT.ProcessManagement.ProcessResult])]
+    [OutputType([PSADT.ProcessManagement.ProcessHandle])]
     param
     (
         [Parameter(Mandatory = $false)]
@@ -180,13 +213,7 @@ function Start-ADTMsiProcessAsUser
 
         [Parameter(Mandatory = $true, ParameterSetName = 'FilePath', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'FilePath_NoWait', ValueFromPipeline = $true, HelpMessage = 'Please supply the path to the MSI/MSP file to process.')]
-        [ValidateScript({
-                if ([System.IO.Path]::GetExtension($_) -notmatch '^\.ms[ip]$')
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName FilePath -ProvidedValue $_ -ExceptionMessage 'The specified input has an invalid file extension.'))
-                }
-                return ![System.String]::IsNullOrWhiteSpace($_)
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateExtension('.msi', '.msp')]
         [System.String]$FilePath,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ProductCode', ValueFromPipeline = $true, HelpMessage = 'Please supply the Product Code to process.')]
@@ -246,17 +273,7 @@ function Start-ADTMsiProcessAsUser
         [System.String]$LoggingOptions,
 
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ([System.String]::IsNullOrWhiteSpace($_))
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LogFileName -ProvidedValue $_ -ExceptionMessage 'The specified input is null or white space.'))
-                }
-                if ([System.IO.Path]::GetExtension($_) -match '^\.(log|txt)$')
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LogFileName -ProvidedValue $_ -ExceptionMessage 'The specified input cannot have an extension.'))
-                }
-                return $true
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateNotNullOrWhiteSpace()]
         [System.String]$LogFileName,
 
         [Parameter(Mandatory = $false)]
@@ -323,7 +340,7 @@ function Start-ADTMsiProcessAsUser
     process
     {
         # Update the parameters. This will return false if it failed and -ContinueWhenNoUserLoggedOn is passed.
-        if (!(Update-ADTProcessAsUserBoundParameters -Cmdlet $PSCmdlet))
+        if (!(Update-ADTProcessAsUserBoundParameters -Cmdlet $PSCmdlet -BoundParameters $PSBoundParameters) -or !$PSBoundParameters.ContainsKey('RunAsActiveUser'))
         {
             return
         }

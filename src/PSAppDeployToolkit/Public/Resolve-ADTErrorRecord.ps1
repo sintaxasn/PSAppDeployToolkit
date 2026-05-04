@@ -11,10 +11,12 @@ function Resolve-ADTErrorRecord
         Enumerates ErrorRecord details.
 
     .DESCRIPTION
-        Enumerates an ErrorRecord, or a collection of ErrorRecord properties. This function can filter and display specific properties of the ErrorRecord, and can exclude certain parts of the error details.
+        The `Resolve-ADTErrorRecord` function enumerates an ErrorRecord, or a collection of ErrorRecord properties. This function can filter and display specific properties of the ErrorRecord, and can exclude certain parts of the error details.
 
     .PARAMETER ErrorRecord
-        The ErrorRecord to resolve. For usage in a catch block, you'd use the automatic variable `$PSItem`. For usage out of a catch block, you can access the global $Error array's first error (on index 0).
+        The ErrorRecord to resolve. For usage in a catch block, you'd use the automatic variable `$_` or `$PSItem`. For usage outside of a catch block, you can access the global `$Error` variable's first ErrorRecord (usually index 0).
+
+        Note: The `$Error` ArrayList can contain both ErrorRecord and Exception objects. For this reason, you should validate that the object returned from the `$Error` variable is an ErrorRecord before passing it to this function, e.g., `$Error | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } | Select-Object -First 1`
 
     .PARAMETER Property
         The list of properties to display from the ErrorRecord. Use "*" to display all properties.
@@ -23,13 +25,13 @@ function Resolve-ADTErrorRecord
         Exclude ErrorRecord details as represented by $ErrorRecord.
 
     .PARAMETER ExcludeErrorInvocation
-        Exclude ErrorRecord invocation information as represented by $ErrorRecord.InvocationInfo.
+        Exclude ErrorRecord invocation information as represented by `$ErrorRecord.InvocationInfo`.
 
     .PARAMETER ExcludeErrorException
-        Exclude ErrorRecord exception details as represented by $ErrorRecord.Exception.
+        Exclude ErrorRecord exception details as represented by `$ErrorRecord.Exception`.
 
     .PARAMETER IncludeErrorInnerException
-        Includes further ErrorRecord inner exception details as represented by $ErrorRecord.Exception.InnerException. Will retrieve all inner exceptions if there is more than one.
+        Includes further ErrorRecord inner exception details as represented by `$ErrorRecord.Exception.InnerException`. Will retrieve all inner exceptions if there is more than one.
 
     .INPUTS
         System.Management.Automation.ErrorRecord

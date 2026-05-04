@@ -8,10 +8,10 @@ function Copy-ADTContentToCache
 {
     <#
     .SYNOPSIS
-        Copies the toolkit content to a cache folder on the local machine and sets the $adtSession.DirFiles and $adtSession.DirSupportFiles directories to the cache path.
+        Copies the toolkit content to a cache folder on the local machine and sets the `$adtSession.DirFiles` and `$adtSession.DirSupportFiles` directories to the cache path.
 
     .DESCRIPTION
-        Copies the toolkit content to a cache folder on the local machine and sets the $adtSession.DirFiles and $adtSession.DirSupportFiles directories to the cache path.
+        The `Copy-ADTContentToCache` function copies the toolkit content to a cache folder on the local machine and sets the `$adtSession.DirFiles` and `$adtSession.DirSupportFiles` directories to the cache path.
 
         This function is useful in environments where an Endpoint Management solution does not provide a managed cache for source files, such as Intune.
 
@@ -21,11 +21,12 @@ function Copy-ADTContentToCache
         The path to the software cache folder.
 
     .PARAMETER Exclude
-        Specifies one or more content categories to exclude from the cache copy. Acceptable values are 'Files', 'SupportFiles', and 'Toolkit'.
+        Specifies one or more content categories to exclude from the cache copy.
 
-        - Files: Excludes the Files folder and does not remap the DirFiles session property.
-        - SupportFiles: Excludes the SupportFiles folder and does not remap the DirSupportFiles session property.
-        - Toolkit: Excludes all content other than the Files and SupportFiles folders.
+        Valid values for this parameter are:
+        - `Files`: Excludes the Files folder and does not remap the DirFiles session property.
+        - `SupportFiles`: Excludes the SupportFiles folder and does not remap the DirSupportFiles session property.
+        - `Toolkit`: Excludes all content other than the Files and SupportFiles folders.
 
     .INPUTS
         None
@@ -61,7 +62,7 @@ function Copy-ADTContentToCache
 
         This can be done using `Remove-ADTFile -LiteralPath "(Get-ADTConfig).Toolkit.CachePath\$($adtSession.InstallName)" -Recurse -ErrorAction Ignore`.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

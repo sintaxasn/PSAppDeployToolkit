@@ -11,7 +11,7 @@ function Set-ADTIniValue
         Opens an INI file and sets the value of the specified section and key.
 
     .DESCRIPTION
-        Opens an INI file and sets the value of the specified section and key.
+        The `Set-ADTIniValue` function opens an INI file and sets the value of the specified section and key.
 
         Please note that the INI file provided cannot have a byte order mark (BOM) present as the underlying Win32 API cannot process it correctly.
 
@@ -48,7 +48,7 @@ function Set-ADTIniValue
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

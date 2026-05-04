@@ -11,7 +11,7 @@ function Get-ADTFileVersion
         Gets the version of the specified file.
 
     .DESCRIPTION
-        The Get-ADTFileVersion function retrieves the version information of the specified file. By default, it returns the FileVersion, but it can also return the ProductVersion if the -ProductVersion switch is specified.
+        The `Get-ADTFileVersion` function retrieves the version information of the specified file. By default, it returns the FileVersion, but it can also return the ProductVersion if the `-ProductVersion` switch is specified.
 
     .PARAMETER File
         The path of the file.
@@ -20,9 +20,9 @@ function Get-ADTFileVersion
         Switch that makes the command return the file's ProductVersion instead of its FileVersion.
 
     .INPUTS
-        None
+        System.IO.FileInfo
 
-        You cannot pipe objects to this function.
+        The file to get the version info from.
 
     .OUTPUTS
         System.String
@@ -52,10 +52,12 @@ function Get-ADTFileVersion
     #>
 
     [CmdletBinding()]
+    [OutputType([System.String])]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateScript({
+                $_.Refresh()
                 if (!$_.Exists)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName File -ProvidedValue $_ -ExceptionMessage 'The specified file does not exist.'))

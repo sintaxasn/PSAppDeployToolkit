@@ -11,7 +11,7 @@ function Set-ADTEnvironmentVariable
         Sets the value for the specified environment variable.
 
     .DESCRIPTION
-        This function sets the value for the specified environment variable.
+        The `Set-ADTEnvironmentVariable` function sets the value for the specified environment variable.
 
     .PARAMETER Variable
         The variable to set.
@@ -54,7 +54,7 @@ function Set-ADTEnvironmentVariable
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

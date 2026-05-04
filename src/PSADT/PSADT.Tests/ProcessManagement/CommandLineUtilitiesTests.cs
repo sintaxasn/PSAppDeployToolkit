@@ -590,32 +590,32 @@ namespace PSADT.Tests.ProcessManagement
         public static TheoryData<string[]> SystematicRoundTripTestData()
         {
             return [
-                ["a", "b"],
-                ["a b", "c"],
-                ["a\tb", "c"],
-                ["a\"b"],
-                ["a\\b"],
-                ["a\\\\b"],
-                ["a\\\"b"],
-                ["a b", "c d"],
-                ["a\\", "b"],
-                ["a\\\\", "b"],
-                ["a b c"],
-                ["a", "b c"],
-                ["a", "b\tc"],
-                ["a", "b\"c"],
-                ["a", "b\\"],
-                ["a", "b\\\\"],
-                ["a", "b\\c"],
-                ["a", "b\\\\c"],
-                ["a", "b\\\"c"],
-                ["C:\\Program Files\\App\\"],
-                ["C:\\Path\\", "arg with space"],
-                ["argument with \"quotes\""],
-                ["argument with \"\"escaped quotes\"\""],
-                ["c:\\Path with spaces\\trailing_backslash\\"],
-                ["program", "arg1", "arg2"],
-                ["complex\"arg", "with\\backslashes", "and spaces"]
+                new[] { "a", "b" },
+                new[] { "a b", "c" },
+                new[] { "a\tb", "c" },
+                new[] { "a\"b" },
+                new[] { "a\\b" },
+                new[] { "a\\\\b" },
+                new[] { "a\\\"b" },
+                new[] { "a b", "c d" },
+                new[] { "a\\", "b" },
+                new[] { "a\\\\", "b" },
+                new[] { "a b c" },
+                new[] { "a", "b c" },
+                new[] { "a", "b\tc" },
+                new[] { "a", "b\"c" },
+                new[] { "a", "b\\" },
+                new[] { "a", "b\\\\" },
+                new[] { "a", "b\\c" },
+                new[] { "a", "b\\\\c" },
+                new[] { "a", "b\\\"c" },
+                new[] { "C:\\Program Files\\App\\" },
+                new[] { "C:\\Path\\", "arg with space" },
+                new[] { "argument with \"quotes\"" },
+                new[] { "argument with \"\"escaped quotes\"\"" },
+                new[] { "c:\\Path with spaces\\trailing_backslash\\" },
+                new[] { "program", "arg1", "arg2" },
+                new[] { "complex\"arg", "with\\backslashes", "and spaces" }
             ];
         }
 
@@ -972,16 +972,16 @@ namespace PSADT.Tests.ProcessManagement
         public static TheoryData<string[]> UncPathRoundTripTestData()
         {
             return [
-                ["\\\\server\\share"],
-                ["\\\\server\\share\\file.txt"],
-                ["\\\\server name\\share name"],
-                ["\\\\server\\share with spaces\\file.txt"],
-                ["\\\\server\\share\\"],
-                ["\\\\server\\share\\folder with spaces\\"],
-                ["\\\\server\\share\\file\"name.txt"],
-                ["\\\\server\\share \"with quotes\"\\file.txt"],
-                ["\\\\server\\share\\folder\\", "local-file.txt", "\\\\other-server\\other-share\\target.txt"],
-                ["\\\\domain.com\\dfs-share\\deep\\folder\\structure\\file.extension"],
+                new[] { "\\\\server\\share" },
+                new[] { "\\\\server\\share\\file.txt" },
+                new[] { "\\\\server name\\share name" },
+                new[] { "\\\\server\\share with spaces\\file.txt" },
+                new[] { "\\\\server\\share\\" },
+                new[] { "\\\\server\\share\\folder with spaces\\" },
+                new[] { "\\\\server\\share\\file\"name.txt" },
+                new[] { "\\\\server\\share \"with quotes\"\\file.txt" },
+                new[] { "\\\\server\\share\\folder\\", "local-file.txt", "\\\\other-server\\other-share\\target.txt" },
+                new[] { "\\\\domain.com\\dfs-share\\deep\\folder\\structure\\file.extension" },
             ];
         }
 
@@ -1124,6 +1124,8 @@ namespace PSADT.Tests.ProcessManagement
                    new[] { "C:\\Program Files\\App\\app.exe", "C:\\Some Path\\config.txt", "/option" })]
         [InlineData("\"C:\\Quoted Path\\app.exe\" D:\\Unquoted Path\\data.txt /flag",
                    new[] { "C:\\Quoted Path\\app.exe", "D:\\Unquoted Path\\data.txt", "/flag" })]
+        [InlineData("C:\\Program Files\\Autodesk\\DWG TrueView 2021 - English\\Setup\\en-us\\Setup\\Setup.exe /P",
+                   new[] { "C:\\Program Files\\Autodesk\\DWG TrueView 2021 - English\\Setup\\en-us\\Setup\\Setup.exe", "/P" })]
         public void CommandLineToArgumentList_MixedQuotedUnquotedPaths_ParsedCorrectly(string commandLine, IReadOnlyList<string> expected)
         {
             // Act
@@ -1131,6 +1133,24 @@ namespace PSADT.Tests.ProcessManagement
 
             // Assert
             Assert.Equal(expected, result);
+        }
+
+        /// <summary>
+        /// Tests that strict parsing does not apply unquoted path detection heuristics.
+        /// </summary>
+        [Fact]
+        public void CommandLineToArgumentList_UnquotedPathWithStandaloneHyphen_UsesEnhancedParsingOnly()
+        {
+            // Arrange
+            const string commandLine = "C:\\Program Files\\Autodesk\\DWG TrueView 2021 - English\\Setup\\en-us\\Setup\\Setup.exe /P";
+
+            // Act
+            IReadOnlyList<string> compatibleResult = CommandLineUtilities.CommandLineToArgumentList(commandLine);
+            IReadOnlyList<string> strictResult = CommandLineUtilities.CommandLineToArgumentList(commandLine, true);
+
+            // Assert
+            Assert.Equal(["C:\\Program Files\\Autodesk\\DWG TrueView 2021 - English\\Setup\\en-us\\Setup\\Setup.exe", "/P"], compatibleResult);
+            Assert.Equal(["C:\\Program", "Files\\Autodesk\\DWG", "TrueView", "2021", "-", "English\\Setup\\en-us\\Setup\\Setup.exe", "/P"], strictResult);
         }
 
         /// <summary>

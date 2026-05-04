@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
 namespace PSADT.ProcessManagement
@@ -31,7 +32,7 @@ namespace PSADT.ProcessManagement
         /// <param name="windowStyle">The window style to use when launching the process. If null, the default window style is used.</param>
         /// <param name="priorityClass">The priority class for the new process. If null, the default priority is used.</param>
         /// <exception cref="ArgumentNullException">Thrown if filePath is null.</exception>
-        public UserShellExecuteOptions(string filePath, IEnumerable<string>? argumentList = null, string? workingDirectory = null, bool expandEnvironmentVariables = false, string? verb = null, bool createNoWindow = false, bool waitForChildProcesses = false, bool killChildProcessesWithParent = false, ProcessWindowStyle? windowStyle = null, ProcessPriorityClass? priorityClass = null)
+        public UserShellExecuteOptions(string filePath, IReadOnlyList<string>? argumentList = null, string? workingDirectory = null, bool expandEnvironmentVariables = false, string? verb = null, bool createNoWindow = false, bool waitForChildProcesses = false, bool killChildProcessesWithParent = false, ProcessWindowStyle? windowStyle = null, ProcessPriorityClass? priorityClass = null)
         {
             // Validate all string parameters are properly set up.
             ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
@@ -155,6 +156,7 @@ namespace PSADT.ProcessManagement
         /// <remarks>This method uses default options when generating the command-line. To customize the
         /// output, use the overload that accepts parameters.</remarks>
         /// <returns>A string containing the command-line arguments constructed from the current settings.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string MakeCommandLine()
         {
             return MakeCommandLine(false);
@@ -168,6 +170,7 @@ namespace PSADT.ProcessManagement
         /// <returns>A string containing the command-line representation of the process, including the file path and any
         /// arguments. If <paramref name="nullTerminated"/> is <see langword="true"/>, the string will end with a null
         /// character.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal string MakeCommandLine(bool nullTerminated)
         {
             return $"\"{FilePath}\"{(!string.IsNullOrWhiteSpace(Arguments) ? $" {Arguments}" : null)}{(nullTerminated ? '\0' : null)}";
@@ -181,6 +184,7 @@ namespace PSADT.ProcessManagement
         /// when preparing to start a process with the configured options.</remarks>
         /// <returns>A <see cref="ProcessLaunchInfo"/> object containing the parameters required to launch a process with the
         /// specified settings.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ProcessLaunchInfo ToLaunchInfo()
         {
             return new(

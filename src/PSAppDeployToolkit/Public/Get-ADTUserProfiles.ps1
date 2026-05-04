@@ -11,12 +11,12 @@ function Get-ADTUserProfiles
         Get the User Profile Path, User Account SID, and the User Account Name for all users that log onto the machine and also the Default User.
 
     .DESCRIPTION
-        Get the User Profile Path, User Account SID, and the User Account Name for all users that log onto the machine and also the Default User (which does not log on).
+        The `Get-ADTUserProfiles` function gets the User Profile Path, User Account SID, and the User Account Name for all users that log onto the machine and also the Default User (which does not log on).
 
         Please note that the NTAccount property may be empty for some user profiles but the SID and ProfilePath properties will always be populated.
 
     .PARAMETER FilterScript
-        Allows filtration of the returned result by any property in a UserProfile object.
+        Allows filtration of the returned result by any property in a UserProfileInfo object.
 
     .PARAMETER SID
         Specifies the SID to get rather than returning all user profiles.
@@ -50,20 +50,29 @@ function Get-ADTUserProfiles
     .OUTPUTS
         PSADT.AccountManagement.UserProfileInfo
 
-        Returns a PSADT.AccountManagement.UserProfileInfo object with the following properties:
+        Returns a UserProfileInfo object with the following properties:
         - NTAccount
         - SID
         - ProfilePath
+        - AppDataPath
+        - LocalAppDataPath
+        - DesktopPath
+        - DocumentsPath
+        - StartMenuPath
+        - TempPath
+        - OneDrivePath
+        - OneDriveCommercialPath
+        - UserLocale
 
     .EXAMPLE
         Get-ADTUserProfiles
 
-        Return the following properties for each user profile on the system: NTAccount, SID, ProfilePath.
+        Return a UserProfileInfo object for each user profile on the system.
 
     .EXAMPLE
         Get-ADTUserProfiles -ExcludeNTAccount CONTOSO\Robot,CONTOSO\ntadmin
 
-        Return the following properties for each user profile on the system, except for 'Robot' and 'ntadmin': NTAccount, SID, ProfilePath.
+        Return a UserProfileInfo object for each user profile on the system, except for 'Robot' and 'ntadmin'.
 
     .EXAMPLE
         [string[]]$ProfilePaths = Get-ADTUserProfiles | Select-Object -ExpandProperty ProfilePath
@@ -245,18 +254,18 @@ function Get-ADTUserProfiles
                                             $_.NTAccount,
                                             $_.SID,
                                             $_.ProfilePath,
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'AppData' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Local AppData' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Desktop' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Personal' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Start Menu' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Environment' -Name 'TEMP' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Environment' -Name 'OneDrive' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
-                                            $((Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Environment' -Name 'OneDriveCommercial' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'AppData' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Local AppData' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Desktop' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Personal' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -Name 'Start Menu' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Environment' -Name 'TEMP' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Environment' -Name 'OneDrive' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
+                                            $((Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Environment' -Name 'OneDriveCommercial' -SID $_.SID -DoNotExpandEnvironmentNames) -replace '%USERPROFILE%', $_.ProfilePath),
                                             $(
-                                                if (!($userLocale = Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Control Panel\International' -Name 'LocaleName' -SID $_.SID))
+                                                if (!($userLocale = Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Control Panel\International' -Name 'LocaleName' -SID $_.SID))
                                                 {
-                                                    Get-ADTRegistryKey -Key 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Control Panel\International\User Profile' -Name 'Languages' -SID $_.SID | Select-Object -First 1
+                                                    Get-ADTRegistryKey -LiteralPath 'Microsoft.PowerShell.Core\Registry::HKEY_CURRENT_USER\Control Panel\International\User Profile' -Name 'Languages' -SID $_.SID | Select-Object -First 1
                                                 }
                                                 else
                                                 {

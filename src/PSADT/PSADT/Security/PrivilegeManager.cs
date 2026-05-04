@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using PSADT.Interop;
 using PSADT.Interop.Extensions;
@@ -52,14 +51,12 @@ namespace PSADT.Security
             // Retrieve the token privileges and filter them based on the specified attributes before returning them.
             _ = NativeMethods.GetTokenInformation(token, TOKEN_INFORMATION_CLASS.TokenPrivileges, buffer, out _);
             ref readonly TOKEN_PRIVILEGES tokenPrivileges = ref buffer.AsReadOnlyStructure<TOKEN_PRIVILEGES>();
-            uint privilegeCount = tokenPrivileges.PrivilegeCount;
-            int bufferOffset = sizeof(uint);
-            int increment = Marshal.SizeOf<LUID_AND_ATTRIBUTES>();
+            const int bufferOffset = sizeof(uint); int increment = Unsafe.SizeOf<LUID_AND_ATTRIBUTES>();
             Span<char> charSpan = stackalloc char[1024]; charSpan.Clear();
             List<SE_PRIVILEGE> privileges = [];
             if (attributes is not null)
             {
-                for (int i = 0; i < privilegeCount; i++)
+                for (int i = 0; i < tokenPrivileges.PrivilegeCount; i++)
                 {
                     ref readonly LUID_AND_ATTRIBUTES attr = ref buffer.Slice(bufferOffset + (increment * i)).AsReadOnlyStructure<LUID_AND_ATTRIBUTES>();
                     if ((attr.Attributes & attributes) == attributes)
@@ -70,7 +67,7 @@ namespace PSADT.Security
             }
             else
             {
-                for (int i = 0; i < privilegeCount; i++)
+                for (int i = 0; i < tokenPrivileges.PrivilegeCount; i++)
                 {
                     ref readonly LUID_AND_ATTRIBUTES attr = ref buffer.Slice(bufferOffset + (increment * i)).AsReadOnlyStructure<LUID_AND_ATTRIBUTES>();
                     privileges.Add(GetPrivilege(in attr, charSpan));
@@ -172,7 +169,7 @@ namespace PSADT.Security
         {
             if (!HasPrivilege(token, privilege))
             {
-                throw new UnauthorizedAccessException($"The current process does not have the [{privilege}] privilege available.");
+                throw new UnauthorizedAccessException($"The current process does not have the [{privilege}] privileges available.");
             }
             _ = NativeMethods.LookupPrivilegeValue(privilege, out LUID luid);
             TOKEN_PRIVILEGES tp = new()

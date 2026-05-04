@@ -21,8 +21,6 @@ function Get-ADTWindowTitle
         - ParentProcessId
         - ParentProcessMainWindowHandle
 
-        Function does not work in SYSTEM context unless launched with "psexec.exe -s -i" to run it as an interactive process under the SYSTEM account.
-
     .PARAMETER WindowTitle
         The title of the application window to search for using regex matching.
 
@@ -46,7 +44,7 @@ function Get-ADTWindowTitle
     .OUTPUTS
         PSADT.WindowManagement.WindowInfo
 
-        Returns a PSADT.WindowManagement.WindowInfo object with the following properties:
+        Returns a WindowInfo object with the following properties:
 
         - WindowTitle
         - WindowHandle
@@ -72,8 +70,6 @@ function Get-ADTWindowTitle
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        Function does not work in SYSTEM context unless launched with "psexec.exe -s -i" to run it as an interactive process under the SYSTEM account.
-
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
         Copyright: (C) 2026 PSAppDeployToolkit Team (Sean Lillis, Dan Cunningham, Muhammad Mashwani, Mitch Richters, Dan Gough).<br />
@@ -84,6 +80,7 @@ function Get-ADTWindowTitle
     #>
 
     [CmdletBinding()]
+    [OutputType([PSADT.WindowManagement.WindowInfo])]
     param
     (
         [Parameter(Mandatory = $false)]
@@ -99,17 +96,7 @@ function Get-ADTWindowTitle
         [System.String[]]$ParentProcess,
 
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ParentProcessId -ProvidedValue $_ -ExceptionMessage 'The specified ParentProcessId interval was null.'))
-                }
-                if ($_ -le 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ParentProcessId -ProvidedValue $_ -ExceptionMessage 'The specified ParentProcessId interval must be greater than zero.'))
-                }
-                return !!$_
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [System.UInt32[]]$ParentProcessId,
 
         [Parameter(Mandatory = $false)]

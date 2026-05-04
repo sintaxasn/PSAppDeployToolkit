@@ -10,6 +10,7 @@ Describe 'Test-ADTMutexAvailability' {
             $maxAttempts = 100
             $attempt = 0
             $mutex = $null
+            $isMutexLocked = $false
             while ($attempt -lt $maxAttempts)
             {
                 $attempt++
@@ -30,7 +31,6 @@ Describe 'Test-ADTMutexAvailability' {
                         {
                             $mutex.ReleaseMutex()
                         }
-                        $mutex.Close()
                         $mutex.Dispose()
                         $mutex = $null
                     }
@@ -50,6 +50,8 @@ Describe 'Test-ADTMutexAvailability' {
             # BeginInvoke on a thread pool thread) so that the test thread's WaitOne() call
             # correctly sees the mutex as unavailable.
             $mutexName = "Global\PSADT_Pester_$([System.Guid]::NewGuid().Guid)"
+            $mutexHoldTimeout = 30000
+            $mutexAcquireTimeoutMs = 5000
             $mutexAcquired = [System.Threading.ManualResetEventSlim]::new($false)
             $cts = [System.Threading.CancellationTokenSource]::new()
             $ps = [System.Management.Automation.PowerShell]::Create()
@@ -57,6 +59,7 @@ Describe 'Test-ADTMutexAvailability' {
             $ps.Runspace.SessionStateProxy.SetVariable('mutexName', $mutexName)
             $ps.Runspace.SessionStateProxy.SetVariable('mutexAcquired', $mutexAcquired)
             $ps.Runspace.SessionStateProxy.SetVariable('cts', $cts)
+            $ps.Runspace.SessionStateProxy.SetVariable('mutexHoldTimeout', $mutexHoldTimeout)
             $asyncResult = $ps.AddScript({
                     try
                     {
@@ -64,7 +67,7 @@ Describe 'Test-ADTMutexAvailability' {
                         if ($mutex.WaitOne(1))
                         {
                             $mutexAcquired.Set()
-                            [void]$cts.Token.WaitHandle.WaitOne(30000)
+                            [void]$cts.Token.WaitHandle.WaitOne($mutexHoldTimeout)
                             $mutex.ReleaseMutex()
                         }
                     }
@@ -72,12 +75,11 @@ Describe 'Test-ADTMutexAvailability' {
                     {
                         if ($null -ne $mutex)
                         {
-                            $mutex.Close()
                             $mutex.Dispose()
                         }
                     }
                 }).BeginInvoke()
-            if (-not $mutexAcquired.Wait(5000))
+            if (-not $mutexAcquired.Wait($mutexAcquireTimeoutMs))
             {
                 throw "Background PowerShell instance failed to acquire a lock on the mutex [$mutexName]."
             }
@@ -89,7 +91,6 @@ Describe 'Test-ADTMutexAvailability' {
             {
                 $cts.Cancel()
                 $null = $ps.EndInvoke($asyncResult)
-                $ps.Runspace.Close()
                 $ps.Runspace.Dispose()
                 $ps.Dispose()
                 $cts.Dispose()
@@ -109,7 +110,6 @@ Describe 'Test-ADTMutexAvailability' {
                 {
                     $mutexName = "Global\PSADT_Pester_$([System.Guid]::NewGuid().Guid)"
                     $mutex = [System.Threading.Mutex]::OpenExisting($mutexName)
-                    $mutex.Close()
                 }
                 catch [System.Threading.WaitHandleCannotBeOpenedException]
                 {

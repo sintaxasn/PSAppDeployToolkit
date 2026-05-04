@@ -11,7 +11,7 @@ function Convert-ADTRegistryPath
         Converts the specified registry key path to a format that is compatible with built-in PowerShell cmdlets.
 
     .DESCRIPTION
-        Converts the specified registry key path to a format that is compatible with built-in PowerShell cmdlets.
+        The `Convert-ADTRegistryPath` function converts the specified registry key path to a format that is compatible with built-in PowerShell cmdlets.
 
         Converts registry key hives to their full paths. Example: HKLM is converted to "Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE".
 
@@ -19,12 +19,12 @@ function Convert-ADTRegistryPath
         Path to the registry key to convert (can be a registry hive or fully qualified path)
 
     .PARAMETER Wow6432Node
-        Specifies that the 32-bit registry view (Wow6432Node) should be used on a 64-bit system.
+        Specifies that the 32-bit registry view (WOW6432Node) should be used on a 64-bit system.
 
     .PARAMETER SID
         The security identifier (SID) for a user. Specifying this parameter will convert a HKEY_CURRENT_USER registry key to the HKEY_USERS\$SID format.
 
-        Specify this parameter from the Invoke-ADTAllUsersRegistryAction function to read/edit HKCU registry settings for all users on the system.
+        Specify this parameter from the `Invoke-ADTAllUsersRegistryAction` function to read/edit HKCU registry settings for all users on the system.
 
     .INPUTS
         None

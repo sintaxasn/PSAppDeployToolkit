@@ -11,9 +11,9 @@ function Get-ADTRegistryKey
         Retrieves value names and value data for a specified registry key or optionally, a specific value.
 
     .DESCRIPTION
-        Retrieves value names and value data for a specified registry key or optionally, a specific value. If the registry key does not exist or contain any values, the function will return $null by default.
+        The `Get-ADTRegistryKey` function retrieves value names and value data for a specified registry key or optionally, a specific value. If the registry key does not exist or contain any values, the function will return `$null`.
 
-        To test for existence of a registry key path, use built-in Test-Path cmdlet.
+        To test for the existence of a registry key path, use the built-in `Test-Path` cmdlet. To test for the existence of a registry key value, use the `Test-ADTRegistryValue` function.
 
     .PARAMETER Path
         Path of the registry key, wildcards permitted.
@@ -25,12 +25,12 @@ function Get-ADTRegistryKey
         Value name to retrieve (optional).
 
     .PARAMETER Wow6432Node
-        Specify this switch to read the 32-bit registry (Wow6432Node) on 64-bit systems.
+        Specify this switch to read the 32-bit registry (WOW6432Node) on 64-bit systems.
 
     .PARAMETER SID
         The security identifier (SID) for a user. Specifying this parameter will convert a HKEY_CURRENT_USER registry key to the HKEY_USERS\$SID format.
 
-        Specify this parameter from the Invoke-ADTAllUsersRegistryAction function to read/edit HKCU registry settings for all users on the system.
+        Specify this parameter from the `Invoke-ADTAllUsersRegistryAction` function to read/edit HKCU registry settings for all users on the system.
 
     .PARAMETER ReturnEmptyKeyIfExists
         Return the registry key if it exists but it has no property/value pairs underneath it.
@@ -44,7 +44,19 @@ function Get-ADTRegistryKey
         You cannot pipe objects to this function.
 
     .OUTPUTS
+        System.Int32
+
+    .OUTPUTS
+        System.Int64
+
+    .OUTPUTS
         System.String
+
+    .OUTPUTS
+        System.Object
+
+    .OUTPUTS
+        PSCustomObject
 
         Returns the value of the registry key or value.
 
@@ -86,6 +98,11 @@ function Get-ADTRegistryKey
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Int32])]
+    [OutputType([System.Int64])]
+    [OutputType([System.String])]
+    [OutputType([System.Object])]
+    [OutputType([PSCustomObject])]
     param
     (
         [Parameter(Mandatory = $true, ParameterSetName = 'Path')]

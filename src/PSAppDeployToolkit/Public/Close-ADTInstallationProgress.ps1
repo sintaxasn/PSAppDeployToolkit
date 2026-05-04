@@ -8,10 +8,10 @@ function Close-ADTInstallationProgress
 {
     <#
     .SYNOPSIS
-        Closes the dialog created by Show-ADTInstallationProgress.
+        Closes the dialog created by `Show-ADTInstallationProgress`.
 
     .DESCRIPTION
-        Closes the dialog created by Show-ADTInstallationProgress. This function is called by the Close-ADTSession function to close a running instance of the progress dialog if found.
+        The `Close-ADTInstallationProgress` function closes the dialog created by `Show-ADTInstallationProgress`. This function is called by the `Close-ADTSession` function to close a running instance of the progress dialog if found.
 
     .INPUTS
         None
@@ -26,7 +26,7 @@ function Close-ADTInstallationProgress
     .EXAMPLE
         Close-ADTInstallationProgress
 
-        This example closes the dialog created by Show-ADTInstallationProgress.
+        This example closes the dialog created by `Show-ADTInstallationProgress`.
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -69,31 +69,38 @@ function Close-ADTInstallationProgress
         {
             try
             {
-                # Return early if we're silent, a window wouldn't have ever opened.
-                if ($adtSession -and $adtSession.IsSilent())
+                try
                 {
-                    Write-ADTLogEntry -Message "Bypassing $($MyInvocation.MyCommand.Name) [Mode: $($adtSession.DeployMode)]"
-                    return
-                }
+                    # Return early if we're silent, a window wouldn't have ever opened.
+                    if ($adtSession -and $adtSession.IsSilent())
+                    {
+                        Write-ADTLogEntry -Message "Bypassing $($MyInvocation.MyCommand.Name) [Mode: $($adtSession.DeployMode)]"
+                        return
+                    }
 
-                # Bypass if no one's logged on to answer the dialog.
-                if (!($runAsActiveUser = Get-ADTClientServerUser -AllowSystemFallback))
+                    # Bypass if no one's logged on to answer the dialog.
+                    if (!($runAsActiveUser = Get-ADTClientServerUser -AllowSystemFallback))
+                    {
+                        Write-ADTLogEntry -Message "Bypassing $($MyInvocation.MyCommand.Name) as there is no active user logged onto the system."
+                        return
+                    }
+
+                    # Return early if there's no progress dialog open at all.
+                    if (!(Invoke-ADTClientServerOperation -ProgressDialogOpen -User $runAsActiveUser))
+                    {
+                        Write-ADTLogEntry -Message "Bypassing $($MyInvocation.MyCommand.Name) as there is no progress dialog open."
+                        return
+                    }
+
+                    # Call the underlying function to close the progress window.
+                    Write-ADTLogEntry -Message 'Closing the installation progress dialog.'
+                    Invoke-ADTClientServerOperation -CloseProgressDialog -User $runAsActiveUser
+                }
+                finally
                 {
-                    Write-ADTLogEntry -Message "Bypassing $($MyInvocation.MyCommand.Name) as there is no active user logged onto the system."
-                    return
+                    # Remove any callback that might be lingering in the backing buffer.
+                    Remove-ADTModuleCallback -Hookpoint OnFinish -Callback $Script:CommandTable.($MyInvocation.MyCommand.Name)
                 }
-
-                # Return early if there's no progress dialog open at all.
-                if (!(Invoke-ADTClientServerOperation -ProgressDialogOpen -User $runAsActiveUser))
-                {
-                    Write-ADTLogEntry -Message "Bypassing $($MyInvocation.MyCommand.Name) as there is no progress dialog open."
-                    return
-                }
-
-                # Call the underlying function to close the progress window.
-                Write-ADTLogEntry -Message 'Closing the installation progress dialog.'
-                Invoke-ADTClientServerOperation -CloseProgressDialog -User $runAsActiveUser
-                Remove-ADTModuleCallback -Hookpoint OnFinish -Callback $Script:CommandTable.($MyInvocation.MyCommand.Name)
 
                 # We only send balloon tips when a session is active.
                 if (!$adtSession)

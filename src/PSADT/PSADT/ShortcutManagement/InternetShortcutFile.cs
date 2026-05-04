@@ -104,7 +104,7 @@ namespace PSADT.ShortcutManagement
                 _internetShortcut = internetShortcut;
                 _storageMode = storageMode;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex.Message is not null)
             {
                 _ = Marshal.FinalReleaseComObject(internetShortcut);
                 ExceptionDispatchInfo.Capture(ex).Throw();
@@ -119,6 +119,18 @@ namespace PSADT.ShortcutManagement
         ~InternetShortcutFile()
         {
             Dispose(false);
+        }
+
+        /// <summary>
+        /// Gets shortcut info for the current <see cref="InternetShortcutFile"/>.
+        /// </summary>
+        /// <returns>
+        /// Returns a <see cref="InternetShortcutInfo"/> object representing the current <see cref="InternetShortcutFile"/>.
+        /// </returns>
+        public InternetShortcutInfo GetInfoSnapshot()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return new(this);
         }
 
         /// <summary>
@@ -843,7 +855,7 @@ namespace PSADT.ShortcutManagement
             {
                 return;
             }
-            if (disposing && _internetShortcut != null)
+            if (disposing && _internetShortcut is not null)
             {
                 _ = Marshal.FinalReleaseComObject(_internetShortcut);
             }

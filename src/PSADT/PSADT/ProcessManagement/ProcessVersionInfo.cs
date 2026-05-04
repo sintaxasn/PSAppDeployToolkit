@@ -97,6 +97,7 @@ namespace PSADT.ProcessManagement
         /// <param name="ntPathLookupTable">A read-only dictionary for resolving NT paths to user-friendly paths. If <see langword="null"/>, a default lookup table will be used.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="process"/> is <see langword="null"/>.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have the required SeDebugPrivilege to read the target process memory.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S2302:\"nameof\" should be used", Justification = "This is a false positive.")]
         private ProcessVersionInfo(Process process, string? filePath, ReadOnlyDictionary<string, string>? ntPathLookupTable)
         {
             // Confirm we've got the privilege to read the process memory.
@@ -107,14 +108,14 @@ namespace PSADT.ProcessManagement
             PrivilegeManager.EnablePrivilegeIfDisabled(SE_PRIVILEGE.SeDebugPrivilege);
 
             // Get the main module base address and read the version resource from memory.
-            if (filePath is null)
-            {
-                FileName = process.GetFilePath(ntPathLookupTable ?? FileSystemUtilities.MakeNtPathLookupTable());
-            }
-            else
+            if (filePath is not null)
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
                 FileName = new(filePath);
+            }
+            else
+            {
+                FileName = process.GetFilePath(ntPathLookupTable ?? FileSystemUtilities.MakeNtPathLookupTable());
             }
             ReadOnlySpan<byte> versionResource;
             using (SafeFileHandle processHandle = NativeMethods.OpenProcess(PROCESS_ACCESS_RIGHTS.PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_ACCESS_RIGHTS.PROCESS_VM_READ, false, (uint)process.Id))
@@ -124,7 +125,7 @@ namespace PSADT.ProcessManagement
                     MODULEINFO moduleInfo = GetMainModuleInfo(processHandle);
                     versionResource = ReadVersionResource(processHandle, in moduleInfo);
                 }
-                catch
+                catch (Exception ex) when (ex is BadImageFormatException or FileFormatException)
                 {
                     return;
                     throw;
@@ -134,24 +135,24 @@ namespace PSADT.ProcessManagement
             // If we got a valid version resource, parse it.
             // Read the version information from the resource.
             _ = NativeMethods.VerQueryValue(versionResource, @"\", out nint fixedInfoPtr, out _);
-            FixedFileInfo = fixedInfoPtr.AsReadOnlyStructure<VS_FIXEDFILEINFO>();
-            FileMajorPart = PInvoke.HIWORD(FixedFileInfo.dwFileVersionMS);
-            FileMinorPart = PInvoke.LOWORD(FixedFileInfo.dwFileVersionMS);
-            FileBuildPart = PInvoke.HIWORD(FixedFileInfo.dwFileVersionLS);
-            FilePrivatePart = PInvoke.LOWORD(FixedFileInfo.dwFileVersionLS);
-            ProductMajorPart = PInvoke.HIWORD(FixedFileInfo.dwProductVersionMS);
-            ProductMinorPart = PInvoke.LOWORD(FixedFileInfo.dwProductVersionMS);
-            ProductBuildPart = PInvoke.HIWORD(FixedFileInfo.dwProductVersionLS);
-            ProductPrivatePart = PInvoke.LOWORD(FixedFileInfo.dwProductVersionLS);
+            ref readonly VS_FIXEDFILEINFO fixedFileInfo = ref fixedInfoPtr.AsReadOnlyStructure<VS_FIXEDFILEINFO>();
+            FileMajorPart = PInvoke.HIWORD(fixedFileInfo.dwFileVersionMS);
+            FileMinorPart = PInvoke.LOWORD(fixedFileInfo.dwFileVersionMS);
+            FileBuildPart = PInvoke.HIWORD(fixedFileInfo.dwFileVersionLS);
+            FilePrivatePart = PInvoke.LOWORD(fixedFileInfo.dwFileVersionLS);
+            ProductMajorPart = PInvoke.HIWORD(fixedFileInfo.dwProductVersionMS);
+            ProductMinorPart = PInvoke.LOWORD(fixedFileInfo.dwProductVersionMS);
+            ProductBuildPart = PInvoke.HIWORD(fixedFileInfo.dwProductVersionLS);
+            ProductPrivatePart = PInvoke.LOWORD(fixedFileInfo.dwProductVersionLS);
             FileVersionRaw = new(FileMajorPart, FileMinorPart, FileBuildPart, FilePrivatePart);
             ProductVersionRaw = new(ProductMajorPart, ProductMinorPart, ProductBuildPart, ProductPrivatePart);
 
             // Set the flags based on the fixed file info.
-            IsDebug = (FixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_DEBUG) != 0;
-            IsPatched = (FixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PATCHED) != 0;
-            IsPrivateBuild = (FixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PRIVATEBUILD) != 0;
-            IsPreRelease = (FixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PRERELEASE) != 0;
-            IsSpecialBuild = (FixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_SPECIALBUILD) != 0;
+            IsDebug = (fixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_DEBUG) != 0;
+            IsPatched = (fixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PATCHED) != 0;
+            IsPrivateBuild = (fixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PRIVATEBUILD) != 0;
+            IsPreRelease = (fixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PRERELEASE) != 0;
+            IsSpecialBuild = (fixedFileInfo.dwFileFlags & VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_SPECIALBUILD) != 0;
 
             // Read the version resource strings.
             ReadOnlyCollection<string> codepageTable = GetTranslationTableCombinations(versionResource);
@@ -199,7 +200,7 @@ namespace PSADT.ProcessManagement
         {
             // Read the DOS header to make sure we have a valid PE header.
             nint baseAddress; unsafe { baseAddress = (nint)moduleInfo.lpBaseOfDll; }
-            Span<byte> dosHeaderBuf = stackalloc byte[Marshal.SizeOf<IMAGE_DOS_HEADER>()];
+            Span<byte> dosHeaderBuf = stackalloc byte[Unsafe.SizeOf<IMAGE_DOS_HEADER>()];
             _ = NativeMethods.ReadProcessMemory(processHandle, baseAddress, dosHeaderBuf, out _);
             ref readonly IMAGE_DOS_HEADER dosHeader = ref dosHeaderBuf.AsReadOnlyStructure<IMAGE_DOS_HEADER>();
             if (dosHeader.e_magic != PInvoke.IMAGE_DOS_SIGNATURE)
@@ -208,8 +209,8 @@ namespace PSADT.ProcessManagement
             }
 
             // Read the signature to confirm we've got a valid NT image.
-            nint ntHeadersAddress = unchecked(baseAddress + dosHeader.e_lfanew);
-            Span<byte> peSignatureBuf = stackalloc byte[Marshal.SizeOf<uint>()];
+            nint ntHeadersAddress = baseAddress + dosHeader.e_lfanew;
+            const int peSignatureSize = sizeof(uint); Span<byte> peSignatureBuf = stackalloc byte[peSignatureSize];
             _ = NativeMethods.ReadProcessMemory(processHandle, ntHeadersAddress, peSignatureBuf, out _);
             ref readonly uint peSignature = ref peSignatureBuf.AsReadOnlyStructure<uint>();
             if (peSignature != PInvoke.IMAGE_NT_SIGNATURE)
@@ -218,7 +219,7 @@ namespace PSADT.ProcessManagement
             }
 
             // Read the magic from the IMAGE_OPTIONAL_HEADER to know if it's 32/64-bit.
-            nint ntOptionalHeadersAddress = unchecked(ntHeadersAddress + Marshal.SizeOf<uint>() + Marshal.SizeOf<IMAGE_FILE_HEADER>());
+            nint ntOptionalHeadersAddress = ntHeadersAddress + peSignatureSize + Unsafe.SizeOf<IMAGE_FILE_HEADER>();
             Span<byte> magicBuf = stackalloc byte[sizeof(ushort)]; _ = NativeMethods.ReadProcessMemory(processHandle, ntOptionalHeadersAddress, magicBuf, out _);
             ref readonly IMAGE_OPTIONAL_HEADER_MAGIC magic = ref magicBuf.AsReadOnlyStructure<IMAGE_OPTIONAL_HEADER_MAGIC>();
 
@@ -226,24 +227,24 @@ namespace PSADT.ProcessManagement
             uint resourceRva, resourceSize;
             if (magic == IMAGE_OPTIONAL_HEADER_MAGIC.IMAGE_NT_OPTIONAL_HDR32_MAGIC) // PE32
             {
-                Span<byte> optionalHeader32Buf = stackalloc byte[Marshal.SizeOf<IMAGE_OPTIONAL_HEADER32>()];
+                Span<byte> optionalHeader32Buf = stackalloc byte[Unsafe.SizeOf<IMAGE_OPTIONAL_HEADER32>()];
                 _ = NativeMethods.ReadProcessMemory(processHandle, ntOptionalHeadersAddress, optionalHeader32Buf, out _);
                 ref readonly IMAGE_OPTIONAL_HEADER32 optionalHeader32 = ref optionalHeader32Buf.AsReadOnlyStructure<IMAGE_OPTIONAL_HEADER32>();
                 if (optionalHeader32.NumberOfRvaAndSizes <= 2)
                 {
-                    throw new InvalidOperationException("The specified process does not have enough data directories to contain a resource directory.");
+                    throw new FileFormatException("The specified process does not have enough data directories to contain a resource directory.");
                 }
                 resourceRva = optionalHeader32.DataDirectory._2.VirtualAddress;  // INDEX_RESOURCE = 2
                 resourceSize = optionalHeader32.DataDirectory._2.Size;
             }
             else if (magic == IMAGE_OPTIONAL_HEADER_MAGIC.IMAGE_NT_OPTIONAL_HDR64_MAGIC) // PE32+
             {
-                Span<byte> optionalHeader64Buf = stackalloc byte[Marshal.SizeOf<IMAGE_OPTIONAL_HEADER64>()];
+                Span<byte> optionalHeader64Buf = stackalloc byte[Unsafe.SizeOf<IMAGE_OPTIONAL_HEADER64>()];
                 _ = NativeMethods.ReadProcessMemory(processHandle, ntOptionalHeadersAddress, optionalHeader64Buf, out _);
                 ref readonly IMAGE_OPTIONAL_HEADER64 optionalHeader64 = ref optionalHeader64Buf.AsReadOnlyStructure<IMAGE_OPTIONAL_HEADER64>();
                 if (optionalHeader64.NumberOfRvaAndSizes <= 2)
                 {
-                    throw new InvalidOperationException("The specified process does not have enough data directories to contain a resource directory.");
+                    throw new FileFormatException("The specified process does not have enough data directories to contain a resource directory.");
                 }
                 resourceRva = optionalHeader64.DataDirectory._2.VirtualAddress;  // INDEX_RESOURCE = 2
                 resourceSize = optionalHeader64.DataDirectory._2.Size;
@@ -265,17 +266,19 @@ namespace PSADT.ProcessManagement
         private static byte[] FindVersionResource(SafeFileHandle processHandle, nint resourceDirectoryAddress, nint baseAddress)
         {
             // Read the resource directory
-            Span<byte> resourceDirBuf = stackalloc byte[Marshal.SizeOf<IMAGE_RESOURCE_DIRECTORY>()];
+            int resourceDirSize = Unsafe.SizeOf<IMAGE_RESOURCE_DIRECTORY>();
+            Span<byte> resourceDirBuf = stackalloc byte[resourceDirSize];
             _ = NativeMethods.ReadProcessMemory(processHandle, resourceDirectoryAddress, resourceDirBuf, out _);
             ref readonly IMAGE_RESOURCE_DIRECTORY resourceDir = ref resourceDirBuf.AsReadOnlyStructure<IMAGE_RESOURCE_DIRECTORY>();
             int totalEntries = resourceDir.NumberOfNamedEntries + resourceDir.NumberOfIdEntries;
-            nint entriesAddress = unchecked(resourceDirectoryAddress + Marshal.SizeOf<IMAGE_RESOURCE_DIRECTORY>());
+            nint entriesAddress = resourceDirectoryAddress + resourceDirSize;
 
             // Look for RT_VERSION resource (type 16) and throw if not found.
-            Span<byte> entryBuf = stackalloc byte[Marshal.SizeOf<IMAGE_RESOURCE_DIRECTORY_ENTRY>()];
+            int entrySize = Unsafe.SizeOf<IMAGE_RESOURCE_DIRECTORY_ENTRY>();
+            Span<byte> entryBuf = stackalloc byte[entrySize];
             for (int i = 0; i < totalEntries; i++)
             {
-                nint entryAddress = unchecked(entriesAddress + (i * Marshal.SizeOf<IMAGE_RESOURCE_DIRECTORY_ENTRY>()));
+                nint entryAddress = unchecked(entriesAddress + (i * entrySize));
                 _ = NativeMethods.ReadProcessMemory(processHandle, entryAddress, entryBuf, out _);
                 ref readonly IMAGE_RESOURCE_DIRECTORY_ENTRY entry = ref entryBuf.AsReadOnlyStructure<IMAGE_RESOURCE_DIRECTORY_ENTRY>();
                 if (entry.Anonymous1.Id == (uint)RESOURCE_TYPE.RT_VERSION)
@@ -283,7 +286,7 @@ namespace PSADT.ProcessManagement
                     return ReadVersionResourceData(processHandle, resourceDirectoryAddress, baseAddress, entry.Anonymous2.OffsetToData);
                 }
             }
-            throw new InvalidOperationException("The specified process does not contain an RT_VERSION resource in its Level 1 data.");
+            throw new FileFormatException("The specified process does not contain an RT_VERSION resource in its Level 1 data.");
         }
 
         /// <summary>
@@ -292,12 +295,12 @@ namespace PSADT.ProcessManagement
         private static byte[] ReadVersionResourceData(SafeFileHandle processHandle, nint resourceDirectoryAddress, nint baseAddress, uint offsetToData)
         {
             // Navigate through the directory levels using a do/while loop.
-            Span<byte> currentEntryBuf = stackalloc byte[Marshal.SizeOf<IMAGE_RESOURCE_DIRECTORY_ENTRY>()];
+            Span<byte> currentEntryBuf = stackalloc byte[Unsafe.SizeOf<IMAGE_RESOURCE_DIRECTORY_ENTRY>()];
             uint currentOffsetToData = offsetToData;
             do
             {
                 nint currentAddress = unchecked(resourceDirectoryAddress + (int)(currentOffsetToData & IMAGE_RESOURCE_RVA_MASK));
-                nint currentEntryAddress = unchecked(currentAddress + Marshal.SizeOf<IMAGE_RESOURCE_DIRECTORY>());
+                nint currentEntryAddress = currentAddress + Unsafe.SizeOf<IMAGE_RESOURCE_DIRECTORY>();
                 _ = NativeMethods.ReadProcessMemory(processHandle, currentEntryAddress, currentEntryBuf, out _);
                 ref readonly IMAGE_RESOURCE_DIRECTORY_ENTRY currentEntry = ref currentEntryBuf.AsReadOnlyStructure<IMAGE_RESOURCE_DIRECTORY_ENTRY>();
                 currentOffsetToData = currentEntry.Anonymous2.OffsetToData;
@@ -306,7 +309,7 @@ namespace PSADT.ProcessManagement
 
             // At this point, currentEntry points to a data entry, not a directory.
             nint dataEntryAddress = unchecked(resourceDirectoryAddress + (int)currentOffsetToData);
-            Span<byte> dataEntryBuf = stackalloc byte[Marshal.SizeOf<IMAGE_RESOURCE_DATA_ENTRY>()];
+            Span<byte> dataEntryBuf = stackalloc byte[Unsafe.SizeOf<IMAGE_RESOURCE_DATA_ENTRY>()];
             _ = NativeMethods.ReadProcessMemory(processHandle, dataEntryAddress, dataEntryBuf, out _);
             ref readonly IMAGE_RESOURCE_DATA_ENTRY dataEntry = ref dataEntryBuf.AsReadOnlyStructure<IMAGE_RESOURCE_DATA_ENTRY>();
             if (dataEntry.Size > 0)
@@ -315,7 +318,7 @@ namespace PSADT.ProcessManagement
                 _ = NativeMethods.ReadProcessMemory(processHandle, unchecked(baseAddress + (int)dataEntry.OffsetToData), buffer, out _);
                 return buffer;
             }
-            throw new InvalidProgramException($"Invalid data entry size: {dataEntry.Size} at address 0x{(long)dataEntryAddress:X}");
+            throw new BadImageFormatException($"Invalid data entry size: {dataEntry.Size} at address 0x{(long)dataEntryAddress:X}");
         }
 
         /// <summary>
@@ -326,7 +329,7 @@ namespace PSADT.ProcessManagement
             // Return any translation pairs found in the version resource.
             List<string> translationCombinations = [];
             _ = NativeMethods.VerQueryValue(versionResource, @"\VarFileInfo\Translation", out nint translationPtr, out uint translationLength);
-            int langAndCodepageSize = Marshal.SizeOf<LANGANDCODEPAGE>();
+            int langAndCodepageSize = Unsafe.SizeOf<LANGANDCODEPAGE>();
             for (int i = 0; i < translationLength / langAndCodepageSize; i++)
             {
                 ref readonly LANGANDCODEPAGE langAndCodePage = ref (translationPtr + (i * langAndCodepageSize)).AsReadOnlyStructure<LANGANDCODEPAGE>();
@@ -585,14 +588,6 @@ namespace PSADT.ProcessManagement
         /// Gets the special build information for the file.
         /// </summary>
         public string? SpecialBuild { get; }
-
-        /// <summary>
-        /// Represents the fixed file information of a version resource.
-        /// </summary>
-        /// <remarks>This field provides version information that is fixed for a specific file, such as
-        /// the file version number, product version number, and other attributes. It is typically used in version
-        /// management and file identification.</remarks>
-        private readonly VS_FIXEDFILEINFO FixedFileInfo;
 
         /// <summary>
         /// Represents a mask used to extract the relative virtual address (RVA) from an image resource.

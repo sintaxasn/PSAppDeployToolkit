@@ -23,9 +23,9 @@ function ConvertTo-ADTNTAccountOrSID
         The Windows NT Account SID.
 
     .PARAMETER WellKnownSIDName
-        Specify the Well Known SID name translate to the actual SID (e.g., LocalServiceSid).
+        Specify the Well Known SID name to translate to the actual SID (e.g., LocalServiceSid).
 
-        To get all well known SIDs available on system: [Enum]::GetNames([Security.Principal.WellKnownSidType])
+        To get all well known SIDs available on system: `[Enum]::GetNames([Security.Principal.WellKnownSidType])`
 
     .PARAMETER WellKnownToNTAccount
         Convert the Well Known SID to an NTAccount name.
@@ -42,9 +42,14 @@ function ConvertTo-ADTNTAccountOrSID
         Accepts a string containing the NT Account name or SID.
 
     .OUTPUTS
-        System.String
+        System.Security.Principal.NTAccount
 
-        Returns the NT Account name or SID.
+        When the input is a SID or a Well Known SID name and the `-WellKnownToNTAccount` parameter is specified, this function returns an NTAccount object representing the account name of the SID specified.
+
+    .OUTPUTS
+        System.Security.Principal.SecurityIdentifier
+
+        When the input is an NTAccount or a Well Known SID name and the `-WellKnownToNTAccount` parameter is not specified, this function returns a SecurityIdentifier object representing the SID of the specified account.
 
     .EXAMPLE
         ConvertTo-ADTNTAccountOrSID -AccountName 'CONTOSO\User1'
@@ -64,7 +69,7 @@ function ConvertTo-ADTNTAccountOrSID
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        The conversion can return an empty result if the user account does not exist anymore or if translation fails Refer to: http://blogs.technet.com/b/askds/archive/2011/07/28/troubleshooting-sid-translation-failures-from-the-obvious-to-the-not-so-obvious.aspx
+        The conversion can return an empty result if the user account does not exist anymore or if translation fails Refer to: https://learn.microsoft.com/en-us/archive/blogs/askds/troubleshooting-sid-translation-failures-from-the-obvious-to-the-not-so-obvious
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -75,13 +80,13 @@ function ConvertTo-ADTNTAccountOrSID
         https://psappdeploytoolkit.com/docs/reference/functions/ConvertTo-ADTNTAccountOrSID
 
     .LINK
-        http://msdn.microsoft.com/en-us/library/system.security.principal.wellknownsidtype(v=vs.110).aspx
+        https://learn.microsoft.com/en-us/dotnet/api/system.security.principal.wellknownsidtype
 
     #>
 
     [CmdletBinding()]
-    [OutputType([System.Security.Principal.SecurityIdentifier])]
     [OutputType([System.Security.Principal.NTAccount])]
+    [OutputType([System.Security.Principal.SecurityIdentifier])]
     param
     (
         [Parameter(Mandatory = $true, ParameterSetName = 'NTAccountToSID', ValueFromPipelineByPropertyName = $true)]

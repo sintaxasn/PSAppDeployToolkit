@@ -41,7 +41,9 @@ namespace PSAppDeployToolkit.Foundation
         /// <param name="parameters">All parameters from Open-ADTSession.</param>
         /// <param name="noExitOnClose">Indicates that the shell shouldn't exit on the last session closure.</param>
         /// <param name="compatibilityMode">Indicates whether compatibility mode is enabled.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Maintainability", "CA1505:Avoid unmaintainable code", Justification = "This is unfortunately unavoidable.")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2201:Do not raise reserved exception types", Justification = "This exception type is fine here.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3366:\"this\" should not be exposed from constructors", Justification = "This is deliberate, unfortunately.")]
         public DeploymentSession(IReadOnlyDictionary<string, object>? parameters = null, bool? noExitOnClose = null, bool? compatibilityMode = null)
         {
             try
@@ -266,7 +268,7 @@ namespace PSAppDeployToolkit.Foundation
                     // Mount the WIM file and reset DirFiles to the mount point.
                     WriteInitialDivider(ref writtenDivider);
                     WriteLogEntry($"Discovered Zero-Config WIM file [{wimFile}].");
-                    DirectoryInfo mountPath = new(Path.Combine(DirFiles.FullName, Path.GetRandomFileName()));
+                    DirectoryInfo mountPath = new(Path.Join(DirFiles.FullName, Path.GetRandomFileName()));
                     _ = ModuleDatabase.InvokeScript(ScriptBlock.Create("& $Script:CommandTable.'Mount-ADTWimFile' -ImagePath $args[0] -Path $args[1] -Index 1"), wimFile, mountPath.FullName);
                     AddMountedWimFile(wimFile); DirFiles = mountPath;
                     WriteLogEntry($"Successfully mounted WIM file to [{mountPath}].");
@@ -310,7 +312,7 @@ namespace PSAppDeployToolkit.Foundation
                     }
                     else if (!Path.IsPathFullyQualified(DefaultMsiFile.ToString()) && DirFiles is not null)
                     {
-                        DefaultMsiFile = new(Path.Combine(DirFiles.FullName, DefaultMsiFile.ToString()));
+                        DefaultMsiFile = new(Path.Join(DirFiles.FullName, DefaultMsiFile.ToString()));
                     }
 
                     // If we have a default MSI file, proceed further with the Zero-Config configuration.
@@ -330,7 +332,7 @@ namespace PSAppDeployToolkit.Foundation
                         }
                         else if (!Path.IsPathFullyQualified(DefaultMstFile.ToString()) && DirFiles is not null)
                         {
-                            DefaultMstFile = new(Path.Combine(DirFiles.FullName, DefaultMstFile.ToString()));
+                            DefaultMstFile = new(Path.Join(DirFiles.FullName, DefaultMstFile.ToString()));
                         }
                         if (DefaultMstFile is not null)
                         {
@@ -347,7 +349,7 @@ namespace PSAppDeployToolkit.Foundation
                         }
                         else if (DirFiles is not null && DefaultMspFiles.Any(static f => !Path.IsPathFullyQualified(f.ToString())))
                         {
-                            DefaultMspFiles = new ReadOnlyCollection<FileInfo>([.. DefaultMspFiles.Select(f => !Path.IsPathFullyQualified(f.ToString()) ? new(Path.Combine(DirFiles!.FullName, f.ToString())) : f)]);
+                            DefaultMspFiles = new ReadOnlyCollection<FileInfo>([.. DefaultMspFiles.Select(f => !Path.IsPathFullyQualified(f.ToString()) ? new(Path.Join(DirFiles!.FullName, f.ToString())) : f)]);
                         }
                         if (DefaultMspFiles.Count > 0)
                         {
@@ -447,7 +449,7 @@ namespace PSAppDeployToolkit.Foundation
                 if ((bool)configToolkit["CompressLogs"]!)
                 {
                     // If the temp log folder already exists from a previous ZIP operation, then delete all files in it to avoid issues.
-                    DirectoryInfo logTempFolder = new(Path.Combine(adtEnv.EnvTemp.FullName, $"{InstallName}_{DeploymentType}"));
+                    DirectoryInfo logTempFolder = new(Path.Join(adtEnv.EnvTemp.FullName, $"{InstallName}_{DeploymentType}"));
                     if (logTempFolder.Exists)
                     {
                         logTempFolder.Delete(true);
@@ -463,7 +465,7 @@ namespace PSAppDeployToolkit.Foundation
                 if ((bool)configToolkit["LogToHierarchy"]!)
                 {
                     // Create the hierarchical log path based on vendor, app name and version before checking whether we need to clean up old log folders.
-                    LogPath = new(Directory.CreateDirectory(Path.Combine(LogPath.FullName, $@"{AppVendor}\{AppName}\{AppVersion}".Replace(@"\\", null))).FullName);
+                    LogPath = new(Directory.CreateDirectory(Path.Join(LogPath.FullName, $@"{AppVendor}\{AppName}\{AppVersion}".Replace(@"\\", null))).FullName);
 
                     // Check how many hierarchy levels to keep based on configuration.
                     DirectoryInfo[] hierarchyDirectories = [.. LogPath.Parent!.GetDirectories().Where(d => !d.FullName.Equals(LogPath.FullName, StringComparison.OrdinalIgnoreCase)).OrderBy(static d => d.CreationTime)];
@@ -479,16 +481,16 @@ namespace PSAppDeployToolkit.Foundation
                 }
                 else if ((bool)configToolkit["LogToSubfolder"]!)
                 {
-                    LogPath = new(Directory.CreateDirectory(Path.Combine(LogPath.FullName, $"{InstallName}_{DeploymentType}")).FullName);
+                    LogPath = new(Directory.CreateDirectory(Path.Join(LogPath.FullName, $"{InstallName}_{DeploymentType}")).FullName);
                 }
 
                 // Generate the log filename to use. Append the username to the log file name if the toolkit is not running as an administrator,
                 // since users do not have the rights to modify files in the ProgramData folder that belong to other users.
                 DefaultLogName = invalidChars.Replace($"{InstallName}_{{0}}_{DeploymentType}{(!isAdmin ? $"_{adtEnv.EnvUserName}" : null)}.log", string.Empty);
                 LogName = !string.IsNullOrWhiteSpace(LogName) ? invalidChars.Replace(LogName, string.Empty) : NewLogFileName(appDeployToolkitName);
-                FileInfo logFile = new(Path.Combine(LogPath.FullName, LogName));
+                FileInfo logFile = new(Path.Join(LogPath.FullName, LogName));
                 int logMaxSize = (int)configToolkit["LogMaxSize"]!;
-                bool logFileSizeExceeded = logFile.Exists && (logMaxSize > 0) && ((logFile.Length / 1048576.0) > logMaxSize);
+                bool logFileSizeExceeded = logFile.Exists && (logMaxSize > 0) && ((logFile.Length / 1_048_576.0) > logMaxSize);
 
                 // Check if log file needs to be rotated.
                 if ((logFile.Exists && !(bool)configToolkit["LogAppend"]!) || logFileSizeExceeded)
@@ -500,7 +502,7 @@ namespace PSAppDeployToolkit.Foundation
                         string logFileExtension = LogUtilities.LogFileNameRegex.Match(LogName).Value;
                         string logFileTimestamp = DateTime.Now.ToString("O").Split('.')[0].Replace(":", null);
                         string archiveLogFileName = $"{logFileNameOnly}_{logFileTimestamp}{logFileExtension}";
-                        string archiveLogFilePath = Path.Combine(LogPath.FullName, archiveLogFileName);
+                        string archiveLogFilePath = Path.Join(LogPath.FullName, archiveLogFileName);
                         int logMaxHistory = (int)configToolkit["LogMaxHistory"]!;
 
                         // Log message about archiving the log file.
@@ -540,7 +542,7 @@ namespace PSAppDeployToolkit.Foundation
                 // Flush our log buffer out to disk.
                 if (!DisableLogging && LogBuffer.Count > 0)
                 {
-                    using StreamWriter logFileWriter = new(Path.Combine(LogPath.FullName, LogName), true, LogUtilities.LogEncoding);
+                    using StreamWriter logFileWriter = new(Path.Join(LogPath.FullName, LogName), true, LogUtilities.LogEncoding);
                     foreach (string line in LogStyle == LogStyle.CMTrace ? LogBuffer.Select(static o => o.CMTraceLogLine) : LogBuffer.Select(static o => o.LegacyLogLine))
                     {
                         logFileWriter.WriteLine(line);
@@ -982,7 +984,7 @@ namespace PSAppDeployToolkit.Foundation
 
                 #endregion
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex.Message is not null)
             {
                 WriteLogEntry(ex.Message, LogSeverity.Error);
                 RemoveSubstDrive(); DismountWimFiles();
@@ -1001,6 +1003,7 @@ namespace PSAppDeployToolkit.Foundation
         /// Closes the session and releases resources.
         /// </summary>
         /// <returns>The exit code.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S6561:Avoid using \"DateTime.Now\" for benchmarking or timing operations", Justification = "We don't require nanosecond precision here.")]
         public int Close()
         {
             // Throw if this object has already been disposed.
@@ -1084,7 +1087,7 @@ namespace PSAppDeployToolkit.Foundation
                     }
 
                     // Compression of the log files.
-                    ZipFile.CreateFromDirectory(LogPath.FullName, Path.Combine(destArchiveFilePath.FullName, destArchiveFileName), CompressionLevel.Optimal, false);
+                    ZipFile.CreateFromDirectory(LogPath.FullName, Path.Join(destArchiveFilePath.FullName, destArchiveFileName), CompressionLevel.Optimal, false);
                     LogPath.Delete(true);
                 }
                 catch (Exception ex) when (ex.Message is not null)
@@ -1137,7 +1140,7 @@ namespace PSAppDeployToolkit.Foundation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteLogEntry(IReadOnlyList<string> message)
         {
-            _ = WriteLogEntry(message, false, null, null, null, null, null, null, null);
+            _ = WriteLogEntry(message, false);
         }
 
         /// <summary>
@@ -1147,7 +1150,7 @@ namespace PSAppDeployToolkit.Foundation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteLogEntry(string message)
         {
-            _ = WriteLogEntry([message], false, null, null, null, null, null, null, null);
+            _ = WriteLogEntry([message], false);
         }
 
         /// <summary>
@@ -1158,7 +1161,7 @@ namespace PSAppDeployToolkit.Foundation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteLogEntry(string message, LogSeverity severity)
         {
-            _ = WriteLogEntry([message], false, severity, null, null, null, null, null, null);
+            _ = WriteLogEntry([message], false, severity);
         }
 
         /// <summary>
@@ -1169,7 +1172,7 @@ namespace PSAppDeployToolkit.Foundation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteLogEntry(string message, string source)
         {
-            _ = WriteLogEntry([message], false, null, source, null, null, null, null, null);
+            _ = WriteLogEntry([message], false, source: source);
         }
 
         /// <summary>
@@ -1181,7 +1184,7 @@ namespace PSAppDeployToolkit.Foundation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteLogEntry(string message, LogSeverity severity, string source)
         {
-            _ = WriteLogEntry([message], false, severity, source, null, null, null, null, null);
+            _ = WriteLogEntry([message], false, severity, source);
         }
 
         /// <summary>
@@ -1192,7 +1195,7 @@ namespace PSAppDeployToolkit.Foundation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteLogEntry(string message, bool writeHost)
         {
-            _ = WriteLogEntry([message], false, null, null, null, null, null, null, GetHostLogStreamTypeMode(writeHost));
+            _ = WriteLogEntry([message], false, hostLogStreamType: GetHostLogStreamTypeMode(writeHost));
         }
 
         /// <summary>
@@ -1532,12 +1535,12 @@ namespace PSAppDeployToolkit.Foundation
         /// <summary>
         /// The default exit code to exit out with in the event of an error.
         /// </summary>
-        private readonly int DefaultExitCode = 1618;
+        private readonly int DefaultExitCode;
 
         /// <summary>
         /// The default exit code used when the user defers a deployment.
         /// </summary>
-        private readonly int DeferExitCode = 1602;
+        private readonly int DeferExitCode;
 
         /// <summary>
         /// Indicates whether log files should be compressed upon session closure.
@@ -1617,12 +1620,12 @@ namespace PSAppDeployToolkit.Foundation
         /// <summary>
         /// Gets the deployment session's deployment type.
         /// </summary>
-        public DeploymentType DeploymentType { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; } = DeploymentType.Install;
+        public DeploymentType DeploymentType { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); } = DeploymentType.Install;
 
         /// <summary>
         /// Gets the deployment session's deployment mode.
         /// </summary>
-        public DeployMode DeployMode { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; } = DeployMode.Auto;
+        public DeployMode DeployMode { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); } = DeployMode.Auto;
 
         /// <summary>
         /// Gets whether this deployment session is allowed to exit with a reboot exit code.
@@ -1647,87 +1650,87 @@ namespace PSAppDeployToolkit.Foundation
         /// <summary>
         /// Gets the deployment session's application vendor.
         /// </summary>
-        public string? AppVendor { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? AppVendor { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's application name.
         /// </summary>
-        public string? AppName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? AppName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's application version.
         /// </summary>
-        public string? AppVersion { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? AppVersion { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's application architecture.
         /// </summary>
-        public string? AppArch { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? AppArch { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's application language.
         /// </summary>
-        public string? AppLang { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? AppLang { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's application package revision.
         /// </summary>
-        public string? AppRevision { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? AppRevision { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's exit code(s) to indicate a successful deployment.
         /// </summary>
-        public IReadOnlyList<int> AppSuccessExitCodes { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; } = new ReadOnlyCollection<int>([0]);
+        public IReadOnlyList<int> AppSuccessExitCodes { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); } = new ReadOnlyCollection<int>([0]);
 
         /// <summary>
         /// Gets the deployment session's exit code(s) to indicate a reboot is required.
         /// </summary>
-        public IReadOnlyList<int> AppRebootExitCodes { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; } = new ReadOnlyCollection<int>([1641, 3010]);
+        public IReadOnlyList<int> AppRebootExitCodes { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); } = new ReadOnlyCollection<int>([1641, 3010]);
 
         /// <summary>
         /// Gets the list of application processes that should be closed.
         /// </summary>
-        public IReadOnlyList<ProcessDefinition> AppProcessesToClose { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; } = new ReadOnlyCollection<ProcessDefinition>([]);
+        public IReadOnlyList<ProcessDefinition> AppProcessesToClose { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); } = new ReadOnlyCollection<ProcessDefinition>([]);
 
         /// <summary>
         /// Gets the deployment session's application package version.
         /// </summary>
-        public Version? AppScriptVersion { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public Version? AppScriptVersion { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's application package date.
         /// </summary>
-        public DateTime? AppScriptDate { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public DateTime? AppScriptDate { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's application package author.
         /// </summary>
-        public string? AppScriptAuthor { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? AppScriptAuthor { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets an override to the deployment session's installation name.
         /// </summary>
-        public string InstallName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string InstallName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets an override to the deployment session's installation title.
         /// </summary>
-        public string InstallTitle { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string InstallTitle { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's frontend script name.
         /// </summary>
-        public string? DeployAppScriptFriendlyName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string? DeployAppScriptFriendlyName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's frontend script version.
         /// </summary>
-        public Version? DeployAppScriptVersion { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public Version? DeployAppScriptVersion { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's frontend script parameters.
         /// </summary>
-        public IReadOnlyDictionary<string, object>? DeployAppScriptParameters { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public IReadOnlyDictionary<string, object>? DeployAppScriptParameters { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets/sets the deployment session's installation phase.
@@ -1747,12 +1750,12 @@ namespace PSAppDeployToolkit.Foundation
         /// <summary>
         /// Gets the deployment session's starting date as a string.
         /// </summary>
-        public string CurrentDate { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string CurrentDate { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's starting time as a string.
         /// </summary>
-        public string CurrentTime { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string CurrentTime { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's UTC offset from GMT 0.
@@ -1762,7 +1765,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <summary>
         /// Gets the script directory of the caller.
         /// </summary>
-        public IReadOnlyList<DirectoryInfo> ScriptDirectory { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; } = new ReadOnlyCollection<DirectoryInfo>([]);
+        public IReadOnlyList<DirectoryInfo> ScriptDirectory { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); } = new ReadOnlyCollection<DirectoryInfo>([]);
 
         /// <summary>
         /// Gets the specified or determined path to the Files folder.
@@ -1777,17 +1780,17 @@ namespace PSAppDeployToolkit.Foundation
         /// <summary>
         /// Gets the deployment session's Zero-Config MSI file path.
         /// </summary>
-        public FileInfo? DefaultMsiFile { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public FileInfo? DefaultMsiFile { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's Zero-Config MST file path.
         /// </summary>
-        public FileInfo? DefaultMstFile { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public FileInfo? DefaultMstFile { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's Zero-Config MSP file paths.
         /// </summary>
-        public IReadOnlyList<FileInfo> DefaultMspFiles { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; } = new ReadOnlyCollection<FileInfo>([]);
+        public IReadOnlyList<FileInfo> DefaultMspFiles { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); } = new ReadOnlyCollection<FileInfo>([]);
 
         /// <summary>
         /// Gets whether this deployment session found a valid Zero-Config MSI file.
@@ -1797,12 +1800,12 @@ namespace PSAppDeployToolkit.Foundation
         /// <summary>
         /// Gets the deployment session's log path.
         /// </summary>
-        public DirectoryInfo LogPath { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public DirectoryInfo LogPath { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets the deployment session's log filename.
         /// </summary>
-        public string LogName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); [MethodImpl(MethodImplOptions.AggressiveInlining)] init; }
+        public string LogName { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => GetPropertyValue(in field); }
 
         /// <summary>
         /// Gets a value indicating whether administrative privileges are required.

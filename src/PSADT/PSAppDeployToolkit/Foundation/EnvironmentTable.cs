@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -16,7 +15,6 @@ using System.Text.RegularExpressions;
 using Microsoft.Win32;
 using PSADT.AccountManagement;
 using PSADT.DeviceManagement;
-using PSADT.Extensions;
 using PSADT.Foundation;
 using PSADT.Interop;
 using PSADT.TerminalServices;
@@ -106,7 +104,7 @@ namespace PSAppDeployToolkit.Foundation
                 {
                     EnvLogonServer = (string?)Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Group Policy\\History", "DCName", null);
                 }
-                if (EnvLogonServer is not null && EnvLogonServer.StartsWith("\\"))
+                if (EnvLogonServer?.StartsWith("\\") == true)
                 {
                     EnvLogonServer = EnvLogonServer.TrimStart('\\');
                 }
@@ -131,20 +129,20 @@ namespace PSAppDeployToolkit.Foundation
                 {
                     EnvProgramFiles = GetEnvironmentVariableDirectory("ProgramW6432");
                     EnvCommonProgramFiles = GetEnvironmentVariableDirectory("CommonProgramW6432");
-                    EnvSysNativeDirectory = EnvWinDir is not null ? new(Path.Combine(EnvWinDir.FullName, "sysnative")) : null;
+                    EnvSysNativeDirectory = EnvWinDir is not null ? new(Path.Join(EnvWinDir.FullName, "sysnative")) : null;
                     EnvSysWow64Directory = EnvSystem32Directory;
                 }
                 EnvProgramFilesX86 = GetEnvironmentFolderPath(Environment.SpecialFolder.ProgramFilesX86);
                 EnvCommonProgramFilesX86 = GetEnvironmentFolderPath(Environment.SpecialFolder.CommonProgramFilesX86);
-                EnvSystemProfile = EnvSysNativeDirectory is not null ? new(Path.Combine(EnvSysNativeDirectory.FullName, "Config", "systemprofile")) : null;
-                EnvSystemProfileX86 = EnvSysWow64Directory is not null ? new(Path.Combine(EnvSysWow64Directory.FullName, "Config", "systemprofile")) : null;
+                EnvSystemProfile = EnvSysNativeDirectory is not null ? new(Path.Join(EnvSysNativeDirectory.FullName, "Config", "systemprofile")) : null;
+                EnvSystemProfileX86 = EnvSysWow64Directory is not null ? new(Path.Join(EnvSysWow64Directory.FullName, "Config", "systemprofile")) : null;
             }
             else
             {
                 EnvProgramFiles = GetEnvironmentFolderPath(Environment.SpecialFolder.ProgramFiles);
                 EnvCommonProgramFiles = GetEnvironmentFolderPath(Environment.SpecialFolder.CommonProgramFiles);
                 EnvSysNativeDirectory = EnvSystem32Directory;
-                EnvSystemProfile = EnvSysNativeDirectory is not null ? new(Path.Combine(EnvSysNativeDirectory.FullName, "Config", "systemprofile")) : null;
+                EnvSystemProfile = EnvSysNativeDirectory is not null ? new(Path.Join(EnvSysNativeDirectory.FullName, "Config", "systemprofile")) : null;
             }
 
             // Operating system information.
@@ -212,10 +210,7 @@ namespace PSAppDeployToolkit.Foundation
             }
 
             // PowerShell version information.
-            using (Process currentProcess = Process.GetCurrentProcess())
-            {
-                EnvPSProcessPath = currentProcess.GetFilePath();
-            }
+            EnvPSProcessPath = AssemblyManager.CallingProcessPath;
             if (psVersionTable["CLRVersion"] is Version clrVersion)
             {
                 EnvCLRVersion = clrVersion;
@@ -884,7 +879,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <remarks>This property can be used to monitor available system resources or to make decisions
         /// based on the total installed RAM. The value reflects the physical memory detected by the operating system at
         /// the time of retrieval.</remarks>
-        public decimal EnvSystemRAM { get; } = DeviceUtilities.GetTotalSystemMemory() / (decimal)1073741824;
+        public decimal EnvSystemRAM { get; } = DeviceUtilities.GetTotalSystemMemory() / (decimal)1_073_741_824;
 
         /// <summary>
         /// Gets the type of hardware used in the current environment.

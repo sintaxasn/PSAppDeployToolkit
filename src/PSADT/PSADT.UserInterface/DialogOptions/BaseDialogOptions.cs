@@ -34,7 +34,7 @@ namespace PSADT.UserInterface.DialogOptions
         /// <param name="options">A dictionary containing key-value pairs that define dialog configuration settings, such as application
         /// title, subtitle, icon images, language, and display options. Keys must match the expected option names.</param>
         /// <exception cref="ArgumentNullException">Thrown if the options dictionary is null.</exception>
-        internal BaseDialogOptions(IDictionary options) : this(
+        private protected BaseDialogOptions(IDictionary options) : this(
             (options ?? throw new ArgumentNullException(nameof(options)))["AppTitle"] as string ?? null!,
             options["Subtitle"] as string ?? null!,
             options["AppIconImage"] as string ?? null!,
@@ -254,7 +254,7 @@ namespace PSADT.UserInterface.DialogOptions
                 }
                 return image;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex.Message is not null)
             {
                 throw new BadImageFormatException($"The specified [{identifier}] is not a valid image format", identifier, ex);
             }

@@ -11,7 +11,7 @@ function New-ADTLogFileName
         Generates a new log file name based off the current deployment session's properties.
 
     .DESCRIPTION
-        Generates a new log file name based off the current deployment session's properties, using the same default format that PSAppDeployTookit uses itself.
+        The `New-ADTLogFileName` function generates a new log file name based off the current deployment session's properties, using the same default format that PSAppDeployTookit uses itself.
 
     .PARAMETER Discriminator
         The identifier to pre-format the log file name with.
@@ -37,7 +37,7 @@ function New-ADTLogFileName
     .NOTES
         An active ADT session is required to use this function.
 
-        Requires: PSADT session should be initialized using Open-ADTSession
+        Requires: PSADT session should be initialized using `Open-ADTSession`
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

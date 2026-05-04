@@ -8,13 +8,13 @@ function Get-ADTBoundParametersAndDefaultValues
 {
     <#
     .SYNOPSIS
-        Returns a hashtable with the output of $PSBoundParameters and default-valued parameters for the given InvocationInfo.
+        Returns a hashtable with the output of `$PSBoundParameters` and default-valued parameters for the given InvocationInfo.
 
     .DESCRIPTION
-        This function processes the provided InvocationInfo and combines the results of $PSBoundParameters and default-valued parameters via the InvocationInfo's ScriptBlock AST (Abstract Syntax Tree).
+        The `Get-ADTBoundParametersAndDefaultValues` function processes the provided InvocationInfo and combines the results of `$PSBoundParameters` and default-valued parameters via the InvocationInfo's ScriptBlock AST (Abstract Syntax Tree).
 
     .PARAMETER Invocation
-        The script or function's InvocationInfo ($MyInvocation) to process.
+        The script or function's InvocationInfo (`$MyInvocation`) to process.
 
     .PARAMETER ParameterSetName
         The ParameterSetName to use as a filter against the Invocation's parameters.
@@ -24,6 +24,13 @@ function Get-ADTBoundParametersAndDefaultValues
 
     .PARAMETER Exclude
         One or more parameter names to exclude from the results.
+
+        Note: When a parameter name appears in both `-Include` and `-Exclude`, the `-Exclude` filter takes precedence and the parameter is excluded.
+
+    .PARAMETER Include
+        One or more parameter names to explicitly include in the results. All other parameter names will be excluded.
+
+        Note: When a parameter name appears in both `-Include` and `-Exclude`, the `-Exclude` filter takes precedence and the parameter is excluded.
 
     .PARAMETER CommonParameters
         Specifies whether PowerShell advanced function common parameters should be included.
@@ -36,7 +43,7 @@ function Get-ADTBoundParametersAndDefaultValues
     .OUTPUTS
         System.Collections.Generic.Dictionary[System.String, System.Object]
 
-        Get-ADTBoundParametersAndDefaultValues returns a dictionary of the same base type as $PSBoundParameters for API consistency.
+        `Get-ADTBoundParametersAndDefaultValues` returns a dictionary of the same base type as `$PSBoundParameters` for API consistency.
 
     .EXAMPLE
         Get-ADTBoundParametersAndDefaultValues -Invocation $MyInvocation
@@ -76,7 +83,13 @@ function Get-ADTBoundParametersAndDefaultValues
 
         [Parameter(Mandatory = $false)]
         [PSAppDeployToolkit.Attributes.ValidateNotNullOrWhiteSpace()]
+        [PSAppDeployToolkit.Attributes.ValidateUnique()]
         [System.String[]]$Exclude,
+
+        [Parameter(Mandatory = $false)]
+        [PSAppDeployToolkit.Attributes.ValidateNotNullOrWhiteSpace()]
+        [PSAppDeployToolkit.Attributes.ValidateUnique()]
+        [System.String[]]$Include,
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.SwitchParameter]$CommonParameters
@@ -228,6 +241,18 @@ function Get-ADTBoundParametersAndDefaultValues
 
                         # Add the parameter and its value.
                         $obj.Add($_.Name.VariablePath.UserPath, $_.DefaultValue.SafeGetValue())
+                    }
+                }
+
+                if ($Include)
+                {
+                    # Filter out parameters not specified in -Include
+                    foreach ($key in $($obj.Keys))
+                    {
+                        if ($Include -notcontains $key)
+                        {
+                            $null = $obj.Remove($key)
+                        }
                     }
                 }
 

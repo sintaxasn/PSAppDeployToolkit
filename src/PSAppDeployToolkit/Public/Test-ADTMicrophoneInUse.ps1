@@ -11,7 +11,7 @@ function Test-ADTMicrophoneInUse
         Tests whether the device's microphone is in use.
 
     .DESCRIPTION
-        Tests whether someone is using the microphone on their device. This could be within Teams, Zoom, a game, or any other app that uses a microphone.
+        The `Test-ADTMicrophoneInUse` function tests whether someone is using the the primary audio capture device (microphone) on the device. This could be within Teams, Zoom, a game, or any other app that uses a microphone.
 
     .INPUTS
         None
@@ -21,12 +21,12 @@ function Test-ADTMicrophoneInUse
     .OUTPUTS
         System.Boolean
 
-        Returns $true if the microphone is in use, otherwise returns $false.
+        Returns `$true` if the microphone is in use, otherwise returns `$false`.
 
     .EXAMPLE
         Test-ADTMicrophoneInUse
 
-        Checks if the microphone is in use and returns true or false.
+        Checks if the microphone is in use and returns `$true` or `$false`.
 
     .NOTES
         An active ADT session is NOT required to use this function.

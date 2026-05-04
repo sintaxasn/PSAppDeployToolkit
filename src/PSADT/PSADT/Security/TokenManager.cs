@@ -1,11 +1,12 @@
 ﻿using System;
 using System.IO.Pipes;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
 using PSADT.AccountManagement;
-using PSADT.ClientServer;
+using PSADT.Foundation;
 using PSADT.Interop;
 using PSADT.Interop.Extensions;
 using PSADT.SafeHandles;
@@ -43,6 +44,7 @@ namespace PSADT.Security
         /// <exception cref="UnauthorizedAccessException">Thrown if the caller is not an administrator or if an elevated token of type HighestMandatory cannot be
         /// obtained.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the token broker fails to provide a valid token or if an invalid token length is received.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "This synchronous stop operation must wait for the polling task to complete before releasing resources.")]
         internal static SafeFileHandle GetUserPrimaryToken(uint sessionId, ElevatedTokenType elevatedTokenType = ElevatedTokenType.None, bool uiAccess = false)
         {
             // Confirm that the caller is an administrator.
@@ -92,7 +94,7 @@ namespace PSADT.Security
                                         try
                                         {
                                             using SafeFreeBSTRHandle userId = SafeFreeBSTRHandle.Alloc(AccountUtilities.LocalSystemSid.Value);
-                                            using SafeFreeBSTRHandle path = SafeFreeBSTRHandle.Alloc(ClientServerUtilities.ClientCompatiblePath.FullName);
+                                            using SafeFreeBSTRHandle path = SafeFreeBSTRHandle.Alloc(ClientServerUtilities.ClientLauncherCompatiblePath.FullName);
                                             using SafeFreeBSTRHandle args = SafeFreeBSTRHandle.Alloc($"/TokenBroker -PipeName {pipeName} -ProcessId {AccountUtilities.CallerProcessId} -SessionId {sessionId} -ElevatedTokenType {elevatedTokenType} -UIAccess {uiAccess}");
                                             bool userIdAddRef = false; bool pathAddRef = false; bool argsAddRef = false;
                                             try
@@ -116,7 +118,7 @@ namespace PSADT.Security
                                                     _ = Marshal.FinalReleaseComObject(runningTask);
                                                     try
                                                     {
-                                                        using CancellationTokenSource cts = new(TimeSpan.FromSeconds(15));
+                                                        using CancellationTokenSource cts = new(ClientServerUtilities.ClientOperationTimeout);
                                                         pipe.WaitForConnectionAsync(cts.Token).GetAwaiter().GetResult();
                                                     }
                                                     catch (OperationCanceledException)
@@ -200,7 +202,7 @@ namespace PSADT.Security
                 }
 
                 // Return the token handle.
-                return new((nint)(tokenLength == 8 ? BitConverter.ToInt64(tokenBuf, 0) : BitConverter.ToInt32(tokenBuf, 0)), true);
+                return new(tokenBuf.AsReadOnlyStructure<nint>(), true);
             }
             else
             {
@@ -215,7 +217,7 @@ namespace PSADT.Security
                         {
                             return GetLinkedPrimaryToken(hUserToken, uiAccess);
                         }
-                        catch (Exception ex)
+                        catch (Exception ex) when (ex.Message is not null)
                         {
                             if (elevatedTokenType == ElevatedTokenType.HighestMandatory)
                             {
@@ -267,7 +269,7 @@ namespace PSADT.Security
         /// handle.</returns>
         internal static SafeFileHandle GetLinkedToken(SafeHandle tokenHandle)
         {
-            Span<byte> buffer = stackalloc byte[Marshal.SizeOf<TOKEN_LINKED_TOKEN>()];
+            Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<TOKEN_LINKED_TOKEN>()];
             _ = NativeMethods.GetTokenInformation(tokenHandle, TOKEN_INFORMATION_CLASS.TokenLinkedToken, buffer, out _);
             ref readonly TOKEN_LINKED_TOKEN tokenLinkedToken = ref buffer.AsReadOnlyStructure<TOKEN_LINKED_TOKEN>();
             return new(tokenLinkedToken.LinkedToken, true);

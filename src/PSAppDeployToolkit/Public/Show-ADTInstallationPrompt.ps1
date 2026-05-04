@@ -11,7 +11,7 @@ function Show-ADTInstallationPrompt
         Displays a custom installation prompt with the toolkit branding and optional buttons.
 
     .DESCRIPTION
-        Displays a custom installation prompt with the toolkit branding and optional buttons. Any combination of Left, Middle, or Right buttons can be displayed. The return value of the button clicked by the user is the button text specified. The prompt can also display a system icon and be configured to persist, minimize other windows, or timeout after a specified period.
+        The `Show-ADTInstallationPrompt` function displays a custom installation prompt with the toolkit branding and optional buttons. Any combination of Left, Middle, or Right buttons can be displayed. The return value of the button clicked by the user is the button text specified. The prompt can also display a system icon and be configured to persist, minimize other windows, or timeout after a specified period.
 
     .PARAMETER RequestInput
         Show a text box for the user to provide an answer.
@@ -47,7 +47,7 @@ function Show-ADTInstallationPrompt
         Presents the dialog in a separate, independent thread so that the main process isn't stalled waiting for a response.
 
     .PARAMETER PersistPrompt
-        Specify whether to make the prompt persist in the center of the screen every couple of seconds, specified in the config.psd1 file. The user will have no option but to respond to the prompt.
+        Specify whether to make the prompt persist, reappearing in the specified `-WindowLocation` at the interval specified in the `config.psd1` file. The user will have no option but to respond to the prompt.
 
     .PARAMETER MinimizeWindows
         Specifies whether to minimize other windows when displaying prompt.
@@ -107,8 +107,10 @@ function Show-ADTInstallationPrompt
         Show-ADTInstallationPrompt -RequestInput -DefaultValue 'XXXX' -Message 'Please type in your favourite beer.' -ButtonRightText 'Submit'
 
     .EXAMPLE
+        ```powershell
         $result = Show-ADTInstallationPrompt -Message 'Select your preferred configuration:' -ListItems @('Default', 'Minimal', 'Full', 'Custom') -DefaultIndex 0 -ButtonRightText 'OK'
         Write-ADTLogEntry "User selected: $($result.SelectedItem)"
+        ```
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -220,17 +222,10 @@ function Show-ADTInstallationPrompt
                 )
             ))
         $paramDictionary.Add('Timeout', [System.Management.Automation.RuntimeDefinedParameter]::new(
-                'Timeout', [System.Nullable[System.UInt32]], $(
+                'Timeout', [System.UInt32], $(
                     [System.Management.Automation.ParameterAttribute]@{ Mandatory = $false; HelpMessage = 'Specifies how long to show the message prompt before aborting.' }
+                    [PSAppDeployToolkit.Attributes.ValidateGreaterThanZeroAttribute]::new()
                     [System.Management.Automation.ValidateScriptAttribute]::new({
-                            if ($null -eq $_)
-                            {
-                                $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Timeout -ProvidedValue $_ -ExceptionMessage 'The installation UI dialog timeout cannot be null.'))
-                            }
-                            if ($_ -le 0)
-                            {
-                                $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Timeout -ProvidedValue $_ -ExceptionMessage 'The installation UI dialog timeout cannot be less than or equal to 0.'))
-                            }
                             if ($_ -gt $adtConfig.UI.DefaultTimeout)
                             {
                                 $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Timeout -ProvidedValue $_ -ExceptionMessage 'The installation UI dialog timeout cannot be longer than the timeout specified in the config.psd1 file.'))

@@ -8,10 +8,10 @@ function Unblock-ADTAppExecution
 {
     <#
     .SYNOPSIS
-        Unblocks the execution of applications performed by the Block-ADTAppExecution function.
+        Unblocks the execution of applications that were blocked by the `Block-ADTAppExecution` function.
 
     .DESCRIPTION
-        This function is called by the Close-ADTSession function. It undoes the actions performed by Block-ADTAppExecution, allowing previously blocked applications to execute.
+        The `Unblock-ADTAppExecution` function is called by the `Close-ADTSession` function. It undoes the actions performed by `Block-ADTAppExecution`, allowing previously blocked applications to execute.
 
     .PARAMETER Tasks
         Specify the scheduled tasks to unblock.
@@ -29,14 +29,14 @@ function Unblock-ADTAppExecution
     .EXAMPLE
         Unblock-ADTAppExecution
 
-        Unblocks the execution of applications that were previously blocked by Block-ADTAppExecution.
+        Unblocks the execution of applications that were previously blocked by `Block-ADTAppExecution`.
 
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        It is used when the -BlockExecution parameter is specified with the Show-ADTInstallationWelcome function to undo the actions performed by Block-ADTAppExecution.
+        It is used when the `-BlockExecution` parameter is specified with the `Show-ADTInstallationWelcome` function to undo the actions performed by `Block-ADTAppExecution`.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -47,13 +47,13 @@ function Unblock-ADTAppExecution
         https://psappdeploytoolkit.com/docs/reference/functions/Unblock-ADTAppExecution
     #>
 
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess = $false)]
     param
     (
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [PSAppDeployToolkit.Attributes.ValidateUnique()]
-        [PSDefaultValue(Help = "All scheduled tasks wildcard matching [PSAppDeployToolkit_*_BlockedApps].")]
+        [PSDefaultValue(Help = 'All scheduled tasks matching the wildcard pattern `PSAppDeployToolkit_*_BlockedApps`.')]
         [Microsoft.Management.Infrastructure.CimInstance[]]$Tasks = (Get-ScheduledTask -TaskName "$($MyInvocation.MyCommand.Module.Name)_*_BlockedApps" -ErrorAction Ignore)
     )
 
@@ -65,24 +65,23 @@ function Unblock-ADTAppExecution
 
     process
     {
-        # Bypass if no admin rights.
-        if (!(Test-ADTCallerIsAdmin))
-        {
-            Write-ADTLogEntry -Message "Bypassing Function [$($MyInvocation.MyCommand.Name)], because [User: $([PSADT.AccountManagement.AccountUtilities]::CallerUsername)] is not admin."
-            return
-        }
-
-        # Clean up blocked apps using our backend worker.
-        if (!$PSCmdlet.ShouldProcess('Blocked applications', 'Unblock'))
-        {
-            return
-        }
         try
         {
             try
             {
-                Unblock-ADTAppExecutionInternal @uaaeiParams -Verbose 4>&1 | Write-ADTLogEntry
-                Remove-ADTModuleCallback -Hookpoint OnFinish -Callback $Script:CommandTable.($MyInvocation.MyCommand.Name)
+                try
+                {
+                    if (!(Test-ADTCallerIsAdmin))
+                    {
+                        Write-ADTLogEntry -Message "Bypassing Function [$($MyInvocation.MyCommand.Name)], because [User: $([PSADT.AccountManagement.AccountUtilities]::CallerUsername)] is not admin."
+                        return
+                    }
+                    Unblock-ADTAppExecutionInternal @uaaeiParams -Verbose 4>&1 | Write-ADTLogEntry
+                }
+                finally
+                {
+                    Remove-ADTModuleCallback -Hookpoint OnFinish -Callback $Script:CommandTable.($MyInvocation.MyCommand.Name)
+                }
             }
             catch
             {

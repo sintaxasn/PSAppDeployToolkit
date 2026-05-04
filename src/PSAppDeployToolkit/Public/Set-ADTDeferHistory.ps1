@@ -11,7 +11,7 @@ function Set-ADTDeferHistory
         Set the history of deferrals in the registry for the current application.
 
     .DESCRIPTION
-        Set the history of deferrals in the registry for the current application.
+        The `Set-ADTDeferHistory` function sets the history of deferrals in the registry for the current application.
 
     .PARAMETER DeferTimesRemaining
         Specify the number of deferrals remaining.
@@ -24,10 +24,10 @@ function Set-ADTDeferHistory
 
         This helps address the issue where Intune retries installations shortly after a user defers, preventing multiple immediate prompts and improving the user experience.
 
-        This parameter is specifically utilized within the `Show-ADTInstallationWelcome` function, and if specified, the current date and time will be used for the DeferRunIntervalLastTime.
+        This parameter is specifically utilized within the `Show-ADTInstallationWelcome` function, and if specified, the current date and time will be used for the `-DeferRunIntervalLastTime` parameter.
 
     .PARAMETER DeferRunIntervalLastTime
-        Specifies the last time the DeferRunInterval value was tested. This is set from within `Show-ADTInstallationWelcome` as required.
+        Specifies the last time the `-DeferRunInterval` value was tested. This is set from within `Show-ADTInstallationWelcome` as required.
 
     .INPUTS
         None

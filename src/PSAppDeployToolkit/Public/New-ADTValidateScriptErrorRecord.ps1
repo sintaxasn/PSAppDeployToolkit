@@ -8,16 +8,16 @@ function New-ADTValidateScriptErrorRecord
 {
     <#
     .SYNOPSIS
-        Creates a new ErrorRecord for script validation errors.
+        Creates a new ErrorRecord for use in the ValidateScript parameter validation attribute.
 
     .DESCRIPTION
-        This function creates a new ErrorRecord object for script validation errors. It takes the parameter name, provided value, exception message, and an optional inner exception to build a detailed error record. This helps in identifying and handling invalid parameter values in scripts.
+        The `New-ADTValidateScriptErrorRecord` function creates a new ErrorRecord object for use in the ValidateScript parameter validation attribute. It takes the parameter name, provided value, exception message, and an optional inner exception to build a detailed error record. This helps in identifying and handling invalid parameter values in scripts.
 
     .PARAMETER ParameterName
         The name of the parameter that caused the validation error.
 
     .PARAMETER ProvidedValue
-        The value provided for the parameter that caused the validation error.
+        The value provided for the parameter that caused the validation error. Within a ValidateScript attribute, this will usually be `$_`.
 
     .PARAMETER ExceptionMessage
         The message describing the validation error.
@@ -43,6 +43,21 @@ function New-ADTValidateScriptErrorRecord
 
         Creates a new ErrorRecord for a validation error with the specified parameters.
 
+    .EXAMPLE
+        ```PowerShell
+        [Parameter(Mandatory = $true)]
+        [ValidateScript({
+                if (!(Test-Path -LiteralPath $_ -PathType Leaf))
+                {
+                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName FilePath -ProvidedValue $_ -ExceptionMessage 'The specified file does not exist.'))
+                }
+                return ![System.String]::IsNullOrWhiteSpace($_)
+            })]
+        [System.String]$FilePath
+        ```
+
+        Creates a new ErrorRecord and throws it when the specified file path does not exist.
+
     .NOTES
         An active ADT session is NOT required to use this function.
 
@@ -57,6 +72,7 @@ function New-ADTValidateScriptErrorRecord
 
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = "This function does not change system state.")]
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.ErrorRecord])]
     param
     (
         [Parameter(Mandatory = $true)]

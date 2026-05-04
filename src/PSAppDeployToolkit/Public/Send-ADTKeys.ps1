@@ -11,9 +11,7 @@ function Send-ADTKeys
         Send a sequence of keys to one or more application windows.
 
     .DESCRIPTION
-        Send a sequence of keys to one or more application windows. If the window title searched for returns more than one window, then all of them will receive the sent keys.
-
-        Function does not work in SYSTEM context unless launched with "psexec.exe -s -i" to run it as an interactive process under the SYSTEM account.
+        The `Send-ADTKeys` function sends a sequence of keys to one or more application windows. If the window title searched for returns more than one window, then all of them will receive the sent keys.
 
     .PARAMETER WindowTitle
         The title of the application window to search for using regex matching.
@@ -46,12 +44,12 @@ function Send-ADTKeys
         Send the sequence of keys "Hello world" to the application titled "foobar - Notepad".
 
     .EXAMPLE
-        Send-ADTKeys -WindowTitle 'foobar - Notepad' -Keys 'Hello world' WaitDuration 00:00:05
+        Send-ADTKeys -WindowTitle 'foobar - Notepad' -Keys 'Hello world' -WaitDuration 00:00:05
 
         Send the sequence of keys "Hello world" to the application titled "foobar - Notepad" and wait 5 seconds.
 
     .EXAMPLE
-        Send-ADTKeys -WindowTitle 'foobar - Notepad' -Keys 'Hello world' WaitDuration (New-TimeSpan -Seconds 5)
+        Send-ADTKeys -WindowTitle 'foobar - Notepad' -Keys 'Hello world' -WaitDuration (New-TimeSpan -Seconds 5)
 
         Send the sequence of keys "Hello world" to the application titled "foobar - Notepad" and wait 5 seconds.
 
@@ -69,7 +67,7 @@ function Send-ADTKeys
         License: https://opensource.org/license/lgpl-3-0
 
     .LINK
-        http://msdn.microsoft.com/en-us/library/System.Windows.Forms.SendKeys(v=vs.100).aspx
+        https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.sendkeys
 
     .LINK
         https://psappdeploytoolkit.com/docs/reference/functions/Send-ADTKeys

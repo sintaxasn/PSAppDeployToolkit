@@ -11,7 +11,7 @@ function Initialize-ADTModuleIfUninitialized
         Convenience function to initialize the module if required, optionally returning the active session if available.
 
     .DESCRIPTION
-        Convenience function to initialize the module if required, optionally returning the active session if available. This is available as a shorthand function for extension module developers and will likely serve no benefit for regular deployment scripts.
+        The `Initialize-ADTModuleIfUninitialized` function initializes the PSAppDeployToolkit module if it is not already initialized, using `Initialize-ADTModule` and optionally returns the active session, if one is available. This is available as a shorthand function for extension module developers and will likely serve no benefit for regular deployment scripts.
 
     .PARAMETER Cmdlet
         The cmdlet that is being initialized.
@@ -31,14 +31,19 @@ function Initialize-ADTModuleIfUninitialized
         You cannot pipe objects to this function.
 
     .OUTPUTS
+        None
+
+        By default, this function returns no output.
+
+    .OUTPUTS
         PSAppDeployToolkit.Foundation.DeploymentSession
 
-        Returns the most recent session object from the ADT module data.
+        If an active DeploymentSession is available and the `-PassThruActiveSession` parameter is provided, this function returns the active DeploymentSession.
 
     .EXAMPLE
         Initialize-ADTModuleIfUninitialized -Cmdlet $PSCmdlet
 
-        Initializes the ADT module with the default settings and configurations if it is uninitialized.
+        Initializes the PSAppDeployToolkit module with the default settings and configurations if it is uninitialized.
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -53,6 +58,7 @@ function Initialize-ADTModuleIfUninitialized
     #>
 
     [CmdletBinding()]
+    [OutputType([PSAppDeployToolkit.Foundation.DeploymentSession])]
     param
     (
         [Parameter(Mandatory = $true)]

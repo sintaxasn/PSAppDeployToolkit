@@ -21,14 +21,16 @@ function Get-ADTPresentationSettingsEnabledUsers
     .OUTPUTS
         PSADT.AccountManagement.UserProfileInfo
 
-        Returns one or more UserProfile objects of the users with presentation mode enabled on their device.
+        Returns one or more UserProfileInfo objects of the users with presentation mode enabled on their device.
 
     .EXAMPLE
         Get-ADTPresentationSettingsEnabledUsers
 
-        Checks whether any users users have presentation settings enabled on their device and returns an associated UserProfile object.
+        Checks whether any users users have presentation settings enabled on their device and returns an associated UserProfileInfo object.
 
     .NOTES
+        This function is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
+
         An active ADT session is NOT required to use this function.
 
         Tags: psadt<br />

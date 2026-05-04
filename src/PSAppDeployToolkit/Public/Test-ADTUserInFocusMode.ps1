@@ -11,7 +11,7 @@ function Test-ADTUserInFocusMode
         Tests whether the user is in focus mode.
 
     .DESCRIPTION
-        This function tests whether the user is in focus mode, returning true/false, or null if the API is unavailable (older OS, etc).
+        The `Test-ADTUserInFocusMode` function tests whether the user is in focus mode, returning `$true`/`$false`, or `$null` if the API is unavailable (older OS, etc).
 
     .INPUTS
         None
@@ -19,14 +19,19 @@ function Test-ADTUserInFocusMode
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        [System.Nullable[System.Boolean]]
+        None
 
-        Returns true/false if the user is in focus mode or not, or $null if there is no active user or the API is unavailable.
+        Returns `$null` if there is no active user or the API is unavailable.
+
+    .OUTPUTS
+        System.Boolean
+
+        Returns `$true` if the active user is in focus mode and `$false` when they aren't.
 
     .EXAMPLE
         Test-ADTUserInFocusMode
 
-        Returns whether the logged on user is in focus mode or not, or null if the API is unavailable.
+        Returns whether the logged on user is in focus mode or not, or `$null` if the API is unavailable.
 
     .NOTES
         An active ADT session is NOT required to use this function.

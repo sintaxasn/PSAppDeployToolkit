@@ -11,7 +11,7 @@ function Get-ADTPEFileArchitecture
         Determine if a PE file is a 32-bit or a 64-bit file.
 
     .DESCRIPTION
-        Determine if a PE file is a 32-bit or a 64-bit file by examining the file's image file header.
+        The `Get-ADTPEFileArchitecture` function determines if a PE file is a 32-bit or a 64-bit file by examining the file's image file header.
 
         PE file extensions: .exe, .dll, .ocx, .drv, .sys, .scr, .efi, .cpl, .fon
 
@@ -25,7 +25,7 @@ function Get-ADTPEFileArchitecture
         A FileInfo object to retrieve executable info from. Available for pipelining.
 
     .PARAMETER PassThru
-        Get the file object, attach a property indicating the file binary type, and write to pipeline.
+        Returns a FileInfo object with an additional "BinaryType" property containing the PE file architecture, rather than a IMAGE_FILE_MACHINE enum value.
 
     .INPUTS
         System.IO.FileInfo
@@ -33,12 +33,17 @@ function Get-ADTPEFileArchitecture
         Accepts a FileInfo object from the pipeline.
 
     .OUTPUTS
-        System.String
+        PSADT.Interop.IMAGE_FILE_MACHINE
 
-        Returns a string indicating the file binary type.
+        By default, this function returns an IMAGE_FILE_MACHINE enum value indicating the file binary type.
+
+    .OUTPUTS
+        System.IO.FileInfo
+
+        When the `-PassThru` parameter is provided, a FileInfo object is returned with an additional "BinaryType" property containing the PE file architecture as an IMAGE_FILE_MACHINE enum value.
 
     .EXAMPLE
-        Get-ADTPEFileArchitecture -FilePath "$env:windir\notepad.exe"
+        Get-ADTPEFileArchitecture -LiteralPath "$env:SystemRoot\notepad.exe"
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -56,6 +61,7 @@ function Get-ADTPEFileArchitecture
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'LiteralPath', Justification = "This parameter is accessed programmatically via the ParameterSet it's within, which PSScriptAnalyzer doesn't understand.")]
     [CmdletBinding()]
     [OutputType([PSADT.Interop.IMAGE_FILE_MACHINE])]
+    [OutputType([System.IO.FileInfo])]
     param
     (
         [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
@@ -71,7 +77,14 @@ function Get-ADTPEFileArchitecture
         [System.String[]]$LiteralPath,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'InputObject', ValueFromPipeline = $true)]
-        [ValidateNotNullOrEmpty()]
+        [ValidateScript({
+                $_.Refresh()
+                if (!$_.Exists)
+                {
+                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName InputObject -ProvidedValue $_ -ExceptionMessage 'The specified file does not exist.'))
+                }
+                return !!$_
+            })]
         [System.IO.FileInfo]$InputObject,
 
         [Parameter(Mandatory = $false)]
@@ -125,7 +138,7 @@ function Get-ADTPEFileArchitecture
                     Write-ADTLogEntry -Message "File [$($file.FullName)] has a detected file architecture of [$peArchEnum]."
                     if ($PassThru)
                     {
-                        $file | Add-Member -MemberType NoteProperty -Name BinaryType -Value $peArchEnum -Force -PassThru
+                        Add-Member -InputObject $file -MemberType NoteProperty -Name BinaryType -Value $peArchEnum -Force -PassThru
                     }
                     else
                     {

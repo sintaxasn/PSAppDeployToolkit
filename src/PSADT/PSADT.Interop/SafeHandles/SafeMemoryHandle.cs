@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using PSADT.Interop.Extensions;
@@ -56,10 +57,15 @@ namespace PSADT.Interop.SafeHandles
         /// <typeparam name="T">The value type to interpret the memory as. Must be an unmanaged structure.</typeparam>
         /// <param name="offset">The byte offset from the start of the handle at which to read the structure. Defaults to 0.</param>
         /// <returns>A reference to the structure of type <typeparamref name="T"/> at the specified offset.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S2302:\"nameof\" should be used", Justification = "This is a false positive.")]
         internal ref readonly T AsReadOnlyStructure<T>(int offset = 0) where T : unmanaged
         {
             InvalidOperationException.ThrowIfNullOrInvalid(this, "The called upon SafeMemoryHandle instance is invalid.");
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
+            if (Unsafe.SizeOf<T>() > Length - offset)
+            {
+                throw new InvalidOperationException("The size of the structure exceeds the remaining length of the memory region at the specified offset.");
+            }
             return ref handle.AsReadOnlyStructure<T>(offset);
         }
 
@@ -237,10 +243,10 @@ namespace PSADT.Interop.SafeHandles
         internal ReadOnlySpan<T> AsReadOnlySpan<T>(int offset = 0) where T : unmanaged
         {
             InvalidOperationException.ThrowIfNullOrInvalid(this, "The called upon SafeMemoryHandle instance is invalid.");
-            ArgumentOutOfRangeException.ThrowIfNegative(offset); int length = (Length - offset) / Marshal.SizeOf<T>();
+            ArgumentOutOfRangeException.ThrowIfNegative(offset); int length = (Length - offset) / Unsafe.SizeOf<T>();
             return length < 0
                 ? throw new InvalidOperationException("Offset exceeds the length of the memory region.")
-                : (Length - offset) % Marshal.SizeOf<T>() != 0
+                : (Length - offset) % Unsafe.SizeOf<T>() != 0
                 ? throw new InvalidOperationException("Offset must be aligned to the size of the type T.")
                 : (handle + offset).AsReadOnlySpan<T>(length);
         }

@@ -11,7 +11,7 @@ function Test-ADTSessionActive
         Checks if there is an active ADT session.
 
     .DESCRIPTION
-        This function checks if there is an active ADT (App Deploy Toolkit) session by retrieving the module data and returning the count of active sessions.
+        The `Test-ADTSessionActive` function checks if there is an active ADT (App Deploy Toolkit) session by retrieving the module data and returning the count of active sessions.
 
     .INPUTS
         None
@@ -21,12 +21,12 @@ function Test-ADTSessionActive
     .OUTPUTS
         System.Boolean
 
-        Returns $true if there is at least one active session, otherwise $false.
+        Returns `$true` if there is at least one active session, otherwise `$false`.
 
     .EXAMPLE
         Test-ADTSessionActive
 
-        Checks if there is an active ADT session and returns true or false.
+        Checks if there is an active ADT session and returns `$true` or `$false`.
 
     .NOTES
         An active ADT session is NOT required to use this function.

@@ -11,19 +11,25 @@ function Get-ADTApplication
         Retrieves information about installed applications.
 
     .DESCRIPTION
-        Retrieves information about installed applications by querying the registry. You can specify an application name, a product code, or both. Returns information about application publisher, name & version, product code, uninstall string, install source, location, date, and application architecture.
+        The `Get-ADTApplication` function retrieves information about installed applications by querying the registry. You can specify an application name, a product code, or both. Returns information about application publisher, name & version, product code, uninstall string, install source, location, date, and application architecture.
 
     .PARAMETER Name
         The name of the application to retrieve information for. Performs a contains match on the application display name by default.
 
     .PARAMETER NameMatch
-        Specifies the type of match to perform on the application name. Valid values are 'Contains', 'Exact', 'Wildcard', and 'Regex'. The default value is 'Contains'.
+        Specifies the type of match to perform on the application name. The default value for this parameter is `Contains`.
+
+        Valid values for this parameter are:
+        - `Contains`: Equivalent to `$appDisplayName -like "*$Name*"`.
+        - `Exact`: Equivalent to `$appDisplayName -eq $Name`.
+        - `Wildcard`: Equivalent to `$appDisplayName -like $Name`.
+        - `Regex`: Equivalent to `$appDisplayName -match $Name`.
 
     .PARAMETER ProductCode
         The product code of the application to retrieve information for.
 
     .PARAMETER ApplicationType
-        Specifies the type of application to remove. Valid values are 'All', 'MSI', and 'EXE'. The default value is 'All'.
+        Specifies the type of application to remove. Valid values are `All`, `MSI`, and `EXE`. The default value is `All`.
 
     .PARAMETER IncludeUpdatesAndHotfixes
         Include matches against updates and hotfixes in results.
@@ -39,7 +45,7 @@ function Get-ADTApplication
     .OUTPUTS
         PSADT.AppManagement.InstalledApplication
 
-        Returns a custom type with information about an installed application:
+        Returns a InstalledApplication object with information about an installed application:
         - PSPath
         - PSParentPath
         - PSChildName
@@ -274,7 +280,7 @@ function Get-ADTApplication
                     }
 
                     # Process the EstimatedSize if it's an integer.
-                    if (($value = $item.GetValue($_, $null)) -is [System.Int32])
+                    if (($value = $item.GetValue('EstimatedSize', $null)) -is [System.Int32])
                     {
                         $appProperties.Add('EstimatedSize', $value)
                     }

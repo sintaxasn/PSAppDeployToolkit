@@ -11,7 +11,7 @@ function Register-ADTDll
         Register a DLL file.
 
     .DESCRIPTION
-        This function registers a DLL file using regsvr32.exe. It ensures that the specified DLL file exists before attempting to register it. If the file does not exist, it throws an error.
+        The `Register-ADTDll` function registers a DLL file using regsvr32.exe. It ensures that the specified DLL file exists before attempting to register it. If the file does not exist, it throws an error.
 
     .PARAMETER FilePath
         Path to the DLL file.
@@ -34,7 +34,7 @@ function Register-ADTDll
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

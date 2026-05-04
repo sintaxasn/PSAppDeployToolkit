@@ -11,7 +11,7 @@ function Set-ADTServiceStartMode
         Set the service startup mode.
 
     .DESCRIPTION
-        Set the service startup mode. This function allows you to configure the startup mode of a specified service. The startup modes available are: Automatic, Automatic (Delayed Start), Manual, Disabled, Boot, and System.
+        The `Set-ADTServiceStartMode` function sets the service startup mode. This function allows you to configure the startup mode of a specified service. The startup modes available are: Automatic, Automatic (Delayed Start), Manual, Disabled, Boot, and System.
 
     .PARAMETER Service
         Specify the name of the service.
@@ -37,7 +37,7 @@ function Set-ADTServiceStartMode
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -94,7 +94,7 @@ function Set-ADTServiceStartMode
                 $scResult = & "$([System.Environment]::SystemDirectory)\sc.exe" config $Service.Name start= $StartMode 2>&1
                 if (!$Global:LASTEXITCODE)
                 {
-                    Write-ADTLogEntry -Message "Successfully set service [($Service.Name)] startup mode to [$StartMode]."
+                    Write-ADTLogEntry -Message "Successfully set service [$($Service.Name)] startup mode to [$StartMode]."
                     return
                 }
 

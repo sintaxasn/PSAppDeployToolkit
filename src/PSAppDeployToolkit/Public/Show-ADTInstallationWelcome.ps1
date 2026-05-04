@@ -72,13 +72,13 @@ function Show-ADTInstallationWelcome
         The location of the dialog on the screen.
 
     .PARAMETER BlockExecution
-        Option to prevent the user from launching processes/applications, specified in -CloseProcesses, during the deployment.
+        Specify whether to prevent the user from launching processes/applications, specified in `-CloseProcesses`, during the deployment. This parameter utilizes the `Block-ADTAppExecution` function to prevent the user from launching the specified processes.
 
     .PARAMETER PromptToSave
-        Specify whether to prompt to save working documents when the user chooses to close applications by selecting the "Close Programs" button. Option does not work in SYSTEM context unless toolkit launched with "psexec.exe -s -i" to run it as an interactive process under the SYSTEM account.
+        Specify whether to prompt to save working documents when the user chooses to close applications by selecting the "Close Programs" button.
 
     .PARAMETER PersistPrompt
-        Specify whether to make the Show-ADTInstallationWelcome prompt persist in the center of the screen every couple of seconds, specified in the config.psd1. The user will have no option but to respond to the prompt. This only takes effect if deferral is not allowed or has expired.
+        Specify whether to make the prompt persist, reappearing in the specified `-WindowLocation` at the interval specified in the `config.psd1` file. The user will have no option but to respond to the prompt. This only takes effect if deferral is not allowed or has expired.
 
     .PARAMETER ContinueOnProcessClosure
         Specifies that the dialog should auto-continue when running processes have been closed by the user.
@@ -89,6 +89,9 @@ function Show-ADTInstallationWelcome
     .PARAMETER NotTopMost
         Specifies whether the windows is the topmost window.
 
+    .PARAMETER AllowMinimize
+        Specifies that the user is allowed to minimize the dialog.
+
     .PARAMETER AllowMove
         Specifies that the user can move the dialog on the screen.
 
@@ -98,10 +101,10 @@ function Show-ADTInstallationWelcome
     .PARAMETER CheckDiskSpace
         Specify whether to check if there is enough disk space for the deployment to proceed.
 
-        If this parameter is specified without the RequiredDiskSpace parameter, the required disk space is calculated automatically based on the size of the script source and associated files.
+        If this parameter is specified without the `-RequiredDiskSpace` parameter, the required disk space is calculated automatically based on the size of the script source and associated files.
 
     .PARAMETER RequiredDiskSpace
-        Specify required disk space in MB, used in combination with CheckDiskSpace.
+        Specify required disk space in MB, used in combination with the `-CheckDiskSpace` parameter.
 
     .PARAMETER PassThru
         Returns the user's prompt choice to the caller for further decision making.
@@ -139,7 +142,7 @@ function Show-ADTInstallationWelcome
     .EXAMPLE
         Show-ADTInstallationWelcome -CloseProcesses @{ Name = 'winword' }, @{ Name = 'msaccess' }, @{ Name = 'excel' } -PersistPrompt
 
-        Prompt the user to close Word, MSAccess and Excel. By using the PersistPrompt switch, the dialog will return to the center of the screen every couple of seconds, specified in the config.psd1, so the user cannot ignore it by dragging it aside.
+        Prompt the user to close Word, MSAccess and Excel. By using the PersistPrompt switch, the dialog will return to the center of the screen every couple of seconds, specified in the `config.psd1` file, so the user cannot ignore it by dragging it aside.
 
     .EXAMPLE
         Show-ADTInstallationWelcome -AllowDefer -DeferDeadline '2013-08-25'
@@ -156,9 +159,9 @@ function Show-ADTInstallationWelcome
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        The process descriptions are retrieved via Get-Process, with a fall back on the process name if no description is available. Alternatively, you can specify the description yourself with a '=' symbol - see examples.
+        The process descriptions are retrieved via `Get-Process`, with a fall back on the process name if no description is available. Alternatively, you can specify the description yourself by instantiating the ProcessDefinition object with a description, e.g., `@{ Name = 'winword'; Description = 'Microsoft Word' }`
 
-        The dialog box will timeout after the timeout specified in the config.psd1 file (default 55 minutes) to prevent Intune/SCCM deployments from timing out and returning a failure code. When the dialog times out, the script will exit and return a 1618 code (SCCM fast retry code).
+        The dialog box will timeout after the timeout specified in the `config.psd1` file (default 55 minutes) to prevent Intune/SCCM deployments from timing out and returning a failure code. When the dialog times out, the script will exit and return a 1618 code (SCCM fast retry code).
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -260,22 +263,15 @@ function Show-ADTInstallationWelcome
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a close processes countdown if the user has no available deferrals, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically closing applications where deferral is not allowed or has expired.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed irrespective of whether processes to close are open, and with a close processes countdown if the user has no available deferrals.', HelpMessage = 'Specify a countdown to display before automatically closing applications where deferral is not allowed or has expired.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed irrespective of whether processes to close are open, with a close processes countdown if the user has no available deferrals, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically closing applications where deferral is not allowed or has expired.')]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CloseProcessesCountdown -ProvidedValue $_ -ExceptionMessage 'The specified CloseProcessesCountdown interval was null.'))
-                }
-                if ($_ -eq 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CloseProcessesCountdown -ProvidedValue $_ -ExceptionMessage 'The specified CloseProcessesCountdown interval must be greater than zero.'))
-                }
                 if ($_ -gt 86400)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CloseProcessesCountdown -ProvidedValue $_ -ExceptionMessage 'The specified CloseProcessesCountdown interval cannot exceed 86,400 seconds.'))
                 }
                 return !!$_
             })]
-        [System.Nullable[System.UInt32]]$CloseProcessesCountdown,
+        [System.UInt32]$CloseProcessesCountdown,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, and with a close processes countdown irrespective of whether the user can defer or not.', HelpMessage = 'Specify a countdown to display before automatically closing applications whether or not deferral is allowed.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with a close processes countdown irrespective of whether the user can defer or not, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically closing applications whether or not deferral is allowed.')]
@@ -283,22 +279,15 @@ function Show-ADTInstallationWelcome
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a close processes countdown irrespective of whether the user can defer or not, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically closing applications whether or not deferral is allowed.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed irrespective of whether processes to close are open, and with a close processes countdown irrespective of whether the user can defer or not.', HelpMessage = 'Specify a countdown to display before automatically closing applications whether or not deferral is allowed.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed irrespective of whether processes to close are open, with a close processes countdown irrespective of whether the user can defer or not, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically closing applications whether or not deferral is allowed.')]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ForceCloseProcessesCountdown -ProvidedValue $_ -ExceptionMessage 'The specified ForceCloseProcessesCountdown interval was null.'))
-                }
-                if ($_ -eq 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ForceCloseProcessesCountdown -ProvidedValue $_ -ExceptionMessage 'The specified ForceCloseProcessesCountdown interval must be greater than zero.'))
-                }
                 if ($_ -gt 86400)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ForceCloseProcessesCountdown -ProvidedValue $_ -ExceptionMessage 'The specified ForceCloseProcessesCountdown interval cannot exceed 86,400 seconds.'))
                 }
                 return !!$_
             })]
-        [System.Nullable[System.UInt32]]$ForceCloseProcessesCountdown,
+        [System.UInt32]$ForceCloseProcessesCountdown,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with deferral allowed, and with a continue countdown irrespective of deferrals.', HelpMessage = 'Specify a countdown to display before automatically proceeding with the deployment when a deferral is enabled.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with deferral allowed, with a continue countdown irrespective of deferrals, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically proceeding with the deployment when a deferral is enabled.')]
@@ -306,22 +295,15 @@ function Show-ADTInstallationWelcome
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed irrespective of whether processes to close are open, with a continue/defer countdown depending on whether processes to close are open or not, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically proceeding with the deployment when a deferral is enabled.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, and with a continue/defer countdown depending on whether processes to close are open or not.', HelpMessage = 'Specify a countdown to display before automatically proceeding with the deployment when a deferral is enabled.')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a continue/defer countdown depending on whether processes to close are open or not, and a free disk space check.', HelpMessage = 'Specify a countdown to display before automatically proceeding with the deployment when a deferral is enabled.')]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ForceCountdown -ProvidedValue $_ -ExceptionMessage 'The specified ForceCountdown interval was null.'))
-                }
-                if ($_ -eq 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ForceCountdown -ProvidedValue $_ -ExceptionMessage 'The specified ForceCountdown interval must be greater than zero.'))
-                }
                 if ($_ -gt 86400)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ForceCountdown -ProvidedValue $_ -ExceptionMessage 'The specified ForceCountdown interval cannot exceed 86,400 seconds.'))
                 }
                 return !!$_
             })]
-        [System.Nullable[System.UInt32]]$ForceCountdown,
+        [System.UInt32]$ForceCountdown,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, and with deferral allowed.', HelpMessage = 'Specify the number of times the deferral is allowed.')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with deferral allowed, and a free disk space check.', HelpMessage = 'Specify the number of times the deferral is allowed.')]
@@ -343,18 +325,8 @@ function Show-ADTInstallationWelcome
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a close processes countdown if the user has no available deferrals, and a free disk space check.', HelpMessage = 'Specify the number of times the deferral is allowed.')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, and with a close processes countdown irrespective of whether the user can defer or not.', HelpMessage = 'Specify the number of times the deferral is allowed.')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a close processes countdown irrespective of whether the user can defer or not, and a free disk space check.', HelpMessage = 'Specify the number of times the deferral is allowed.')]
-        [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName DeferTimes -ProvidedValue $_ -ExceptionMessage 'The specified DeferTimes interval was null.'))
-                }
-                if ($_ -le 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName DeferTimes -ProvidedValue $_ -ExceptionMessage 'The specified DeferTimes interval must be greater than zero.'))
-                }
-                return !!$_
-            })]
-        [System.Nullable[System.UInt32]]$DeferTimes,
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
+        [System.UInt32]$DeferTimes,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, and with deferral allowed.', HelpMessage = 'Specify the number of days since first run that the deferral is allowed.')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with deferral allowed, and a free disk space check.', HelpMessage = 'Specify the number of days since first run that the deferral is allowed.')]
@@ -376,18 +348,8 @@ function Show-ADTInstallationWelcome
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a close processes countdown if the user has no available deferrals, and a free disk space check.', HelpMessage = 'Specify the number of days since first run that the deferral is allowed.')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, and with a close processes countdown irrespective of whether the user can defer or not.', HelpMessage = 'Specify the number of days since first run that the deferral is allowed.')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a close processes countdown irrespective of whether the user can defer or not, and a free disk space check.', HelpMessage = 'Specify the number of days since first run that the deferral is allowed.')]
-        [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName DeferDays -ProvidedValue $_ -ExceptionMessage 'The specified DeferDays interval was null.'))
-                }
-                if ($_ -le 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName DeferDays -ProvidedValue $_ -ExceptionMessage 'The specified DeferDays interval must be greater than zero.'))
-                }
-                return !!$_
-            })]
-        [System.Nullable[System.Double]]$DeferDays,
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
+        [System.Double]$DeferDays,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, and with deferral allowed.', HelpMessage = "Specify the deadline (in either your local UI culture's date format, or ISO8601 format) for which deferral will expire as an option.")]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with deferral allowed, and a free disk space check.', HelpMessage = "Specify the deadline (in either your local UI culture's date format, or ISO8601 format) for which deferral will expire as an option.")]
@@ -752,18 +714,8 @@ function Show-ADTInstallationWelcome
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with processes to close, with deferral allowed only if the processes to close are open, with a close processes countdown irrespective of whether the user can defer or not, and a free disk space check.', HelpMessage = 'Specify required disk space in MB, used in combination with [-CheckDiskSpace].')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Silent, and with a free disk space check.', HelpMessage = 'Specify required disk space in MB, used in combination with [-CheckDiskSpace].')]
         [Parameter(Mandatory = $false, ParameterSetName = 'Silent, with processes to close, and a free disk space check.', HelpMessage = 'Specify required disk space in MB, used in combination with [-CheckDiskSpace].')]
-        [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName RequiredDiskSpace -ProvidedValue $_ -ExceptionMessage 'The specified RequiredDiskSpace interval was null.'))
-                }
-                if ($_ -le 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName RequiredDiskSpace -ProvidedValue $_ -ExceptionMessage 'The specified RequiredDiskSpace interval must be greater than zero.'))
-                }
-                return !!$_
-            })]
-        [System.Nullable[System.UInt32]]$RequiredDiskSpace,
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
+        [System.UInt32]$RequiredDiskSpace,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, with no modifying options.', HelpMessage = "Returns the user's prompt choice to the caller for further decision making.")]
         [Parameter(Mandatory = $false, ParameterSetName = 'Interactive, and with a free disk space check.', HelpMessage = "Returns the user's prompt choice to the caller for further decision making.")]

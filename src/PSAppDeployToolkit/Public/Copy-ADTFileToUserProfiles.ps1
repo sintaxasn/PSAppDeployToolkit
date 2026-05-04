@@ -11,7 +11,7 @@ function Copy-ADTFileToUserProfiles
         Copy one or more items to each user profile on the system.
 
     .DESCRIPTION
-        The Copy-ADTFileToUserProfiles function copies one or more items to each user profile on the system. It supports various options such as recursion, flattening files, and using Robocopy to overcome the 260 character limit.
+        The `Copy-ADTFileToUserProfiles` function copies one or more items to each user profile on the system. It supports various options such as recursion, flattening files, and using Robocopy to overcome the 260 character limit.
 
     .PARAMETER Path
         The path of the file or folder to copy.
@@ -38,7 +38,7 @@ function Copy-ADTFileToUserProfiles
         Continue copying files if an error is encountered. This will continue the deployment script and will warn about files that failed to be copied.
 
     .PARAMETER FileCopyMode
-        Select from 'Native' or 'Robocopy'. Default is configured in config.psd1. Note that Robocopy supports * in file names, but not folders, in source paths.
+        Specifies whether to use the native `Copy-Item` cmdlet or Robocopy.exe when copying files. The default value for this parameter can be configured in the `config.psd1` file. Note: Robocopy supports the use of asterisk wildcards (`*`) in file names, but not folders, in source paths.
 
     .PARAMETER RobocopyParams
         Override the default Robocopy parameters.
@@ -47,7 +47,7 @@ function Copy-ADTFileToUserProfiles
         Append to the default Robocopy parameters.
 
     .PARAMETER UserProfiles
-        Specifies one or more UserProfile objects to copy files into.
+        Specifies one or more UserProfileInfo objects to copy files into.
 
     .PARAMETER ExcludeNTAccount
         Specify NT account names in Domain\Username format to exclude from the list of user profiles.
@@ -64,7 +64,7 @@ function Copy-ADTFileToUserProfiles
     .INPUTS
         System.String[]
 
-        You can pipe in string values for $LiteralPath.
+        You can pipe in string values for the `-LiteralPath` parameter.
 
     .OUTPUTS
         None
@@ -94,7 +94,7 @@ function Copy-ADTFileToUserProfiles
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

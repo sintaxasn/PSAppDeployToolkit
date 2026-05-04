@@ -11,13 +11,13 @@ function Remove-ADTFileFromUserProfiles
         Removes one or more items from each user profile on the system.
 
     .DESCRIPTION
-        This function removes one or more items from each user profile on the system. It can handle both wildcard paths and literal paths. If the specified path does not exist, it logs a warning instead of throwing an error. The function can also delete items recursively if the Recurse parameter is specified. Additionally, it allows excluding specific NT accounts, system profiles, service profiles, and the default user profile.
+        The `Remove-ADTFileFromUserProfiles` function removes one or more items from each user profile on the system. It can handle both wildcard paths and literal paths. If the specified path does not exist, it logs a warning instead of throwing an error. The function can also delete items recursively if the `-Recurse` parameter is specified. Additionally, it allows excluding specific NT accounts, system profiles, service profiles, and the default user profile.
 
     .PARAMETER Path
         Specifies the path to append to the root of the user profile to be resolved. The value of Path will accept wildcards. Will accept an array of values.
 
     .PARAMETER LiteralPath
-        Specifies the path to append to the root of the user profile to be resolved. The value of LiteralPath is used exactly as it is typed; no characters are interpreted as wildcards. Will accept an array of values.
+        Specifies the path to append to the root of the user profile to be resolved. The value of `-LiteralPath` is used exactly as it is typed; no characters are interpreted as wildcards. Will accept an array of values.
 
     .PARAMETER Recurse
         Deletes the files in the specified location(s) and in all child items of the location(s).
@@ -57,7 +57,7 @@ function Remove-ADTFileFromUserProfiles
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

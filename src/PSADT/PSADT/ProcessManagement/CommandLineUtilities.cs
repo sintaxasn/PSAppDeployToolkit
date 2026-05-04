@@ -531,9 +531,13 @@ namespace PSADT.ProcessManagement
 
             // Check for common argument start patterns: flags, quotes, GUIDs.
             char ch = commandLine[position];
-            if (ch is '/' or '-' or '"' or '{')
+            if (ch is '"' or '{')
             {
                 return true;
+            }
+            if (ch is '/' or '-')
+            {
+                return position + 1 < commandLine.Length && !IsWhitespace(commandLine[position + 1]);
             }
 
             // Check for key=value patterns.
@@ -555,7 +559,7 @@ namespace PSADT.ProcessManagement
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsArgumentLike(string part)
         {
-            return !string.IsNullOrWhiteSpace(part) && part[0] is char first && (first is '/' or '-' || part.Contains("=") || (first == '{' && part.EndsWith("}")));
+            return !string.IsNullOrWhiteSpace(part) && part[0] is char first && (((first is '/' or '-') && part.Length > 1) || part.Contains("=") || (first == '{' && part.EndsWith("}")));
         }
 
         /// <summary>
@@ -590,8 +594,8 @@ namespace PSADT.ProcessManagement
                         // Backslashes are followed by a quote.
                         // 2n backslashes + quote -> n backslashes, and the quote is a delimiter.
                         // 2n+1 backslashes + quote -> n backslashes + a literal quote.
-                        _ = argument.Append('\\', backslashCount / 2);
-                        if (backslashCount % 2 == 1)
+                        _ = argument.Append('\\', Math.DivRem(backslashCount, 2, out int remainder));
+                        if (remainder != 0)
                         {
                             _ = argument.Append('"'); // Escaped quote.
                         }
@@ -790,6 +794,7 @@ namespace PSADT.ProcessManagement
         /// </summary>
         /// <param name="argument">The argument to escape.</param>
         /// <returns>The escaped argument string.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S127:\"for\" loop stop conditions should be invariant", Justification = "This manual loop increment is part of the design.")]
         private static string EscapeArgumentStrict(string argument)
         {
             // Return empty quotes for a null argument.

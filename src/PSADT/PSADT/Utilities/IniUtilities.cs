@@ -87,6 +87,7 @@ namespace PSADT.Utilities
         /// <param name="section">The section name</param>
         /// <param name="filepath">Path to the INI file</param>
         /// <returns>OrderedDictionary of key/value pairs in the section</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S2302:\"nameof\" should be used", Justification = "This is a false positive.")]
         public static OrderedDictionary? GetSection(string filepath, string section)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(section);
@@ -102,7 +103,7 @@ namespace PSADT.Utilities
             {
                 res = NativeMethods.GetPrivateProfileSection(section, buffer, filepath);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex.Message is not null)
             {
                 throw new InvalidDataException($"Failed to get section [{section}] from the INI file.", ex);
             }

@@ -11,7 +11,7 @@ function Test-ADTRegistryValue
         Test if a registry value exists.
 
     .DESCRIPTION
-        Checks a registry key path to see if it has a value with a given name. Can correctly handle cases where a value simply has an empty or null value.
+        The `Test-ADTRegistryValue` function checks a registry key path to see if it has a value with a given name. Can correctly handle cases where a value simply has an empty or null value.
 
     .PARAMETER Key
         Path of the registry key.
@@ -22,10 +22,10 @@ function Test-ADTRegistryValue
     .PARAMETER SID
         The security identifier (SID) for a user. Specifying this parameter will convert a HKEY_CURRENT_USER registry key to the HKEY_USERS\$SID format.
 
-        Specify this parameter from the Invoke-ADTAllUsersRegistryAction function to read/edit HKCU registry settings for all users on the system.
+        Specify this parameter from the `Invoke-ADTAllUsersRegistryAction` function to read/edit HKCU registry settings for all users on the system.
 
     .PARAMETER Wow6432Node
-        Specify this switch to check the 32-bit registry (Wow6432Node) on 64-bit systems.
+        Specify this switch to check the 32-bit registry (WOW6432Node) on 64-bit systems.
 
     .INPUTS
         System.String
@@ -35,7 +35,7 @@ function Test-ADTRegistryValue
     .OUTPUTS
         System.Boolean
 
-        Returns $true if the registry value exists, $false if it does not.
+        Returns `$true` if the registry value exists, `$false` if it does not.
 
     .EXAMPLE
         Test-ADTRegistryValue -Key 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' -Name 'PendingFileRenameOperations'
@@ -45,7 +45,7 @@ function Test-ADTRegistryValue
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        To test if a registry key exists, use the Test-Path function like so: Test-Path -LiteralPath $Key -PathType 'Container'
+        To test if a registry key exists, use the `Test-Path` function like so: Test-Path -LiteralPath $Key -PathType 'Container'
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

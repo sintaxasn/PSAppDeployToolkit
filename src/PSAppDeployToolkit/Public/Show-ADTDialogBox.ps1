@@ -11,9 +11,9 @@ function Show-ADTDialogBox
         Display a custom dialog box with optional title, buttons, icon, and timeout.
 
     .DESCRIPTION
-        Display a custom dialog box with optional title, buttons, icon, and timeout. The default button is "OK", the default Icon is "None", and the default Timeout is None.
+        The `Show-ADTDialogBox` function displays a custom dialog box with optional title, buttons, icon, and timeout. The default button is "OK", the default Icon is "None", and the default Timeout is None.
 
-        Show-ADTInstallationPrompt is recommended over this function as it provides more customization and uses consistent branding with the other UI components.
+        `Show-ADTInstallationPrompt` is recommended over this function as it provides more customization and uses consistent branding with the other UI components.
 
     .PARAMETER Text
         Text in the message dialog box.
@@ -22,10 +22,10 @@ function Show-ADTDialogBox
         The button(s) to display on the dialog box.
 
     .PARAMETER DefaultButton
-        The Default button that is selected. Options: First, Second, Third.
+        The Default button that is selected. Valid values for this parameter are: `First`, `Second`, `Third`.
 
     .PARAMETER Icon
-        Icon to display on the dialog box. Options: None, Stop, Question, Exclamation, Information.
+        Icon to display on the dialog box. Valid values for this parameter are: `None`, `Stop`, `Question`, `Exclamation`, `Information`.
 
     .PARAMETER NoWait
         Presents the dialog in a separate, independent thread so that the main process isn't stalled waiting for a response.
@@ -114,17 +114,10 @@ function Show-ADTDialogBox
                 )
             ))
         $paramDictionary.Add('Timeout', [System.Management.Automation.RuntimeDefinedParameter]::new(
-                'Timeout', [System.Nullable[System.UInt32]], $(
+                'Timeout', [System.UInt32], $(
                     [System.Management.Automation.ParameterAttribute]@{ Mandatory = $false; HelpMessage = 'Specifies how long (in seconds) to show the message prompt before aborting.' }
+                    [PSAppDeployToolkit.Attributes.ValidateGreaterThanZeroAttribute]::new()
                     [System.Management.Automation.ValidateScriptAttribute]::new({
-                            if ($null -eq $_)
-                            {
-                                $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Timeout -ProvidedValue $_ -ExceptionMessage 'The installation UI dialog timeout cannot be null.'))
-                            }
-                            if ($_ -le 0)
-                            {
-                                $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Timeout -ProvidedValue $_ -ExceptionMessage 'The installation UI dialog timeout cannot be less than or equal to 0.'))
-                            }
                             if ($_ -gt $adtConfig.UI.DefaultTimeout)
                             {
                                 $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Timeout -ProvidedValue $_ -ExceptionMessage 'The installation UI dialog timeout cannot be longer than the timeout specified in the config.psd1 file.'))

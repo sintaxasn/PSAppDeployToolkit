@@ -11,7 +11,7 @@ function Get-ADTIniSection
         Parses an INI file and returns the specified section as an ordered hashtable of key value pairs.
 
     .DESCRIPTION
-        Parses an INI file and returns the specified section as an ordered hashtable of key value pairs.
+        The `Get-ADTIniSection` function parses an INI file and returns the specified section as an ordered hashtable of key value pairs.
 
         Please note that the INI file provided cannot have a byte order mark (BOM) present as the underlying Win32 API cannot process it correctly.
 
@@ -53,13 +53,7 @@ function Get-ADTIniSection
     param
     (
         [Parameter(Mandatory = $true)]
-        [ValidateScript({
-                if (!(Test-Path -LiteralPath $_ -PathType Leaf))
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName FilePath -ProvidedValue $_ -ExceptionMessage 'The specified file does not exist.'))
-                }
-                return ![System.String]::IsNullOrWhiteSpace($_)
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateNotNullOrWhiteSpace()]
         [System.String]$FilePath,
 
         [Parameter(Mandatory = $true)]

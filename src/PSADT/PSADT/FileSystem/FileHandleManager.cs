@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,6 @@ using Windows.Wdk.Foundation;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Storage.FileSystem;
-using Windows.Win32.System.LibraryLoader;
 using Windows.Win32.System.Memory;
 using Windows.Win32.System.Threading;
 
@@ -44,8 +44,8 @@ namespace PSADT.FileSystem
             }
 
             // Build the StartRoutine template once during static initialization.
-            using (FreeLibrarySafeHandle hKernel32Ptr = NativeMethods.LoadLibraryEx("kernel32.dll", LOAD_LIBRARY_FLAGS.LOAD_LIBRARY_SEARCH_SYSTEM32))
-            using (FreeLibrarySafeHandle hNtdllPtr = NativeMethods.LoadLibraryEx("ntdll.dll", LOAD_LIBRARY_FLAGS.LOAD_LIBRARY_SEARCH_SYSTEM32))
+            using (FreeLibrarySafeHandle hKernel32Ptr = NativeMethods.LoadLibraryEx("kernel32.dll"))
+            using (FreeLibrarySafeHandle hNtdllPtr = NativeMethods.LoadLibraryEx("ntdll.dll"))
             {
                 // Build the start routine stub to call NtQueryObject and exit the thread once done.
                 FARPROC ntQueryObject = NativeMethods.GetProcAddress(hNtdllPtr, "NtQueryObject");
@@ -225,8 +225,8 @@ namespace PSADT.FileSystem
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(path);
             }
-            int handleInfoExSize = Marshal.SizeOf<SYSTEM_HANDLE_INFORMATION_EX>();
-            int handleEntryExSize = Marshal.SizeOf<SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX>();
+            int handleInfoExSize = Unsafe.SizeOf<SYSTEM_HANDLE_INFORMATION_EX>();
+            int handleEntryExSize = Unsafe.SizeOf<SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX>();
             byte[] handleBuffer = new byte[GetExtendedHandleBufferSize(handleInfoExSize + handleEntryExSize) * 5 / 4];
             _ = NativeMethods.NtQuerySystemInformation(SYSTEM_INFORMATION_CLASS.SystemExtendedHandleInformation, handleBuffer, out _);
 
@@ -327,7 +327,7 @@ namespace PSADT.FileSystem
                                 {
                                     _ = NativeMethods.NtTerminateThread(hThread, NTSTATUS.STATUS_TIMEOUT);
                                 }
-                                _ = NativeMethods.GetExitCodeThread(hThread, out uint exitCode); res = unchecked((NTSTATUS)exitCode);
+                                _ = NativeMethods.GetExitCodeThread(hThread, out uint exitCode); res = unchecked((NTSTATUS)(int)exitCode);
                             }
 
                             // Handle the result of the NtQueryObject call; returning early on certain expected failure codes.

@@ -11,7 +11,7 @@ function Get-ADTMsiTableProperty
         Get all of the properties from a Windows Installer database table or the Summary Information stream and return as a custom object.
 
     .DESCRIPTION
-        Use the Windows Installer object to read all of the properties from a Windows Installer database table or the Summary Information stream.
+        The `Get-ADTMsiTableProperty` function reads all of the properties from a Windows Installer database table or the Summary Information stream.
 
     .PARAMETER LiteralPath
         The fully qualified path to an database file. Supports .msi and .msp files.
@@ -31,7 +31,7 @@ function Get-ADTMsiTableProperty
     .PARAMETER GetSummaryInformation
         Retrieves the Summary Information for the Windows Installer database.
 
-        Summary Information property descriptions: https://msdn.microsoft.com/en-us/library/aa372049(v=vs.85).aspx
+        Summary Information property descriptions: https://learn.microsoft.com/en-us/windows/win32/msi/summary-property-descriptions
 
     .INPUTS
         None
@@ -42,6 +42,28 @@ function Get-ADTMsiTableProperty
         System.Collections.Generic.IReadOnlyDictionary[System.String, System.Object]
 
         Returns a readonly dictionary with the properties as key/value pairs.
+
+    .OUTPUTS
+        PSADT.WindowsInstaller.MsiSummaryInfo
+
+        When the `-GetSummaryInformation` parameter is specified, this function returns a MsiSummaryInfo object with information about the MSI:
+        - CodePage
+        - Title
+        - Subject
+        - Author
+        - Keywords
+        - Comments
+        - Template
+        - LastSavedby
+        - RevisionNumber
+        - LastPrinted
+        - CreateTimeDate
+        - LastSaveTimeDate
+        - PageCount
+        - WordCount
+        - CharacterCount
+        - CreatingApplication
+        - Security
 
     .EXAMPLE
         Get-ADTMsiTableProperty -LiteralPath 'C:\Package\AppDeploy.msi' -TransformPath 'C:\Package\AppDeploy.mst'
@@ -105,12 +127,12 @@ function Get-ADTMsiTableProperty
         [Parameter(Mandatory = $false, ParameterSetName = 'TableInfo')]
         [ValidateNotNullOrEmpty()]
         [PSDefaultValue(Help = 'MSI file: 1; MSP file: 2')]
-        [System.Nullable[System.Int32]]$TablePropertyNameColumnNum,
+        [System.Nullable[System.UInt32]]$TablePropertyNameColumnNum,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'TableInfo')]
         [ValidateNotNullOrEmpty()]
         [PSDefaultValue(Help = 'MSI file: 2; MSP file: 3')]
-        [System.Nullable[System.Int32]]$TablePropertyValueColumnNum,
+        [System.Nullable[System.UInt32]]$TablePropertyValueColumnNum,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'SummaryInfo')]
         [System.Management.Automation.SwitchParameter]$GetSummaryInformation

@@ -11,7 +11,7 @@ function Stop-ADTServiceAndDependencies
         Stop a Windows service and its dependencies.
 
     .DESCRIPTION
-        This function stops a specified Windows service and its dependencies. It provides options to skip stopping dependent services, wait for a service to get out of a pending state, and return the service object.
+        The `Stop-ADTServiceAndDependencies` function stops a specified Windows service and its dependencies. It provides options to skip stopping dependent services, wait for a service to get out of a pending state, and return the service object.
 
     .PARAMETER Name
         Specify the name of the service.
@@ -34,9 +34,14 @@ function Stop-ADTServiceAndDependencies
         You cannot pipe objects to this function.
 
     .OUTPUTS
+        None
+
+        By default, this function returns no output.
+
+    .OUTPUTS
         System.ServiceProcess.ServiceController
 
-        Returns the service object.
+        When the `-PassThru` parameter is provided, this function returns a ServiceController object representing the service that was stopped.
 
     .EXAMPLE
         Stop-ADTServiceAndDependencies -Name 'wuauserv'
@@ -53,11 +58,10 @@ function Stop-ADTServiceAndDependencies
 
         Stops the Windows Update service and its dependencies, waiting 1 minute for the service to stop.
 
-
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -69,6 +73,7 @@ function Stop-ADTServiceAndDependencies
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([System.ServiceProcess.ServiceController])]
     param
     (
         [Parameter(Mandatory = $true, ParameterSetName = 'Name')]

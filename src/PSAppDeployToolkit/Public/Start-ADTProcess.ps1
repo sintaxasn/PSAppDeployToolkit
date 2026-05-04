@@ -11,21 +11,21 @@ function Start-ADTProcess
         Execute a process with optional arguments, working directory, window style.
 
     .DESCRIPTION
-        Executes a process, e.g. a file included in the Files directory of the App Deploy Toolkit, or a file on the local machine. Provides various options for handling the return codes (see Parameters).
+        The `Start-ADTProcess` function executes a process, e.g. a file included in the Files directory of the App Deploy Toolkit, or a file on the local machine. Provides various options for handling the return codes (see Parameters).
 
     .PARAMETER FilePath
         Path to the file to be executed. If the file is located directly in the "Files" directory of the App Deploy Toolkit, only the file name needs to be specified.
 
-        Otherwise, the full path of the file must be specified. If the files is in a subdirectory of "Files", use the "$($adtSession.DirFiles)" variable as shown in the example.
+        Otherwise, the full path of the file must be specified. If the files is in a subdirectory of "Files", use the `$($adtSession.DirFiles)` variable, as shown in the example.
 
     .PARAMETER ArgumentList
         Arguments to be passed to the executable.
 
     .PARAMETER SecureArgumentList
-        Hides all parameters passed to the executable from the Toolkit log file.
+        Hides all arguments passed to the executable from the Toolkit log file.
 
     .PARAMETER WorkingDirectory
-        The working directory used for executing the process. Defaults to DirFiles if there is an active DeploymentSession. The use of UseShellExecute affects this parameter.
+        The working directory used for executing the process. Defaults to DirFiles if there is an active DeploymentSession. The use of `-UseShellExecute` affects this parameter.
 
     .PARAMETER RunAsActiveUser
         A RunAsActiveUser object to invoke the process as.
@@ -37,7 +37,9 @@ function Start-ADTProcess
         Use a user's linked administrative token if it's available while running the process under their context.
 
     .PARAMETER DenyUserTermination
-        Specifies that users cannot terminate the process started in their context. The user will still be able to terminate the process if they're an administrator, though.
+        Specifies that users cannot terminate the process started in their context.
+
+        Note: This will not prevent the user from terminating the process if they are a member of the built-in Administrators group.
 
     .PARAMETER InheritEnvironmentVariables
         Specifies whether the process running as a user should inherit the SYSTEM account's environment variables.
@@ -46,22 +48,22 @@ function Start-ADTProcess
         If the current process is elevated, starts the new process unelevated using the user's unelevated linked token.
 
     .PARAMETER ExpandEnvironmentVariables
-        Specifies whether to expand any Windows/DOS-style environment variables in the specified FilePath/ArgumentList.
+        Specifies whether to expand any Windows/DOS-style environment variables in the specified `-FilePath` and `-ArgumentList` parameters.
 
     .PARAMETER UseShellExecute
-        Specifies whether to use the operating system shell to start the process. $true if the shell should be used when starting the process; $false if the process should be created directly from the executable file.
+        Specifies whether to use the operating system shell to start the process. `$true` if the shell should be used when starting the process; `$false` if the process should be created directly from the executable file.
 
         The word "Shell" in this context refers to a graphical shell (similar to the Windows shell) rather than command shells (for example, bash or sh) and lets users launch graphical applications or open documents. It lets you open a file or a url and the Shell will figure out the program to open it with.
 
-        The WorkingDirectory property behaves differently depending on the value of the UseShellExecute property. When UseShellExecute is true, the WorkingDirectory property specifies the location of the executable. When UseShellExecute is false, the WorkingDirectory property is not used to find the executable. Instead, it is used only by the process that is started and has meaning only within the context of the new process.
+        The WorkingDirectory property behaves differently depending on the value of the `-UseShellExecute` parameter. When `-UseShellExecute` is `$true`, the `-WorkingDirectory` parameter specifies the location of the executable. When `-UseShellExecute` is `$false`, the `-WorkingDirectory` parameter is not used to find the executable. Instead, it is used only by the process that is started and has meaning only within the context of the new process.
 
-        If you set UseShellExecute to $true, there will be no available output from the process.
+        If you set `-UseShellExecute` to `$true`, there will be no available output from the process.
 
     .PARAMETER Verb
         The verb to use when doing a ShellExecute invocation. Common usages are "runas" to trigger a UAC elevation of the process.
 
     .PARAMETER WindowStyle
-        Style of the window of the process executed. Options: Normal, Hidden, Maximized, Minimized. Only works for native Windows GUI applications. If the WindowStyle is set to Hidden, UseShellExecute should be set to $true.
+        Style of the window of the process executed. Options: Normal, Hidden, Maximized, Minimized. Only works for native Windows GUI applications. If the WindowStyle is set to Hidden, `-UseShellExecute` should be set to `$true`.
 
         Note: Not all processes honor WindowStyle. WindowStyle is a recommendation passed to the process. They can choose to ignore it.
 
@@ -105,13 +107,13 @@ function Start-ADTProcess
         List of exit codes to indicate a reboot is required. Defaults to values set during ADTSession initialization, otherwise: 1641, 3010
 
     .PARAMETER IgnoreExitCodes
-        List the exit codes to ignore or * to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
+        List the exit codes to ignore or `*` to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
 
     .PARAMETER PriorityClass
-        Specifies priority class for the process. Options: Idle, Normal, High, AboveNormal, BelowNormal, RealTime.
+        Specifies priority class for the process. Options: `Idle`, `Normal`, `High`, `AboveNormal`, `BelowNormal`, `RealTime`.
 
     .PARAMETER ExitOnProcessFailure
-        Automatically closes the active deployment session via Close-ADTSession in the event the process exits with a non-success or non-ignored exit code.
+        Automatically closes the active deployment session via `Close-ADTSession` in the event the process exits with a non-success or non-ignored exit code.
 
     .PARAMETER NoWait
         Immediately continue after executing the process.
@@ -170,19 +172,35 @@ function Start-ADTProcess
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        PSADT.Types.ProcessResult
+        None
 
-        Returns an object with the results of the installation if -PassThru is specified.
-        - ProcessId
+        By default, this function returns no output.
+
+    .OUTPUTS
+        PSADT.ProcessManagement.ProcessResult
+
+        Returns an object with the results of the installation if `-PassThru` is specified.
+        - Process
+        - LaunchInfo
+        - CommandLine
         - ExitCode
         - StdOut
         - StdErr
         - Interleaved
 
+    .OUTPUTS
+        PSADT.ProcessManagement.ProcessHandle
+
+        Returns an object with the handle of the installation process if `-PassThru` and `-NoWait` are specified.
+        - Process
+        - LaunchInfo
+        - CommandLine
+        - Task
+
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -194,8 +212,8 @@ function Start-ADTProcess
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Default_CreateWindow_Wait')]
-    [OutputType([PSADT.ProcessManagement.ProcessHandle])]
     [OutputType([PSADT.ProcessManagement.ProcessResult])]
+    [OutputType([PSADT.ProcessManagement.ProcessHandle])]
     param
     (
         [Parameter(Mandatory = $true)]
@@ -381,13 +399,7 @@ function Start-ADTProcess
         [System.Management.Automation.SwitchParameter]$WaitForMsiExec,
 
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ($_ -le [System.TimeSpan]::Zero)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName MsiExecWaitTime -ProvidedValue $_ -ExceptionMessage "The provided `-MsiExecWaitTime` parameter value must be greater than zero."))
-                }
-                return !!$_
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [System.TimeSpan]$MsiExecWaitTime,
 
         [Parameter(Mandatory = $false)]
@@ -408,13 +420,7 @@ function Start-ADTProcess
         [Parameter(Mandatory = $true, ParameterSetName = 'UseShellExecute_CreateWindow_Timeout')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseShellExecute_WindowStyle_Timeout')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseShellExecute_CreateNoWindow_Timeout')]
-        [ValidateScript({
-                if ($_.TotalMilliseconds -lt 1)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Timeout -ProvidedValue $_ -ExceptionMessage "The `-Timeout` parameter expects a `[System.TimeSpan]` object of 1ms or above; the supplied value of $($_.Ticks) ticks equates to $($_.TotalMilliSeconds) milliseconds. Try `-Timeout (New-Timespan -Seconds $($_.Ticks))` instead."))
-                }
-                return !!$_
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [System.TimeSpan]$Timeout,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Default_CreateWindow_Timeout')]
@@ -617,6 +623,27 @@ function Start-ADTProcess
             $cancellationTokenSource.Token
         }
 
+        # Set up the elevation type to use for the new process.
+        $elevatedTokenType = if ($RunAsActiveUser)
+        {
+            if ($UseLinkedAdminToken)
+            {
+                [PSADT.Security.ElevatedTokenType]::HighestMandatory
+            }
+            elseif ($UseHighestAvailableToken)
+            {
+                [PSADT.Security.ElevatedTokenType]::HighestAvailable
+            }
+            elseif ($RunAsActiveUser -eq [PSADT.AccountManagement.AccountUtilities]::CallerRunAsActiveUser)
+            {
+                [PSADT.Security.ElevatedTokenType]::None
+            }
+        }
+        elseif ($UseUnelevatedToken)
+        {
+            [PSADT.Security.ElevatedTokenType]::None
+        }
+
         # Internal worker function to set the session exit code.
         function Set-ADTSessionExitCode
         {
@@ -774,14 +801,11 @@ function Start-ADTProcess
                         $ArgumentList,
                         $PSBoundParameters.WorkingDirectory,
                         $RunAsActiveUser,
-                        $UseLinkedAdminToken,
-                        $UseHighestAvailableToken,
                         $InheritEnvironmentVariables,
                         $ExpandEnvironmentVariables,
                         $DenyUserTermination,
-                        $UseUnelevatedToken,
+                        $elevatedTokenType,
                         $StandardInput,
-                        $null,
                         $UseShellExecute,
                         $PSBoundParameters.Verb,
                         $CreateNoWindow,

@@ -8,18 +8,18 @@ function Start-ADTMspProcessAsUser
 {
     <#
     .SYNOPSIS
-        Executes an MSP file using the same logic as Start-ADTMsiProcess.
+        Executes an MSP file using the same logic as `Start-ADTMsiProcess`.
 
     .DESCRIPTION
-        Reads SummaryInfo targeted product codes in MSP file and determines if the MSP file applies to any installed products. If a valid installed product is found, triggers the Start-ADTMsiProcess function to patch the installation.
+        Reads SummaryInfo targeted product codes in MSP file and determines if the MSP file applies to any installed products. If a valid installed product is found, triggers the `Start-ADTMsiProcess` function to patch the installation.
 
-        Uses default config MSI parameters. You can use -AdditionalArgumentList to add additional parameters.
+        Uses default config MSI arguments. You can use the `-AdditionalArgumentList` parameter to add additional arguments.
 
     .PARAMETER FilePath
         Path to the MSP file.
 
     .PARAMETER AdditionalArgumentList
-        Additional parameters.
+        Adds additional arguments to the default MSI InstallParams/SilentParams arguments, specified in the `config.psd1` file.
 
     .PARAMETER Username
         A username to invoke the process as. Only supported while running as the SYSTEM account.
@@ -34,16 +34,18 @@ function Start-ADTMspProcessAsUser
         Specifies whether the process running as a user should inherit the SYSTEM account's environment variables.
 
     .PARAMETER DenyUserTermination
-        Specifies that users cannot terminate the process started in their context. The user will still be able to terminate the process if they're an administrator, though.
+        Specifies that users cannot terminate the process started in their context.
+
+        Note: This will not prevent the user from terminating the process if they are a member of the built-in Administrators group.
 
     .PARAMETER ExpandEnvironmentVariables
-        Specifies whether to expand any Windows/DOS-style environment variables in the specified FilePath/ArgumentList.
+        Specifies whether to expand any Windows/DOS-style environment variables in the specified `-FilePath` and `-AdditionalArgumentList` parameters.
 
     .PARAMETER LoggingOptions
-        Overrides the default logging options specified in the config.psd1 file.
+        Overrides the default logging options specified in the `config.psd1` file.
 
     .PARAMETER LogFileName
-        Overrides the default log file name. The default log file name is generated from the MSI file name. If LogFileName does not end in .log, it will be automatically appended.
+        Overrides the default log file name. The default log file name is generated from the MSI file name. If the value of `-LogFileName` does not end in a common log file extension (.log, .logx, .txt, or .out), '.log' will be automatically appended.
 
         For uninstallations, by default the product code is resolved to the DisplayName and version of the application.
 
@@ -54,25 +56,25 @@ function Start-ADTMspProcessAsUser
         List of exit codes to indicate a reboot is required. Defaults to values set during ADTSession initialization, otherwise: 1641, 3010
 
     .PARAMETER IgnoreExitCodes
-        List the exit codes to ignore or * to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
+        List the exit codes to ignore or `*` to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
 
     .PARAMETER PriorityClass
-        Specifies priority class for the process. Options: Idle, Normal, High, AboveNormal, BelowNormal, RealTime.
+        Specifies priority class for the process. Options: `Idle`, `Normal`, `High`, `AboveNormal`, `BelowNormal`, `RealTime`.
 
     .PARAMETER ExitOnProcessFailure
-        Automatically closes the active deployment session via Close-ADTSession in the event the process exits with a non-success or non-ignored exit code.
+        Automatically closes the active deployment session via `Close-ADTSession` in the event the process exits with a non-success or non-ignored exit code.
 
     .PARAMETER ContinueWhenNoUserLoggedOn
         When specified, if no user is logged on, the condition is logged and the function returns without throwing an exception.
 
     .PARAMETER NoDesktopRefresh
-        If specifies, doesn't refresh the desktop and environment after successful MSI installation.
+        If specified, doesn't refresh the desktop and environment after successful MSI installation.
 
     .PARAMETER NoWait
         Immediately continue after executing the process.
 
     .PARAMETER PassThru
-        Returns ExitCode, StdOut, and StdErr output from the process. Note that a failed execution will only return an object if either `-ErrorAction` is set to `SilentlyContinue`/`Ignore`, or if `-SuccessExitCodes` is used.
+        If `-NoWait` is not specified, returns an object with ExitCode, StdOut, and StdErr output from the process. If `-NoWait` is specified, returns a task that can be awaited. Note that a failed execution will only return an object if either `-ErrorAction` is set to `SilentlyContinue`/`Ignore`, or if `-SuccessExitCodes` is used.
 
     .INPUTS
         None
@@ -82,7 +84,28 @@ function Start-ADTMspProcessAsUser
     .OUTPUTS
         None
 
-        This function does not generate any output.
+        By default, this function returns no output.
+
+    .OUTPUTS
+        PSADT.ProcessManagement.ProcessResult
+
+        Returns an object with the results of the installation if `-PassThru` is specified.
+        - Process
+        - LaunchInfo
+        - CommandLine
+        - ExitCode
+        - StdOut
+        - StdErr
+        - Interleaved
+
+    .OUTPUTS
+        PSADT.ProcessManagement.ProcessHandle
+
+        Returns an object with the handle of the installation process if `-PassThru` and `-NoWait` are specified.
+        - Process
+        - LaunchInfo
+        - CommandLine
+        - Task
 
     .EXAMPLE
         Start-ADTMspProcessAsUser -FilePath 'Adobe_Reader_11.0.3_EN.msp'
@@ -97,7 +120,7 @@ function Start-ADTMspProcessAsUser
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -109,7 +132,8 @@ function Start-ADTMspProcessAsUser
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
-    [OutputType([System.Int32])]
+    [OutputType([PSADT.ProcessManagement.ProcessResult])]
+    [OutputType([PSADT.ProcessManagement.ProcessHandle])]
     param
     (
         [Parameter(Mandatory = $false)]
@@ -118,13 +142,7 @@ function Start-ADTMspProcessAsUser
         [System.Security.Principal.NTAccount]$Username,
 
         [Parameter(Mandatory = $true, HelpMessage = 'Please supply the path to the MSP file to process.')]
-        [ValidateScript({
-                if ([System.IO.Path]::GetExtension($_) -notmatch '^\.msp$')
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName FilePath -ProvidedValue $_ -ExceptionMessage 'The specified input has an invalid file extension.'))
-                }
-                return ![System.String]::IsNullOrWhiteSpace($_)
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateExtension('.msp')]
         [System.String]$FilePath,
 
         [Parameter(Mandatory = $false)]
@@ -196,7 +214,7 @@ function Start-ADTMspProcessAsUser
     process
     {
         # Update the parameters. This will return false if it failed and -ContinueWhenNoUserLoggedOn is passed.
-        if (!(Update-ADTProcessAsUserBoundParameters -Cmdlet $PSCmdlet))
+        if (!(Update-ADTProcessAsUserBoundParameters -Cmdlet $PSCmdlet -BoundParameters $PSBoundParameters) -or !$PSBoundParameters.ContainsKey('RunAsActiveUser'))
         {
             return
         }

@@ -11,7 +11,7 @@ function Invoke-ADTRegSvr32
         Register or unregister a DLL file.
 
     .DESCRIPTION
-        Register or unregister a DLL file using regsvr32.exe. This function determines the bitness of the DLL file and uses the appropriate version of regsvr32.exe to perform the action. It supports both 32-bit and 64-bit DLL files on corresponding operating systems.
+        The `Invoke-ADTRegSvr32` function registers or unregisters a DLL file using regsvr32.exe. This function determines the bitness of the DLL file and uses the appropriate version of regsvr32.exe to perform the action. It supports both 32-bit and 64-bit DLL files on corresponding operating systems.
 
     .PARAMETER FilePath
         Path to the DLL file.
@@ -42,7 +42,7 @@ function Invoke-ADTRegSvr32
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -57,10 +57,11 @@ function Invoke-ADTRegSvr32
     param
     (
         [Parameter(Mandatory = $true)]
+        [PSAppDeployToolkit.Attributes.ValidateExtension('.dll')]
         [ValidateScript({
-                if (!(Test-Path -LiteralPath $_ -PathType Leaf) -and ([System.IO.Path]::GetExtension($_) -ne '.dll'))
+                if (!(Test-Path -LiteralPath $_ -PathType Leaf))
                 {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName FilePath -ProvidedValue $_ -ExceptionMessage 'The specified file does not exist or is not a DLL file.'))
+                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName FilePath -ProvidedValue $_ -ExceptionMessage 'The specified file does not exist.'))
                 }
                 return ![System.String]::IsNullOrWhiteSpace($_)
             })]

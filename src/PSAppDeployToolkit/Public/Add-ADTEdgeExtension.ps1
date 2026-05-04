@@ -8,10 +8,10 @@ function Add-ADTEdgeExtension
 {
     <#
     .SYNOPSIS
-        Adds an extension for Microsoft Edge using the ExtensionSettings policy.
+        Adds an extension to Microsoft Edge using the ExtensionSettings policy.
 
     .DESCRIPTION
-        This function adds an extension for Microsoft Edge using the ExtensionSettings policy: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-manage-extensions-ref-guide.
+        The `Add-ADTEdgeExtension` function adds an extension to Microsoft Edge using the ExtensionSettings policy: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-manage-extensions-ref-guide.
 
         This enables Edge Extensions to be installed and managed like applications, enabling extensions to be pushed to specific devices or users alongside existing GPO/Intune extension policies.
 
@@ -47,7 +47,7 @@ function Add-ADTEdgeExtension
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -116,7 +116,7 @@ function Add-ADTEdgeExtension
                 # Add the additional extension to the current values, then re-write the definition in the registry.
                 if ($PSCmdlet.ShouldProcess("Edge Extension [$ExtensionID]", "Add extension with installation mode [$InstallationMode]"))
                 {
-                    $null = Set-ADTRegistryKey -Key Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge -Name ExtensionSettings -Value $extensionsSettings
+                    $null = Set-ADTRegistryKey -LiteralPath Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge -Name ExtensionSettings -Value $extensionsSettings
                 }
             }
             catch

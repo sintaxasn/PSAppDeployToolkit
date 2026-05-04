@@ -11,7 +11,7 @@ function New-ADTShortcut
         Creates a new .lnk or .url type shortcut.
 
     .DESCRIPTION
-        Creates a new shortcut .lnk or .url file, with configurable options. This function allows you to specify various parameters such as the target path, arguments, icon location, description, working directory, window style, run as administrator, and hotkey.
+        The `New-ADTShortcut` function creates a new .lnk or .url shortcut file, with the configured options. This function allows you to specify various parameters such as the target path, arguments, icon location, description, working directory, window style, run as administrator, and hotkey.
 
     .PARAMETER LiteralPath
         Path to save the shortcut.
@@ -38,13 +38,16 @@ function New-ADTShortcut
         Windows style of the application. Options: Normal, Maximized, Minimized.
 
     .PARAMETER RunAsAdmin
-        Set shortcut to run program as administrator. This option will prompt user to elevate when executing shortcut.
+        Specifies that the command executed by the shortcut should be done so with elevated permissions. Setting this option will prompt the user to elevate when the shortcut is executed.
 
     .PARAMETER Hotkey
         Create a Hotkey to launch the shortcut, e.g. "CTRL+SHIFT+F".
 
     .PARAMETER Force
-        Forces deletion of a pre-existing shortcut.
+        Specifies that an existing shortcut should be overwritten.
+
+    .PARAMETER PassThru
+        Returns a IShortcutLinkInfo object representing the new shortcut.
 
     .INPUTS
         None
@@ -54,7 +57,12 @@ function New-ADTShortcut
     .OUTPUTS
         None
 
-        This function does not return any output.
+        By default, this function does not return any output.
+
+    .OUTPUTS
+        PSADT.ShortcutManagement.IShortcutLinkInfo
+
+        When the `-PassThru` parameter is provided, this function returns a IShortcutLinkInfo object representing the new shortcut.
 
     .EXAMPLE
         New-ADTShortcut -LiteralPath "$envCommonStartMenuPrograms\My Shortcut.lnk" -TargetPath "$envWinDir\notepad.exe" -IconLocation "$envWinDir\notepad.exe" -Description 'Notepad' -WorkingDirectory '%HOMEDRIVE%\%HOMEPATH%'
@@ -66,7 +74,7 @@ function New-ADTShortcut
 
         Url shortcuts only support TargetPath, IconLocation and IconIndex. Other parameters are ignored.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -78,16 +86,11 @@ function New-ADTShortcut
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([PSADT.ShortcutManagement.IShortcutLinkInfo])]
     param
     (
         [Parameter(Mandatory = $true, Position = 0)]
-        [ValidateScript({
-                if (![System.IO.Path]::GetExtension($_).ToLowerInvariant().Equals('.lnk') -and ![System.IO.Path]::GetExtension($_).ToLowerInvariant().Equals('.url'))
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $_ -ExceptionMessage 'The specified path does not have the correct extension.'))
-                }
-                return ![System.String]::IsNullOrWhiteSpace($_)
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateExtension('.lnk', '.url')]
         [Alias('Path', 'PSPath')]
         [System.String]$LiteralPath,
 
@@ -127,7 +130,10 @@ function New-ADTShortcut
         [System.String]$Hotkey,
 
         [Parameter(Mandatory = $false)]
-        [System.Management.Automation.SwitchParameter]$Force
+        [System.Management.Automation.SwitchParameter]$Force,
+
+        [Parameter(Mandatory = $false)]
+        [System.Management.Automation.SwitchParameter]$PassThru
     )
 
     begin

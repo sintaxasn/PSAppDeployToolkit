@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
 using PSADT.AccountManagement;
-using PSADT.ClientServer;
 using PSADT.Foundation;
 using PSADT.Interop;
 using PSADT.Interop.Extensions;
@@ -35,23 +33,16 @@ namespace PSADT.TerminalServices
         /// The list is empty if no active sessions are found.</returns>
         public static IReadOnlyList<SessionInfo> Get()
         {
-            // Enumerate the sessions process each session in the returned buffer.
-            _ = NativeMethods.WTSEnumerateSessionsEx(out SafeWtsExHandle pSessionInfo);
-            using (pSessionInfo)
+            List<SessionInfo> sessions = [];
+            EnumerateSessions((in sessionInfo) =>
             {
-                int objLength = Marshal.SizeOf<WTS_SESSION_INFO_1W>(); int objCount = pSessionInfo.Length / objLength;
-                ReadOnlySpan<byte> pSessionInfoSpan = pSessionInfo.AsReadOnlySpan<byte>();
-                List<SessionInfo> sessions = new(objCount);
-                for (int i = 0; i < objCount; i++)
+                if (Get(in sessionInfo) is SessionInfo session)
                 {
-                    ref readonly WTS_SESSION_INFO_1W sessionInfo = ref pSessionInfoSpan.Slice(objLength * i).AsReadOnlyStructure<WTS_SESSION_INFO_1W>();
-                    if (Get(in sessionInfo) is SessionInfo session)
-                    {
-                        sessions.Add(session);
-                    }
+                    sessions.Add(session);
                 }
-                return sessions.AsReadOnly();
-            }
+                return true;
+            });
+            return sessions.AsReadOnly();
         }
 
         /// <summary>
@@ -62,23 +53,56 @@ namespace PSADT.TerminalServices
         /// langword="null"/>.</returns>
         public static SessionInfo? Get(uint sessionId)
         {
-            // Enumerate the sessions process each session in the returned buffer.
+            SessionInfo? session = null;
+            EnumerateSessions((in sessionInfo) =>
+            {
+                if (sessionInfo.SessionId != sessionId)
+                {
+                    return true;
+                }
+                session = Get(in sessionInfo);
+                return false;
+            });
+            return session;
+        }
+
+        /// <summary>
+        /// Enumerates all active Windows Terminal Services (WTS) sessions and invokes the specified callback for each
+        /// session.
+        /// </summary>
+        /// <remarks>This method provides a way to process each session by supplying a delegate that
+        /// determines whether enumeration should continue. The enumeration stops immediately if the callback returns
+        /// false for any session.</remarks>
+        /// <param name="callback">A delegate that is called for each enumerated session. The callback receives a read-only reference to the
+        /// session information structure. If the callback returns false, enumeration stops.</param>
+        private static void EnumerateSessions(SessionEnumerator callback)
+        {
+            // Enumerate the sessions and process each session in the returned buffer.
             _ = NativeMethods.WTSEnumerateSessionsEx(out SafeWtsExHandle pSessionInfo);
             using (pSessionInfo)
             {
-                int objLength = Marshal.SizeOf<WTS_SESSION_INFO_1W>(); int objCount = pSessionInfo.Length / objLength;
                 ReadOnlySpan<byte> pSessionInfoSpan = pSessionInfo.AsReadOnlySpan<byte>();
+                int objLength = Unsafe.SizeOf<WTS_SESSION_INFO_1W>();
+                int objCount = pSessionInfo.Length / objLength;
                 for (int i = 0; i < objCount; i++)
                 {
                     ref readonly WTS_SESSION_INFO_1W sessionInfo = ref pSessionInfoSpan.Slice(objLength * i).AsReadOnlyStructure<WTS_SESSION_INFO_1W>();
-                    if (sessionInfo.SessionId == sessionId && Get(in sessionInfo) is SessionInfo session)
+                    if (!callback(in sessionInfo))
                     {
-                        return session;
+                        return;
                     }
                 }
-                return null;
             }
         }
+
+        /// <summary>
+        /// Represents a method that processes a Windows Terminal Services session and returns a value indicating
+        /// whether the session meets specific criteria.
+        /// </summary>
+        /// <param name="sessionInfo">A read-only reference to a WTS_SESSION_INFO_1W structure containing information about a Windows Terminal
+        /// Services session.</param>
+        /// <returns>true if the session meets the criteria defined by the delegate implementation; otherwise, false.</returns>
+        private delegate bool SessionEnumerator(in WTS_SESSION_INFO_1W sessionInfo);
 
         /// <summary>
         /// Retrieves detailed information about a Windows Terminal Services session based on the provided session
@@ -91,6 +115,8 @@ namespace PSADT.TerminalServices
         /// <param name="session">A reference to a WTS_SESSION_INFO_1W structure containing information about the session to query.</param>
         /// <returns>A SessionInfo object containing user, session, and client details if the session is valid; otherwise, null.</returns>
         /// <exception cref="InvalidOperationException">Thrown if a required process to retrieve idle time information cannot be launched.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S6561:Avoid using \"DateTime.Now\" for benchmarking or timing operations", Justification = "This is not benchmarking code.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "This synchronous stop operation must wait for the polling task to complete before releasing resources.")]
         private static SessionInfo? Get(in WTS_SESSION_INFO_1W session)
         {
             // Internal helpers for retrieving session information values.
@@ -177,9 +203,8 @@ namespace PSADT.TerminalServices
                 {
                     try
                     {
-                        RunAsActiveUser user = new(ntAccount, sid, session.SessionId, isLocalAdmin); AssemblyPermissions.Remediate(user);
-                        ProcessLaunchInfo args = new(ClientServerUtilities.ClientCompatiblePath.FullName, ["/GetLastInputTime"], Environment.SystemDirectory, user, createNoWindow: true);
-                        using ProcessResult result = ProcessManager.LaunchAsync(args)?.Task.GetAwaiter().GetResult() ?? throw new InvalidOperationException("Failed to launch process to get idle time.");
+                        RunAsActiveUser user = new(ntAccount, sid, session.SessionId, isLocalAdmin); AssemblyManager.RemediatePermissions(user);
+                        using ProcessResult result = ClientServerUtilities.StartClientOperation(["/GetLastInputTime"], user).Task.GetAwaiter().GetResult();
                         idleTime = new(long.Parse(result.StdOut[0], CultureInfo.InvariantCulture));
                     }
                     catch (Exception ex) when (ex.Message is not null)
@@ -266,7 +291,7 @@ namespace PSADT.TerminalServices
             string? clientDirectory,
             uint? clientBuildNumber)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(ntAccount.Value, nameof(ntAccount));
+            ArgumentException.ThrowIfNullOrWhiteSpace(ntAccount.Value);
             ArgumentException.ThrowIfNullOrWhiteSpace(userName);
             ArgumentException.ThrowIfNullOrWhiteSpace(domainName);
             if (sessionName is not null)

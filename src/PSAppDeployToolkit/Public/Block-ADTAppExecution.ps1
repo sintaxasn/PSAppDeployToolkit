@@ -11,13 +11,13 @@ function Block-ADTAppExecution
         Block the execution of an application(s).
 
     .DESCRIPTION
-        This function is called when you pass the -BlockExecution parameter to the Stop-RunningApplications function. It does the following:
+        The `Block-ADTAppExecution` function is called when you pass the `-BlockExecution` parameter to the `Show-ADTInstallationWelcome` function. It does the following:
 
         1) Makes a copy of this script in a temporary directory on the local machine.
-        2) Checks for an existing scheduled task from previous failed installation attempt where apps were blocked and if found, calls the Unblock-ADTAppExecution function to restore the original IFEO registry keys. This is to prevent the function from overriding the backup of the original IFEO options.
+        2) Checks for an existing scheduled task from previous failed installation attempt where apps were blocked and if found, calls the `Unblock-ADTAppExecution` function to restore the original IFEO registry keys. This is to prevent the function from overriding the backup of the original IFEO options.
         3) Creates a scheduled task to restore the IFEO registry key values in case the script is terminated uncleanly by calling `Unblock-ADTAppExecution` the local temporary copy of this module.
         4) Modifies the "Image File Execution Options" registry key for the specified process(s) to call `Show-ADTInstallationPrompt` with the appropriate messaging via this module.
-        5) When the script is called with those parameters, it will display a custom message to the user to indicate that execution of the application has been blocked while the installation is in progress. The text of this message can be customized in the strings.psd1 file.
+        5) When the script is called with those parameters, it will display a custom message to the user to indicate that execution of the application has been blocked while the installation is in progress. The text of this message can be customized in the `strings.psd1` file.
 
     .PARAMETER Processes
         Name of the process or processes separated by commas.
@@ -43,9 +43,9 @@ function Block-ADTAppExecution
     .NOTES
         An active ADT session is required to use this function.
 
-        It is used when the -BlockExecution parameter is specified with the Show-ADTInstallationWelcome function to block applications.
+        It is used when the `-BlockExecution` parameter is specified with the `Show-ADTInstallationWelcome` function to block applications.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -172,7 +172,7 @@ function Block-ADTAppExecution
 
                 # Store the BlockExection command in the registry due to IFEO length issues when > 255 chars.
                 $blockExecRegPath = "Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SOFTWARE\$($adtEnv.appDeployToolkitName)"; $blockExecRegName = [PSADT.UserInterface.BlockExecution]::RegistryKeyName
-                $blockExecDbgPath = "`"$([PSADT.ClientServer.ClientServerUtilities]::ClientLauncherPath)`" /smd -ArgV $($blockExecRegPath.Split('::')[1])\$blockExecRegName"
+                $blockExecDbgPath = "`"$([PSADT.Foundation.ClientServerUtilities]::ClientLauncherPath)`" /smd -ArgV $($blockExecRegPath.Split('::')[1])\$blockExecRegName"
 
                 # If the IFEO path is > 255 characters, warn about it and bomb out.
                 if ($blockExecDbgPath -gt 255)
@@ -180,7 +180,7 @@ function Block-ADTAppExecution
                     Write-ADTLogEntry -Message "The generated block execution command of [$blockExecDbgPath] exceeds the maximum allowable length of 255 characters; unable to block execution." -Severity Warning
                     return
                 }
-                Set-ADTRegistryKey -Key $blockExecRegPath -Name $blockExecRegName -Value ([PSADT.ClientServer.DataSerialization]::SerializeToString([System.Collections.ObjectModel.ReadOnlyDictionary[System.String, System.String]]$blockExecArgs)) -InformationAction SilentlyContinue
+                Set-ADTRegistryKey -LiteralPath $blockExecRegPath -Name $blockExecRegName -Value ([PSADT.ClientServer.DataSerialization]::SerializeToString([System.Collections.ObjectModel.ReadOnlyDictionary[System.String, System.String]]$blockExecArgs)) -InformationAction SilentlyContinue
 
                 # Create a scheduled task to run on startup to call this script and clean up blocked applications in case the installation is interrupted, e.g. user shuts down during installation"
                 Write-ADTLogEntry -Message 'Creating scheduled task to cleanup blocked applications in case the installation is interrupted.'

@@ -4,12 +4,12 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
 using PSADT.AccountManagement;
-using PSADT.ClientServer;
 using PSADT.FileSystem;
 using PSADT.Foundation;
 using PSADT.Interop;
@@ -36,13 +36,49 @@ namespace PSADT.ProcessManagement
         /// provided.</param>
         /// <param name="workingDirectory">The working directory for the process. If null or whitespace, the process uses the current directory.</param>
         /// <param name="runAsActiveUser">Specifies the user context under which to run the process. If null, the default user context is used.</param>
-        /// <param name="useLinkedAdminToken">true to attempt to launch the process with a linked administrator token; otherwise, false.</param>
-        /// <param name="useHighestAvailableToken">true to request the highest available privilege token for the process; otherwise, false.</param>
         /// <param name="inheritEnvironmentVariables">true to inherit the current process's environment variables; otherwise, false.</param>
         /// <param name="expandEnvironmentVariables">true to expand environment variables in the file path and arguments before launching the process; otherwise,
         /// false.</param>
         /// <param name="denyUserTermination">true to prevent the user from terminating the process; otherwise, false.</param>
-        /// <param name="useUnelevatedToken">true to attempt to launch the process with an unelevated token; otherwise, false.</param>
+        /// <param name="elevatedTokenType">The type of elevated token to use when starting a process for another user. If null, no elevation is performed.</param>
+        /// <param name="standardInput">Optional string to write to the process's standard input stream. If null or empty, no data is written.
+        /// The string is encoded using the specified <paramref name="streamEncoding"/> (or the default encoding if not specified).</param>
+        /// <param name="useShellExecute">true to use the operating system shell to start the process; otherwise, false.</param>
+        /// <param name="verb">The action to take when starting the process, such as 'runas' or 'open'. If null or whitespace, the default
+        /// verb is used.</param>
+        /// <param name="createNoWindow">true to start the process without creating a new window; otherwise, false.</param>
+        /// <param name="waitForChildProcesses">true to wait for all child processes to exit before completing; otherwise, false.</param>
+        /// <param name="killChildProcessesWithParent">true to terminate all child processes when the parent process exits; otherwise, false.</param>
+        /// <param name="streamEncoding">The text encoding to use for standard input, output, and error streams. If null, the default encoding is
+        /// used.</param>
+        /// <param name="windowStyle">The window style to use when launching the process. If null, the default window style is used.</param>
+        /// <param name="priorityClass">The priority class for the new process. If null, the default priority is used.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the process launch operation. If null, cancellation is not
+        /// supported.</param>
+        /// <param name="noTerminateOnTimeout">true to prevent the process from being terminated when a timeout occurs; otherwise, false.</param>
+        /// <exception cref="ArgumentNullException">Thrown if filePath is null.</exception>
+        /// <exception cref="DriveNotFoundException">Thrown if filePath is not a fully qualified path when required.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3254:Default parameter values should not be passed as arguments", Justification = "This overload intentionally selects the internal constructor and must pass explicit defaults for the intermediate internal-only parameters.")]
+        public ProcessLaunchInfo(string filePath, IEnumerable<string>? argumentList, string? workingDirectory, RunAsActiveUser? runAsActiveUser, bool inheritEnvironmentVariables, bool expandEnvironmentVariables, bool denyUserTermination, ElevatedTokenType? elevatedTokenType, IReadOnlyList<string>? standardInput, bool useShellExecute, string? verb, bool createNoWindow, bool waitForChildProcesses, bool killChildProcessesWithParent, Encoding? streamEncoding, ProcessWindowStyle? windowStyle, ProcessPriorityClass? priorityClass, CancellationToken? cancellationToken, bool noTerminateOnTimeout) : this(filePath, argumentList, workingDirectory, runAsActiveUser, inheritEnvironmentVariables, expandEnvironmentVariables, denyUserTermination, elevatedTokenType, runAsInvoker: false, uiAccess: false, standardInput, handlesToInherit: null, useShellExecute, verb, createNoWindow, waitForChildProcesses, killChildProcessesWithParent, streamEncoding, windowStyle, priorityClass, cancellationToken, noTerminateOnTimeout)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the ProcessLaunchInfo class with the specified process launch parameters.
+        /// </summary>
+        /// <param name="filePath">The fully qualified path to the executable file to launch. Cannot be null. If not using shell execute and
+        /// not starting with '%', the path must be rooted.</param>
+        /// <param name="argumentList">An optional collection of command-line arguments to pass to the process. If null or empty, no arguments are
+        /// provided.</param>
+        /// <param name="workingDirectory">The working directory for the process. If null or whitespace, the process uses the current directory.</param>
+        /// <param name="runAsActiveUser">Specifies the user context under which to run the process. If null, the default user context is used.</param>
+        /// <param name="inheritEnvironmentVariables">true to inherit the current process's environment variables; otherwise, false.</param>
+        /// <param name="expandEnvironmentVariables">true to expand environment variables in the file path and arguments before launching the process; otherwise,
+        /// false.</param>
+        /// <param name="denyUserTermination">true to prevent the user from terminating the process; otherwise, false.</param>
+        /// <param name="elevatedTokenType">The type of elevated token to use when starting a process for another user. If null, no elevation is performed.</param>
+        /// <param name="runAsInvoker">true to launch the process with the same token as the parent process; otherwise, false.</param>
+        /// <param name="uiAccess">true to launch the process with UI access privileges; otherwise, false.</param>
         /// <param name="standardInput">Optional string to write to the process's standard input stream. If null or empty, no data is written.
         /// The string is encoded using the specified <paramref name="streamEncoding"/> (or the default encoding if not specified).</param>
         /// <param name="handlesToInherit">An optional collection of handles to inherit by the new process. If null, no additional handles are
@@ -62,7 +98,7 @@ namespace PSADT.ProcessManagement
         /// <param name="noTerminateOnTimeout">true to prevent the process from being terminated when a timeout occurs; otherwise, false.</param>
         /// <exception cref="ArgumentNullException">Thrown if filePath is null.</exception>
         /// <exception cref="DriveNotFoundException">Thrown if filePath is not a fully qualified path when required.</exception>
-        public ProcessLaunchInfo(string filePath, IEnumerable<string>? argumentList = null, string? workingDirectory = null, RunAsActiveUser? runAsActiveUser = null, bool useLinkedAdminToken = false, bool useHighestAvailableToken = false, bool inheritEnvironmentVariables = false, bool expandEnvironmentVariables = false, bool denyUserTermination = false, bool useUnelevatedToken = false, IEnumerable<string>? standardInput = null, IEnumerable<nint>? handlesToInherit = null, bool useShellExecute = false, string? verb = null, bool createNoWindow = false, bool waitForChildProcesses = false, bool killChildProcessesWithParent = false, Encoding? streamEncoding = null, ProcessWindowStyle? windowStyle = null, ProcessPriorityClass? priorityClass = null, CancellationToken? cancellationToken = null, bool noTerminateOnTimeout = false)
+        internal ProcessLaunchInfo(string filePath, IEnumerable<string>? argumentList = null, string? workingDirectory = null, RunAsActiveUser? runAsActiveUser = null, bool inheritEnvironmentVariables = false, bool expandEnvironmentVariables = false, bool denyUserTermination = false, ElevatedTokenType? elevatedTokenType = null, bool runAsInvoker = false, bool uiAccess = false, IReadOnlyList<string>? standardInput = null, IReadOnlyList<nint>? handlesToInherit = null, bool useShellExecute = false, string? verb = null, bool createNoWindow = false, bool waitForChildProcesses = false, bool killChildProcessesWithParent = false, Encoding? streamEncoding = null, ProcessWindowStyle? windowStyle = null, ProcessPriorityClass? priorityClass = null, CancellationToken? cancellationToken = null, bool noTerminateOnTimeout = false)
         {
             // Validate all string parameters are properly set up.
             ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
@@ -73,9 +109,20 @@ namespace PSADT.ProcessManagement
             }
 
             // Confirm we're not using incompatible options.
-            if (useShellExecute && !(runAsActiveUser is null || runAsActiveUser == AccountUtilities.CallerRunAsActiveUser))
+            if (useShellExecute)
             {
-                throw new NotSupportedException("Cannot specify UseShellExecute while specifying a RunAsActiveUser.");
+                if (runAsActiveUser?.Equals(AccountUtilities.CallerRunAsActiveUser) == false)
+                {
+                    throw new NotSupportedException("Cannot specify UseShellExecute while specifying a RunAsActiveUser.");
+                }
+                if (elevatedTokenType?.Equals(Security.ElevatedTokenType.None) == false)
+                {
+                    throw new NotSupportedException("Cannot specify ElevatedTokenType while specifying a RunAsActiveUser.");
+                }
+                if (runAsInvoker)
+                {
+                    throw new NotSupportedException("Cannot specify UseShellExecute while specifying RunAsInvoker.");
+                }
             }
 
             // Initially set ArgumentList and FilePath, and test that the caller hasn't done something weird by quoting the path.
@@ -83,23 +130,13 @@ namespace PSADT.ProcessManagement
             FilePath = filePath.TrimStart('"').TrimEnd('"');
 
             // Set up all token-related variables. Allow useLinkedAdminToken to clobber useHighestAvailableToken.
-            if (useHighestAvailableToken)
+            if (elevatedTokenType.HasValue)
             {
-                ElevatedTokenType = ElevatedTokenType.HighestAvailable;
-            }
-            if (useLinkedAdminToken)
-            {
-                ElevatedTokenType = ElevatedTokenType.HighestMandatory;
+                ElevatedTokenType = elevatedTokenType.Value;
             }
             InheritEnvironmentVariables = inheritEnvironmentVariables;
-            UseUnelevatedToken = useUnelevatedToken;
             RunAsActiveUser = runAsActiveUser;
-
-            // Invalidate the use of RunAsActiveUser and UseUnelevatedToken as they run on exclusive paths.
-            if (RunAsActiveUser is not null && UseUnelevatedToken)
-            {
-                throw new NotSupportedException("Cannot configure launch info when RunAsActiveUser and UseUnelevatedToken are both specified.");
-            }
+            UIAccess = uiAccess;
 
             // Expand out environment variables for FilePath/ArgumentList as required.
             if (ExpandEnvironmentVariables = expandEnvironmentVariables)
@@ -154,19 +191,6 @@ namespace PSADT.ProcessManagement
                 throw new DriveNotFoundException("File path must be fully qualified.");
             }
 
-            // Hard-coded adjustment specifically for the UIAccess-enabled client/server executable.
-            if (RunAsActiveUser is null || RunAsActiveUser == AccountUtilities.CallerRunAsActiveUser)
-            {
-                if (FilePath == ClientServerUtilities.ClientDefaultPath.FullName)
-                {
-                    FilePath = ClientServerUtilities.ClientCompatiblePath.FullName;
-                }
-                if (FilePath == ClientServerUtilities.ClientLauncherDefaultPath.FullName)
-                {
-                    FilePath = ClientServerUtilities.ClientLauncherCompatiblePath.FullName;
-                }
-            }
-
             // Create an arguments string out of our ArgumentList (ShellExecute needs this).
             Arguments = ArgumentList.Count > 1 ? CommandLineUtilities.ArgumentListToCommandLine(ArgumentList) : ArgumentList.Count > 0 ? ArgumentList[0] : null;
 
@@ -196,16 +220,14 @@ namespace PSADT.ProcessManagement
             // Handle the CreateNoWindow parameter.
             if (createNoWindow)
             {
-                WindowStyle = WindowStyleMap[System.Diagnostics.ProcessWindowStyle.Hidden];
-                ProcessWindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                WindowStyle = ProcessWindowStyle.Hidden;
                 CreateNoWindow = true;
             }
 
             // Handle remaining nullable parameters.
             if (windowStyle is not null)
             {
-                WindowStyle = WindowStyleMap[windowStyle.Value];
-                ProcessWindowStyle = windowStyle.Value;
+                WindowStyle = windowStyle.Value;
             }
             if (streamEncoding is not null)
             {
@@ -222,23 +244,13 @@ namespace PSADT.ProcessManagement
 
             // Set remaining parameters.
             DenyUserTermination = denyUserTermination;
+            RunAsInvoker = runAsInvoker;
             StandardInput = new ReadOnlyCollection<string>([.. standardInput ?? []]);
             HandlesToInheritValues = new ReadOnlyCollection<long>([.. handlesToInherit?.Select(static h => (long)h) ?? []]);
             WaitForChildProcesses = waitForChildProcesses;
             KillChildProcessesWithParent = killChildProcessesWithParent;
             NoTerminateOnTimeout = noTerminateOnTimeout;
         }
-
-        /// <summary>
-        /// Translator for ProcessWindowStyle to the corresponding value for CreateProcess.
-        /// </summary>
-        private static readonly ReadOnlyDictionary<ProcessWindowStyle, SHOW_WINDOW_CMD> WindowStyleMap = new(new Dictionary<ProcessWindowStyle, SHOW_WINDOW_CMD>()
-        {
-            { System.Diagnostics.ProcessWindowStyle.Normal, SHOW_WINDOW_CMD.SW_SHOWNORMAL },
-            { System.Diagnostics.ProcessWindowStyle.Hidden, SHOW_WINDOW_CMD.SW_HIDE },
-            { System.Diagnostics.ProcessWindowStyle.Minimized, SHOW_WINDOW_CMD.SW_SHOWMINIMIZED },
-            { System.Diagnostics.ProcessWindowStyle.Maximized, SHOW_WINDOW_CMD.SW_SHOWMAXIMIZED },
-        });
 
         /// <summary>
         /// Gets the file path of the process to launch.
@@ -280,7 +292,7 @@ namespace PSADT.ProcessManagement
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "This needs to be a field for the DataContractSerializer.")]
         [DataMember]
-        public readonly ElevatedTokenType ElevatedTokenType;
+        public readonly ElevatedTokenType? ElevatedTokenType;
 
         /// <summary>
         /// Gets a value indicating whether to inherit the environment variables of the current process.
@@ -308,7 +320,17 @@ namespace PSADT.ProcessManagement
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "This needs to be a field for the DataContractSerializer.")]
         [DataMember]
-        public readonly bool UseUnelevatedToken;
+        public readonly bool RunAsInvoker;
+
+        /// <summary>
+        /// Indicates whether the process should be started with UI access privileges.
+        /// </summary>
+        /// <remarks>UI access allows the process to interact with higher-privileged windows, such as
+        /// those running as administrator. This is typically required for accessibility tools or applications that need
+        /// to interact with secure desktop elements.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "This needs to be a field for the DataContractSerializer.")]
+        [DataMember]
+        public readonly bool UIAccess;
 
         /// <summary>
         /// Gets the lines to write to the process's standard input stream.
@@ -371,14 +393,7 @@ namespace PSADT.ProcessManagement
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "This needs to be a field for the DataContractSerializer.")]
         [DataMember]
-        public readonly SHOW_WINDOW_CMD? WindowStyle;
-
-        /// <summary>
-        /// Gets the window style of the process.
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "This needs to be a field for the DataContractSerializer.")]
-        [DataMember]
-        public readonly ProcessWindowStyle? ProcessWindowStyle;
+        public readonly ProcessWindowStyle? WindowStyle;
 
         /// <summary>
         /// Gets the priority class of the process.
@@ -414,6 +429,7 @@ namespace PSADT.ProcessManagement
         /// <remarks>This method uses default options when generating the command-line. To customize the
         /// output, use the overload that accepts parameters.</remarks>
         /// <returns>A string containing the command-line arguments constructed from the current settings.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string MakeCommandLine()
         {
             return MakeCommandLine(false);
@@ -427,6 +443,7 @@ namespace PSADT.ProcessManagement
         /// <returns>A string containing the command-line representation of the process, including the file path and any
         /// arguments. If <paramref name="nullTerminated"/> is <see langword="true"/>, the string will end with a null
         /// character.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal string MakeCommandLine(bool nullTerminated)
         {
             return $"\"{FilePath}\"{(!string.IsNullOrWhiteSpace(Arguments) ? $" {Arguments}" : null)}{(nullTerminated ? '\0' : null)}";
@@ -435,6 +452,7 @@ namespace PSADT.ProcessManagement
         /// <summary>
         /// Gets a value indicating whether the application is a command-line interface (CLI) application.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool IsCliApplication()
         {
             return ImageSubsystem != IMAGE_SUBSYSTEM.IMAGE_SUBSYSTEM_WINDOWS_GUI;

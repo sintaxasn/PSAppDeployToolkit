@@ -11,7 +11,9 @@ function Remove-ADTInvalidFileNameChars
         Remove invalid characters from the supplied string.
 
     .DESCRIPTION
-        This function removes invalid characters from the supplied string and returns a valid filename as a string. It ensures that the resulting string does not contain any characters that are not allowed in filenames. This function should not be used for entire paths as '\' is not a valid filename character.
+        The `Remove-ADTInvalidFileNameChars` function removes invalid characters from the supplied string and returns a valid filename as a string. It ensures that the resulting string does not contain any characters that are not allowed in filenames.
+
+        Note: This function should not be used for entire paths as backslashes (`\`) are not valid filename characters.
 
     .PARAMETER Name
         Text to remove invalid filename characters from.
@@ -46,6 +48,7 @@ function Remove-ADTInvalidFileNameChars
     #>
 
     [CmdletBinding()]
+    [OutputType([System.String])]
     param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]

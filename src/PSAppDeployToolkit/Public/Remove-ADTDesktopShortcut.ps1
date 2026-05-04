@@ -11,10 +11,14 @@ function Remove-ADTDesktopShortcut
         Removes desktop shortcuts from the common desktop folder or logged on user's desktop.
 
     .DESCRIPTION
-        Removes desktop shortcuts from the common desktop folder or logged on user's desktop, either all since the commencement of the session, all shortcuts in general, or based on a custom FilterScript.
+        The `Remove-ADTDesktopShortcut` function removes desktop shortcuts from the common desktop folder or logged on user's desktop, either all since the commencement of the session, all shortcuts in general, or based on a custom FilterScript.
 
     .PARAMETER Scope
-        The scope of which to target (common desktop and/or logged on user's desktop).
+        The scope of which desktop directory to target.
+
+        Valid values for this parameter are:
+        - `AllUsersDesktop`: Removes shortcuts from the common desktop (`$EnvCommonDesktop`).
+        - `RunAsActiveUser`: Removes shortcuts from the active user's desktop.
 
     .PARAMETER SinceSessionStart
         Removes all shortcuts created after the active deployment session commenced.
@@ -43,7 +47,7 @@ function Remove-ADTDesktopShortcut
     .NOTES
         An active ADT session is required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

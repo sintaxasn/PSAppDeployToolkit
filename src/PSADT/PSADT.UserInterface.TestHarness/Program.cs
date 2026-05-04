@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -36,7 +36,7 @@ namespace PSADT.UserInterface.TestHarness
         private static void Main()
         {
             // What dialog style are we running with?
-            DialogStyle dialogStyle = DialogStyle.Fluent; // or DialogStyle.Classic
+            const DialogStyle dialogStyle = DialogStyle.Fluent; // or DialogStyle.Classic
 
             // Read PSADT's string table into memory.
             ScriptBlockAst stringsAst = Parser.ParseFile(Path.GetFullPath($@"{AppDomain.CurrentDomain.BaseDirectory}\..\..\..\..\..\PSAppDeployToolkit\ImportsLast.ps1"), out Token[]? tokens, out ParseError[]? errors);
@@ -99,18 +99,16 @@ namespace PSADT.UserInterface.TestHarness
             Hashtable assetsTable = (Hashtable)configTable["Assets"]!;
 
             // Set up parameters for testing
-            string appTitle = "Adobe Creative Suite 2.1.45 EN";
-            string subtitle = "EQ Bank Global IT Services - App Installation";
+            const string appTitle = "Adobe Creative Suite 2.1.45 EN";
+            const string subtitle = "EQ Bank Global IT Services - App Install";
             string appIconImage = (string?)assetsTable["Logo"]!;
             string appIconDarkImage = (string?)assetsTable["Logo"]!;
             string appBannerImage = (string?)assetsTable["Banner"]!;
             // var FluentAccentColor = ValueTypeConverter.ToInt(0xFF01C9D9); // Cyan
-            DialogPosition dialogPosition = DialogPosition.BottomRight;
-            // DialogPosition dialogPosition = DialogPosition.Center;
-            bool dialogTopMost = true;
-            bool dialogAllowMove = true;
-            bool dialogAllowMinimize = true;
-            DeploymentType deploymentType = DeploymentType.Install;
+            const DialogPosition dialogPosition = DialogPosition.BottomRight;
+            const bool dialogTopMost = true;
+            const bool dialogAllowMove = true;
+            const DeploymentType deploymentType = DeploymentType.Install;
 
             ReadOnlyCollection<ProcessDefinition> appsToClose = new(
             [
@@ -138,36 +136,35 @@ namespace PSADT.UserInterface.TestHarness
 
             TimeSpan countdownDuration = TimeSpan.FromSeconds(580);
 
-            string customMessageText = @"Basic URL: [url]https://example.com[/url]
+            const string customMessageText = @"Basic URL: [url]https://example.com[/url]
 URL with Description: [url=https://example.com]Read the IT Security Policy here[/url].
 This is [bold]bold text[/bold] and [italic]italic text[/italic].
 Nested tags: [bold]Bold plus [italic]italic inside[/italic], with an [accent]accent[/accent][/bold].
 Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][/accent][/bold].";
 
-            uint deferralsRemaining = 99;
+            const uint deferralsRemaining = 3;
             DateTime deferralDeadline = DateTime.Parse("2026-06-04T13:00:00", CultureInfo.InvariantCulture);
 
-            // DateTime? deferralDeadline = null;
-            string progressMessageText = "Performing [accent]pre-flight checks[/accent]…";
-            string progressDetailMessageText = "Testing your [accent]system to ensure compatibility[/accent]. Please wait…";
+            const string progressMessageText = "Performing [accent]pre-flight checks[/accent]…";
+            const string progressDetailMessageText = "Testing your [accent]system to ensure compatibility[/accent]. Please wait…";
 
             TimeSpan restartCountdownDuration = TimeSpan.FromSeconds(80);
             TimeSpan restartCountdownNoMinimizeDuration = TimeSpan.FromSeconds(70);
 
-            string customDialogMessageText = "The installation requires you to have an exceptional amount of patience, as well an almost superhuman ability to not lose your temper. Given that you have not had much and seem to be super-cranky, are you sure you want to proceed? [bold]URL Formatting Tests:[/bold] Visit [url]https://psappdeploytoolkit.com[/url] or check our [url=https://github.com/PSAppDeployToolkit/PSAppDeployToolkit]GitHub Repository[/url] for support.";
-            string customDialogButtonLeftText = "LeftButton";
-            string customDialogButtonMiddleText = "MiddleButton";
-            string customDialogButtonRightText = "RightButton";
+            const string customDialogMessageText = "The installation requires you to have an exceptional amount of patience, as well an almost superhuman ability to not lose your temper. Given that you have not had much and seem to be super-cranky, are you sure you want to proceed? [bold]URL Formatting Tests:[/bold] Visit [url]https://psappdeploytoolkit.com[/url] or check our [url=https://github.com/PSAppDeployToolkit/PSAppDeployToolkit]GitHub Repository[/url] for support.";
+            const string customDialogButtonLeftText = "LeftButton";
+            const string customDialogButtonMiddleText = "MiddleButton";
+            const string customDialogButtonRightText = "RightButton";
 
-            string listDialogMessageText = "Please choose how you’d like to use Adobe Creative Cloud on this device. You can change this later in Preferences.";
+            const string listDialogMessageText = "Please choose how you’d like to use Adobe Creative Cloud on this device. You can change this later in Preferences.";
             string[] listDialogItems = ["Personal (Individual Plan)", "Team (Creative Cloud for Teams)", "Enterprise (Managed by IT)", "Education (Student / Faculty)", "Shared Device (Lab / Classroom)"];
-            string listDialogButtonLeftText = "OK";
-            string listDialogButtonRightText = "Cancel";
+            const string listDialogButtonLeftText = "OK";
+            const string listDialogButtonRightText = "Cancel";
 
-            string inputDialogMessageText = "Enter the server name e.g. [italic]remotesvr1.psadt.ca[/italic]";
-            string inputDialogTextBox = "YouCompleteMe";
-            string inputDialogButtonLeftText = "Continue";
-            string inputDialogButtonRightText = "Cancel";
+            const string inputDialogMessageText = "Enter the server name e.g. [italic]remotesvr1.psadt.ca[/italic]";
+            const string inputDialogTextBox = "YouCompleteMe";
+            const string inputDialogButtonLeftText = "Continue";
+            const string inputDialogButtonRightText = "Cancel";
 
             // Set up options for the dialogs
             using CloseAppsDialogState closeAppsDialogState = new(appsToClose, (_, _, _) => { });
@@ -191,8 +188,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "Language", CultureInfo.CurrentCulture },
                 { "Strings", (Hashtable)stringTable["CloseAppsPrompt"]! },
             };
-
-            ProgressDialogOptions progressDialogOptions = new(new Hashtable()
+            ProgressDialogOptions progressDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
                 { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFFFB900) }, // Accent Color: Yellow #FFB900
@@ -210,7 +206,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "Language", CultureInfo.CurrentCulture },
                 { "AdditionalOption", true }
             });
-            CustomDialogOptions customDialogOptions = new(new Hashtable()
+            CustomDialogOptions customDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
                 { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF00B7C3) }, // Accent Color: Cyan #00B7C3
@@ -233,7 +229,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "MessageAlignment", DialogMessageAlignment.Left }
             });
 
-            ListSelectionDialogOptions listSelectionDialogOptions = new(new Hashtable()
+            ListSelectionDialogOptions listSelectionDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
                 { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF2AB243) }, // Accent Color: Blue #00D326
@@ -257,7 +253,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "MessageAlignment", DialogMessageAlignment.Left }
             });
 
-            InputDialogOptions inputDialogOptions = new(new Hashtable()
+            InputDialogOptions inputDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
                 { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFE81123) }, // Accent Color: Red #E81123
@@ -305,7 +301,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             CloseAppsDialogResult closeAppsResult = DialogManager.ShowCloseAppsDialog(dialogStyle, new CloseAppsDialogOptions(deploymentType, closeAppsDialogOptions), closeAppsDialogState); // Pass the service as optional parameter
 
-            if (closeAppsResult == CloseAppsDialogResult.Defer)
+            if (closeAppsResult.Equals(CloseAppsDialogResult.Defer))
             {
                 Environment.Exit(0);
             }

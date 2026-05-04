@@ -8,10 +8,10 @@ function Get-ADTEnvironmentTable
 {
     <#
     .SYNOPSIS
-        Retrieves the environment data for the ADT module.
+        Retrieves the environment data for the PSAppDeployToolkit module.
 
     .DESCRIPTION
-        The Get-ADTEnvironmentTable function retrieves the environment data for the ADT module. This function ensures that the ADT module has been initialized before attempting to retrieve the environment data. If the module is not initialized, it throws an error.
+        The `Get-ADTEnvironmentTable` function retrieves the environment data for the PSAppDeployToolkit module. This function ensures that the PSAppDeployToolkit module has been initialized before attempting to retrieve the environment data. If the module is not initialized, it throws an error.
 
     .INPUTS
         None
@@ -19,14 +19,14 @@ function Get-ADTEnvironmentTable
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        System.Collections.Specialized.OrderedDictionary
+        PSAppDeployToolkit.Foundation.EnvironmentTable
 
-        Returns the environment data as a read-only ordered dictionary.
+        Returns the environment data as an EnvironmentTable object with read-only properties.
 
     .EXAMPLE
         $environment = Get-ADTEnvironmentTable
 
-        This example retrieves the environment data for the ADT module and stores it in the $environment variable.
+        This example retrieves the environment data for the PSAppDeployToolkit module and stores it in the `$environment` variable.
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -41,6 +41,7 @@ function Get-ADTEnvironmentTable
     #>
 
     [CmdletBinding()]
+    [OutputType([PSAppDeployToolkit.Foundation.EnvironmentTable])]
     param
     (
     )

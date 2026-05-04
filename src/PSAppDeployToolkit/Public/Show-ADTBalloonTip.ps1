@@ -11,7 +11,7 @@ function Show-ADTBalloonTip
         Displays a balloon tip notification in the system tray.
 
     .DESCRIPTION
-        Displays a balloon tip notification in the system tray. This function can be used to show notifications to the user with customizable text, title, icon, and display duration.
+        The `Show-ADTBalloonTip` function displays a balloon tip notification in the system tray. This function can be used to show notifications to the user with customizable text, title, icon, and display duration.
 
         For Windows 10 and above, balloon tips automatically get translated by the system into toast notifications.
 
@@ -19,7 +19,7 @@ function Show-ADTBalloonTip
         Text of the balloon tip.
 
     .PARAMETER BalloonTipIcon
-        Icon to be used. Options: 'Error', 'Info', 'None', 'Warning'.
+        Icon to be used. Valid values for this parameter are: `Error`, `Info`, `None`, `Warning`.
 
     .PARAMETER BalloonTipTime
         Time in milliseconds to display the balloon tip. Default: 10000.
@@ -75,18 +75,8 @@ function Show-ADTBalloonTip
         [System.Windows.Forms.ToolTipIcon]$BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info,
 
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName BalloonTipTime -ProvidedValue $_ -ExceptionMessage 'The specified BalloonTipTime interval was null.'))
-                }
-                if ($_ -le 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName BalloonTipTime -ProvidedValue $_ -ExceptionMessage 'The specified BalloonTipTime interval must be greater than zero.'))
-                }
-                return !!$_
-            })]
-        [System.Nullable[System.UInt32]]$BalloonTipTime = 10000,
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
+        [System.UInt32]$BalloonTipTime = 10000,
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.SwitchParameter]$NoWait,

@@ -11,7 +11,7 @@ function Get-ADTRunningProcesses
         Gets the processes that are running from a list of process objects.
 
     .DESCRIPTION
-        Gets the processes that are running from a list of process objects.
+        The `Get-ADTRunningProcesses` function returns the processes that are running from the provided list of process objects.
 
     .PARAMETER ProcessObjects
         One or more process objects to search for.
@@ -22,14 +22,14 @@ function Get-ADTRunningProcesses
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        System.Collections.Generic.IReadOnlyList`1[[PSADT.ProcessManagement.RunningProcess]].
+        PSADT.ProcessManagement.RunningProcessInfo
 
         Returns one or more RunningProcess objects representing each running process.
 
     .EXAMPLE
         Get-ADTRunningProcesses -ProcessObjects $processObjects
 
-        Returns a list of running processes. If nothing is found nothing will be returned.
+        Returns a list of running processes. If nothing is found, nothing will be returned.
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -44,7 +44,7 @@ function Get-ADTRunningProcesses
     #>
 
     [CmdletBinding()]
-    [OutputType([System.Collections.Generic.IReadOnlyList[PSADT.ProcessManagement.RunningProcessInfo]])]
+    [OutputType([PSADT.ProcessManagement.RunningProcessInfo])]
     param
     (
         [Parameter(Mandatory = $true)]

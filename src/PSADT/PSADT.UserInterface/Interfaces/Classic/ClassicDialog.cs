@@ -8,8 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Microsoft.Win32;
-using PSADT.ClientServer;
 using PSADT.DeviceManagement;
+using PSADT.Foundation;
 using PSADT.Interop;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
@@ -45,7 +45,7 @@ namespace PSADT.UserInterface.Interfaces.Classic
         /// <param name="options">The options that configure the dialog's appearance and behavior. Must not be null.</param>
         /// <param name="dialogResult">An object representing the result of the dialog interaction, used to determine the outcome when the dialog
         /// is closed.</param>
-        internal ClassicDialog(BaseDialogOptions options, IDialogResult dialogResult) : base()
+        internal ClassicDialog(BaseDialogOptions options, IDialogResult dialogResult)
         {
             // Initialise the underlying form as set up by the designer.
             InitializeComponent();
@@ -241,7 +241,7 @@ namespace PSADT.UserInterface.Interfaces.Classic
             expiryTimer?.Start();
 
             // Set the NoWait success flag as the caller may be waiting for it.
-            ClientServerUtilities.SetClientServerOperationSuccess();
+            ClientServerUtilities.SetOperationSuccessFlag();
         }
 
         /// <summary>
@@ -290,6 +290,7 @@ namespace PSADT.UserInterface.Interfaces.Classic
         /// <param name="sender">The source of the event, typically the form that is being closed.</param>
         /// <param name="e">A FormClosingEventArgs that contains data related to the closing event, including the ability to cancel the
         /// operation.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2952:Move this 'Dispose' call into this class' own 'Dispose' method", Justification = "WinForms designer code owns Dispose(bool); this close-path cleanup must stop and release timers before the generated disposal runs.")]
         private protected virtual void Form_FormClosing(object? sender, FormClosingEventArgs e)
         {
             // Cancel the event if we can't close (i.e. user has closed from the taskbar)

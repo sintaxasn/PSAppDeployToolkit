@@ -11,18 +11,18 @@ function Test-ADTServiceExists
         Check to see if a service exists.
 
     .DESCRIPTION
-        Check to see if a service exists. The UseCIM switch can be used in conjunction with PassThru to return WMI objects for PSADT v3.x compatibility, however, this method fails in Windows Sandbox.
+        The `Test-ADTServiceExists` function checks to see if a service exists. The `-UseCIM` switch can be used in conjunction with `-PassThru` to return WMI objects for PSADT v3.x compatibility, however, this method fails in Windows Sandbox.
 
     .PARAMETER Name
         Specify the name of the service.
 
-        Note: Service name can be found by executing "Get-Service | Format-Table -AutoSize -Wrap" or by using the properties screen of a service in services.msc.
+        Note: Service name can be found by executing `Get-Service | Format-Table -AutoSize -Wrap` or by using the properties screen of a service in services.msc.
 
     .PARAMETER UseCIM
         Use CIM/WMI to check for the service. This is useful for compatibility with PSADT v3.x.
 
     .PARAMETER PassThru
-        Return the WMI service object. To see all the properties use: Test-ADTServiceExists -Name 'spooler' -PassThru | Get-Member
+        Return the WMI service object. To see all the properties use: `Test-ADTServiceExists -Name 'spooler' -PassThru | Get-Member`
 
     .INPUTS
         None
@@ -32,7 +32,17 @@ function Test-ADTServiceExists
     .OUTPUTS
         System.Boolean
 
-        Returns $true if the service exists, otherwise returns $false.
+        By default, this function returns `$true` if the service exists, otherwise returns `$false`.
+
+    .OUTPUTS
+        System.ServiceProcess.ServiceController
+
+        When the `-PassThru` parameter is provided and the service specified exists, a ServiceController object representing the service is returned, otherwise `$null`.
+
+    .OUTPUTS
+        Microsoft.Management.Infrastructure.CimInstance
+
+        When the `-PassThru` and `-UseCIM` parameters are provided and the service specified exists, a Win32_Service or Win32_BaseService CimInstance object representing the service is returned, otherwise `$null`.
 
     .EXAMPLE
         Test-ADTServiceExists -Name 'wuauserv'
@@ -42,7 +52,7 @@ function Test-ADTServiceExists
     .EXAMPLE
         Test-ADTServiceExists -Name testservice -UseCIM -PassThru | Invoke-CimMethod -MethodName Delete
 
-        Checks if a service exists and then deletes it by using the -PassThru parameter.
+        Checks if a service exists and then deletes it by using the `-PassThru` parameter.
 
     .NOTES
         An active ADT session is NOT required to use this function.
@@ -58,6 +68,8 @@ function Test-ADTServiceExists
 
     [CmdletBinding()]
     [OutputType([System.Boolean])]
+    [OutputType([System.ServiceProcess.ServiceController])]
+    [OutputType([Microsoft.Management.Infrastructure.CimInstance])]
     param
     (
         [Parameter(Mandatory = $true)]

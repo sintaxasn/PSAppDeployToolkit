@@ -11,7 +11,7 @@ function Get-ADTDeferHistory
         Get the history of deferrals in the registry for the current application.
 
     .DESCRIPTION
-        Get the history of deferrals in the registry for the current application.
+        The `Get-ADTDeferHistory` function gets the deferral history for the current application from the registry.
 
     .INPUTS
         None
@@ -19,12 +19,15 @@ function Get-ADTDeferHistory
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        None
+        PSAppDeployToolkit.Foundation.DeferHistory
 
-        This function does not return any objects.
+        When a deferral history exists for the current deployment, this function returns a DeferHistory object representing the deferral history with the following properties:
+        - DeferTimesRemaining
+        - DeferDeadline
+        - DeferRunIntervalLastTime
 
     .EXAMPLE
-        Get-DeferHistory
+        Get-ADTDeferHistory
 
     .NOTES
         An active ADT session is required to use this function.
@@ -40,6 +43,7 @@ function Get-ADTDeferHistory
     #>
 
     [CmdletBinding()]
+    [OutputType([PSAppDeployToolkit.Foundation.DeferHistory])]
     param
     (
     )

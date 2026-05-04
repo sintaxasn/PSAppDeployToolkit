@@ -11,7 +11,7 @@ function New-ADTFolder
         Create a new folder.
 
     .DESCRIPTION
-        Create a new folder if it does not exist. This function checks if the specified path already exists and creates the folder if it does not. It logs the creation process and handles any errors that may occur during the folder creation.
+        The `New-ADTFolder` function creates a new folder if it does not already exist. This function checks if the specified path already exists and creates the folder if it does not. It logs the creation process and handles any errors that may occur during the folder creation.
 
     .PARAMETER LiteralPath
         Path to the new folder to create.
@@ -37,7 +37,7 @@ function New-ADTFolder
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

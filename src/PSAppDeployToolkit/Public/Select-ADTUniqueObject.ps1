@@ -11,7 +11,7 @@ function Select-ADTUniqueObject
         Provides a consistent way to get unique objects from the given input, with consistent StringComparer equality between Windows PowerShell and PowerShell 7.
 
     .DESCRIPTION
-        This function provides a consistent way to get unique objects from the given input, with consistent StringComparer equality between Windows PowerShell and PowerShell 7.
+        The `Select-ADTUniqueObject` function provides a consistent way to get unique objects from the given input, with consistent StringComparer equality between Windows PowerShell and PowerShell 7.
 
     .PARAMETER InputObject
         The input to process for uniqueness. Can be pipelined input or an array of objects.
@@ -20,10 +20,14 @@ function Select-ADTUniqueObject
         The StringComparison value to use when checking for string equality.
 
     .INPUTS
-        System.Object. One or more objects that will be collected for processing their uniqueness.
+        System.Object
+
+        One or more objects that will be collected for processing their uniqueness.
 
     .OUTPUTS
-        System.Object[]. An array of unique objects derived from the provided input.
+        System.Object
+
+        Unique objects derived from the provided input.
 
     .EXAMPLE
         1, 2, 2, 3 | Select-ADTUniqueObject
@@ -53,6 +57,7 @@ function Select-ADTUniqueObject
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Object])]
     param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]

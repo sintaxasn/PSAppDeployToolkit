@@ -8,12 +8,14 @@ function Install-ADTSCCMSoftwareUpdates
 {
     <#
     .SYNOPSIS
-        Scans for outstanding SCCM updates to be installed and installs the pending updates.
+        Scans for outstanding Configuration Manager/SCCM software updates to be installed and installs the pending updates.
 
     .DESCRIPTION
-        Scans for outstanding SCCM updates to be installed and installs the pending updates.
+        The `Install-ADTSCCMSoftwareUpdates` function scans for outstanding Configuration Manager/SCCM software updates to be installed and installs the pending updates.
 
-        Only compatible with SCCM 2012 Client or higher. This function can take several minutes to run.
+        This function can take several minutes to run.
+
+        Note: This function is not compatible with versions of the Configuration Manager/SCCM Client older than 2012.
 
     .PARAMETER SoftwareUpdatesScanWaitInSeconds
         The amount of time to wait in seconds for the software updates scan to complete.
@@ -34,22 +36,22 @@ function Install-ADTSCCMSoftwareUpdates
     .EXAMPLE
         Install-ADTSCCMSoftwareUpdates
 
-        Scans for outstanding SCCM updates and installs the pending updates with default wait times.
+        Scans for outstanding Configuration Manager/SCCM updates and installs the pending updates with default wait times.
 
     .EXAMPLE
         Install-ADTSCCMSoftwareUpdates -WaitForPendingUpdatesTimeout 00:30:00
 
-        Scans for outstanding SCCM updates and installs the pending updates with a 30 minute timeout.
+        Scans for outstanding Configuration Manager/SCCM updates and installs the pending updates with a 30 minute timeout.
 
     .EXAMPLE
         Install-ADTSCCMSoftwareUpdates -WaitForPendingUpdatesTimeout (New-TimeSpan -Minutes 30)
 
-        Scans for outstanding SCCM updates and installs the pending updates with a 30 minute timeout.
+        Scans for outstanding Configuration Manager/SCCM updates and installs the pending updates with a 30 minute timeout.
 
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -64,18 +66,8 @@ function Install-ADTSCCMSoftwareUpdates
     param
     (
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName SoftwareUpdatesScanWaitInSeconds -ProvidedValue $_ -ExceptionMessage 'The specified SoftwareUpdatesScanWaitInSeconds interval was null.'))
-                }
-                if ($_ -le 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName SoftwareUpdatesScanWaitInSeconds -ProvidedValue $_ -ExceptionMessage 'The specified SoftwareUpdatesScanWaitInSeconds interval must be greater than zero.'))
-                }
-                return !!$_
-            })]
-        [System.Nullable[System.UInt32]]$SoftwareUpdatesScanWaitInSeconds = 180,
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
+        [System.UInt32]$SoftwareUpdatesScanWaitInSeconds = 180,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]

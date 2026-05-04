@@ -11,7 +11,7 @@ function Test-ADTBattery
         Tests whether the local machine is running on AC power or not.
 
     .DESCRIPTION
-        Tests whether the local machine is running on AC power and returns true/false. For detailed information, use the -PassThru option to get a hashtable containing various battery and power status properties.
+        The `Test-ADTBattery` function tests whether the local machine is running on AC power and returns true/false. For detailed information, use the `-PassThru` parameter to get a hashtable containing various battery and power status properties.
 
     .PARAMETER PassThru
         Outputs an object containing the following properties:
@@ -31,7 +31,12 @@ function Test-ADTBattery
         You cannot pipe objects to this function.
 
     .OUTPUTS
-        PSADT.Types.BatteryInfo
+        System.Boolean
+
+        By default, this function returns a Boolean where `$true` represents that the computer is running on AC power and `$false` represents that the computer is running on DC/battery power.
+
+    .OUTPUTS
+        PSADT.DeviceManagement.BatteryInfo
 
         Returns an object containing the following properties:
 
@@ -67,6 +72,7 @@ function Test-ADTBattery
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     [OutputType([PSADT.DeviceManagement.BatteryInfo])]
     param
     (

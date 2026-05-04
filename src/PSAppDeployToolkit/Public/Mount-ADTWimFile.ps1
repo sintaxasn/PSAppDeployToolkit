@@ -11,7 +11,7 @@ function Mount-ADTWimFile
         Mounts a WIM file to a specified directory.
 
     .DESCRIPTION
-        Mounts a WIM file to a specified directory. The function supports mounting by image index or image name. It also provides options to forcefully remove existing directories and return the mounted image details.
+        The `Mount-ADTWimFile` function mounts a WIM file to a specified directory. The function supports mounting by image index or image name. It also provides options to forcefully remove existing directories and return the mounted image details.
 
     .PARAMETER ImagePath
         Path to the WIM file to be mounted.
@@ -37,9 +37,14 @@ function Mount-ADTWimFile
         You cannot pipe objects to this function.
 
     .OUTPUTS
+        None
+
+        By default, this function returns no output.
+
+    .OUTPUTS
         Microsoft.Dism.Commands.ImageObject
 
-        Returns the mounted image details if the PassThru parameter is specified.
+        When the `-PassThru` parameter is provided, this function returns an ImageObject object representing the mounted WIM file.
 
     .EXAMPLE
         Mount-ADTWimFile -ImagePath 'C:\Images\install.wim' -Path 'C:\Mount' -Index 1
@@ -59,7 +64,7 @@ function Mount-ADTWimFile
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -71,6 +76,7 @@ function Mount-ADTWimFile
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([Microsoft.Dism.Commands.ImageObject])]
     param
     (
         [Parameter(Mandatory = $true, ParameterSetName = 'Index')]
@@ -80,6 +86,7 @@ function Mount-ADTWimFile
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ImagePath -ProvidedValue $_ -ExceptionMessage 'The specified input is null.'))
                 }
+                $_.Refresh()
                 if (!$_.Exists)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName ImagePath -ProvidedValue $_ -ExceptionMessage 'The specified image path cannot be found.'))

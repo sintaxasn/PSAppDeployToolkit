@@ -77,12 +77,12 @@ Describe 'Get-ADTRegistryKey' {
             Compare-ADTRegistry -Left $left -Right $right | Should -BeTrue
         }
         It 'Should return an empty registry key if it exists' {
-            Get-ADTRegistryKey -Key "$TestRegistry\Empty" | Should -BeNull
-            Get-ADTRegistryKey -Key "$TestRegistry\Empty" -ReturnEmptyKeyIfExists | Should -Not -BeNull
+            Get-ADTRegistryKey -LiteralPath "$TestRegistry\Empty" | Should -BeNull
+            Get-ADTRegistryKey -LiteralPath "$TestRegistry\Empty" -ReturnEmptyKeyIfExists | Should -Not -BeNull
         }
         It 'Should not expand environment variables' {
-            Get-ADTRegistryKey -Key $TestRegistry -Name 'EnvironmentVariable' | Should -Be "$env:WinDir\System32\cmd.exe"
-            Get-ADTRegistryKey -Key $TestRegistry -Name 'EnvironmentVariable' -DoNotExpandEnvironmentNames | Should -Be '%WinDir%\System32\cmd.exe'
+            Get-ADTRegistryKey -LiteralPath $TestRegistry -Name 'EnvironmentVariable' | Should -Be "$env:WinDir\System32\cmd.exe"
+            Get-ADTRegistryKey -LiteralPath $TestRegistry -Name 'EnvironmentVariable' -DoNotExpandEnvironmentNames | Should -Be '%WinDir%\System32\cmd.exe'
         }
         It 'Should return $null when the property does not exist' {
             Get-ADTRegistrykey -LiteralPath $TestRegistry -Name 'DoesNotExist' | Should -BeNull
@@ -106,9 +106,9 @@ Describe 'Get-ADTRegistryKey' {
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
                 ErrorId = 'ParameterArgumentValidationError,Get-ADTRegistryKey'
             }
-            { Get-ADTRegistryKey -LiteralPath $TestRegistry -Name $null } | Should @shouldParams
-            { Get-ADTRegistryKey -LiteralPath $TestRegistry -Name '' } | Should @shouldParams
-            { Get-ADTRegistryKey -LiteralPath $TestRegistry -Name " `f`n`r`t`v" } | Should @shouldParams
+            { Get-ADTRegistryKey -LiteralPath $null } | Should @shouldParams
+            { Get-ADTRegistryKey -LiteralPath '' } | Should @shouldParams
+            { Get-ADTRegistryKey -LiteralPath " `f`n`r`t`v" } | Should @shouldParams
         }
         It 'Should verify that Name is not null, empty or whitespace' {
             $shouldParams = @{

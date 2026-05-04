@@ -11,7 +11,7 @@ function Get-ADTServiceStartMode
         Retrieves the startup mode of a specified service.
 
     .DESCRIPTION
-        Retrieves the startup mode of a specified service. This function checks the service's start type and adjusts the result if the service is set to 'Automatic (Delayed Start)'.
+        The `Get-ADTServiceStartMode` function retrieves the startup mode of a specified service. This function checks the service's start type and adjusts the result if the service is set to 'Automatic (Delayed Start)'.
 
     .PARAMETER Service
         Specify the service object to retrieve the startup mode for.
@@ -44,6 +44,7 @@ function Get-ADTServiceStartMode
     #>
 
     [CmdletBinding()]
+    [OutputType([System.String])]
     param
     (
         [Parameter(Mandatory = $true)]
@@ -77,7 +78,7 @@ function Get-ADTServiceStartMode
 
                 # Return startup type to the caller.
                 Write-ADTLogEntry -Message "Service [$($Service.Name)] startup mode is set to [$serviceStartMode]."
-                return $serviceStartMode
+                return $serviceStartMode.ToString()
             }
             catch
             {

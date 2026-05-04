@@ -8,10 +8,10 @@ function Install-ADTMSUpdates
 {
     <#
     .SYNOPSIS
-        Install all Microsoft Updates in a given directory.
+        Installs all Microsoft Updates in a given directory.
 
     .DESCRIPTION
-        Install all Microsoft Updates of type ".msu" in a given directory (recursively searches directory).
+        The `Install-ADTMSUpdates` function installs all Microsoft Updates of type ".msu" in a given directory (recursively searches directory).
 
     .PARAMETER LiteralPath
         Directory containing the updates.
@@ -34,7 +34,7 @@ function Install-ADTMSUpdates
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -50,11 +50,19 @@ function Install-ADTMSUpdates
     (
         [Parameter(Mandatory = $true)]
         [ValidateScript({
-                if (!(Test-Path -LiteralPath $_))
+                if (Test-Path -LiteralPath $_ -PathType Container)
                 {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $_ -ExceptionMessage 'The specified directory does not exist.'))
+                    return ![System.String]::IsNullOrWhiteSpace($_)
                 }
-                return ![System.String]::IsNullOrWhiteSpace($_)
+                if (Test-Path -LiteralPath $_ -PathType Leaf)
+                {
+                    if ([System.IO.Path]::GetExtension($_) -ne '.msu')
+                    {
+                        $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $_ -ExceptionMessage "The specified path does not contain a valid '.msu' extension."))
+                    }
+                    return ![System.String]::IsNullOrWhiteSpace($_)
+                }
+                $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $_ -ExceptionMessage 'The specified path does not exist.'))
             })]
         [Alias('Directory')]
         [System.String]$LiteralPath
@@ -64,16 +72,16 @@ function Install-ADTMSUpdates
     {
         # Initialize function.
         Initialize-ADTFunction -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-        if (!($updates = if ([System.IO.Directory]::Exists($LiteralPath)) { Get-ChildItem @PSBoundParameters -Filter *.msu -Recurse -ErrorAction Ignore } else { $LiteralPath }))
+        if (!($updates = if ($pathIsDirectory = [System.IO.Directory]::Exists($LiteralPath)) { Get-ChildItem @PSBoundParameters -Filter *.msu -Recurse -ErrorAction Ignore } else { Get-Item -LiteralPath $LiteralPath }))
         {
-            $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $_ -ExceptionMessage 'The specified path contains no updates.'))
+            $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $LiteralPath -ExceptionMessage 'The specified path contains no updates.'))
         }
     }
 
     process
     {
         # Get all hotfixes and install if required.
-        if ($updates -isnot [System.String])
+        if ($pathIsDirectory)
         {
             Write-ADTLogEntry -Message "Recursively installing all Microsoft Updates in directory [$LiteralPath]."
         }

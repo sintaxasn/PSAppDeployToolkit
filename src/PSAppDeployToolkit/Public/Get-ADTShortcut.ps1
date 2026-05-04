@@ -11,7 +11,7 @@ function Get-ADTShortcut
         Get information from a .lnk or .url type shortcut.
 
     .DESCRIPTION
-        Get information from a .lnk or .url type shortcut. Returns a hashtable with details about the shortcut such as TargetPath, Arguments, Description, and more.
+        The `Get-ADTShortcut` function gets information from a .lnk or .url type shortcut. Returns a IShortcutLinkInfo object with details about the shortcut such as TargetPath, Arguments, Description, and more.
 
     .PARAMETER LiteralPath
         Path to the shortcut to get information from.
@@ -55,20 +55,11 @@ function Get-ADTShortcut
     #>
 
     [CmdletBinding()]
+    [OutputType([PSADT.ShortcutManagement.IShortcutLinkInfo])]
     param
     (
         [Parameter(Mandatory = $true, Position = 0)]
-        [ValidateScript({
-                if (![System.IO.Path]::GetExtension($_).ToLowerInvariant().Equals('.lnk') -and ![System.IO.Path]::GetExtension($_).ToLowerInvariant().Equals('.url'))
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $_ -ExceptionMessage 'The specified path does not have the correct extension.'))
-                }
-                if (!(Test-Path -LiteralPath $_ -PathType Leaf))
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName LiteralPath -ProvidedValue $_ -ExceptionMessage 'The specified path does not exist.'))
-                }
-                return ![System.String]::IsNullOrWhiteSpace($_)
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateExtension('.lnk', '.url')]
         [Alias('Path', 'PSPath')]
         [System.String]$LiteralPath
     )

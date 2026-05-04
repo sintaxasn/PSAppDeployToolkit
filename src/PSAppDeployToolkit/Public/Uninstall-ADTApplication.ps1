@@ -8,29 +8,35 @@ function Uninstall-ADTApplication
 {
     <#
     .SYNOPSIS
-        Removes one or more applications specified by name, filter script, or InstalledApplication object from Get-ADTApplication.
+        Removes one or more applications specified by name, filter script, or InstalledApplication object from `Get-ADTApplication`.
 
     .DESCRIPTION
-        Removes one or more applications specified by name, filter script, or InstalledApplication object from Get-ADTApplication.
+        The `Uninstall-ADTApplication` function removes one or more applications specified by name, filter script, or InstalledApplication object from `Get-ADTApplication`.
 
-        Enumerates the registry for installed applications via Get-ADTApplication, matching the specified application name and uninstalls that application using its uninstall string, with the ability to specify additional uninstall parameters also.
+        Enumerates the registry for installed applications via `Get-ADTApplication`, matching the specified application name and uninstalls that application using its uninstall string, with the ability to specify additional uninstall parameters also.
 
         The application will be uninstalled using its QuietUninstallString where possible. If it doesn't exist, is null, is invalid, or `-ForceUninstallString` is specified, the UninstallString will be used.
 
     .PARAMETER InstalledApplication
-        Specifies the [PSADT.AppManagement.InstalledApplication] object to remove. This parameter is typically used when piping Get-ADTApplication to this function.
+        Specifies the [PSADT.AppManagement.InstalledApplication] object to remove. This parameter is typically used when piping the output of `Get-ADTApplication` to this function.
 
     .PARAMETER Name
         The name of the application to retrieve information for. Performs a contains match on the application display name by default.
 
     .PARAMETER NameMatch
-        Specifies the type of match to perform on the application name. Valid values are 'Contains', 'Exact', 'Wildcard', and 'Regex'. The default value is 'Contains'.
+        Specifies the type of match to perform on the application name.
+
+        Valid values for this parameter are:
+        - `Contains` (default): Equivalent to `$appDisplayName -like "*$Name*"`.
+        - `Exact`: Equivalent to `$appDisplayName -eq $Name`.
+        - `Wildcard`: Equivalent to `$appDisplayName -like $Name`.
+        - `Regex`: Equivalent to `$appDisplayName -match $Name`.
 
     .PARAMETER ProductCode
         The product code of the application to retrieve information for.
 
     .PARAMETER ApplicationType
-        Specifies the type of application to remove. Valid values are 'All', 'MSI', and 'EXE'. The default value is 'All'.
+        Specifies the type of application to remove. Valid values are `All`, `MSI`, and `EXE`. The default value is `All`.
 
     .PARAMETER IncludeUpdatesAndHotfixes
         Include matches against updates and hotfixes in results.
@@ -42,19 +48,19 @@ function Uninstall-ADTApplication
         Forcibly uses the UninstallString instead of QuietUninstallString.
 
     .PARAMETER ArgumentList
-        Overrides the default MSI parameters specified in the config.psd1 file, or the parameters found in QuietUninstallString/UninstallString for EXE applications.
+        Overrides the default MSI arguments specified in the `config.psd1` file, or the arguments found in QuietUninstallString/UninstallString for EXE applications.
 
     .PARAMETER AdditionalArgumentList
-        Adds to the default parameters specified in the config.psd1 file, or the parameters found in QuietUninstallString/UninstallString for EXE applications.
+        Adds to the default MSI arguments specified in the `config.psd1` file, or the arguments found in QuietUninstallString/UninstallString for EXE applications.
 
     .PARAMETER SecureArgumentList
-        Hides all parameters passed to the executable from the Toolkit log file.
+        Hides all arguments passed to the executable from the Toolkit log file.
 
     .PARAMETER LoggingOptions
-        Overrides the default MSI logging options specified in the config.psd1 file. Default options are: "/L*v".
+        Overrides the default MSI logging options specified in the `config.psd1` file. Default options are: "/L*v".
 
     .PARAMETER LogFileName
-        Overrides the default log file name for MSI applications. The default log file name is generated from the MSI file name. If LogFileName does not end in .log, it will be automatically appended.
+        Overrides the default log file name. The default log file name is generated from the MSI file name. If the value of `-LogFileName` does not end in a common log file extension (.log, .logx, .txt, or .out), '.log' will be automatically appended.
 
         For uninstallations, by default the product code is resolved to the DisplayName and version of the application.
 
@@ -71,13 +77,13 @@ function Uninstall-ADTApplication
         List of exit codes to indicate a reboot is required. Defaults to values set during ADTSession initialization, otherwise: 1641, 3010
 
     .PARAMETER IgnoreExitCodes
-        List the exit codes to ignore or * to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
+        List the exit codes to ignore or `*` to ignore all exit codes. Where possible, please use `-SuccessExitCodes` and/or `-RebootExitCodes` instead, or `-ErrorAction SilentlyContinue` as this parameter is deprecated and will be removed in PSAppDeployToolkit 4.3.0.
 
     .PARAMETER ExitOnProcessFailure
-        Automatically closes the active deployment session via Close-ADTSession in the event the process exits with a non-success or non-ignored exit code.
+        Automatically closes the active deployment session via `Close-ADTSession` in the event the process exits with a non-success or non-ignored exit code.
 
     .PARAMETER PassThru
-        Returns a PSADT.Types.ProcessResult object, providing the ExitCode, StdOut, and StdErr output from the uninstallation.
+        Returns an object with ExitCode, StdOut, and StdErr output from the process. Note that a failed execution will only return an object if either `-ErrorAction` is set to `SilentlyContinue`/`Ignore`, or if `-SuccessExitCodes` is used.
 
     .INPUTS
         PSADT.AppManagement.InstalledApplication
@@ -85,12 +91,21 @@ function Uninstall-ADTApplication
         This function can receive one or more InstalledApplication objects for uninstallation.
 
     .OUTPUTS
-        PSADT.Types.ProcessResult
+        None
 
-        Returns an object with the results of the installation if -PassThru is specified.
+        By default, this function returns no output.
+
+    .OUTPUTS
+        PSADT.ProcessManagement.ProcessResult
+
+        Returns an object with the results of the installation if `-PassThru` is specified.
+        - Process
+        - LaunchInfo
+        - CommandLine
         - ExitCode
         - StdOut
         - StdErr
+        - Interleaved
 
     .EXAMPLE
         Uninstall-ADTApplication -Name 'Acrobat' -ApplicationType 'MSI' -FilterScript { $_.Publisher -match 'Adobe' }
@@ -112,7 +127,7 @@ function Uninstall-ADTApplication
 
         More reading on how to create filterscripts https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/where-object?view=powershell-5.1#description
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />

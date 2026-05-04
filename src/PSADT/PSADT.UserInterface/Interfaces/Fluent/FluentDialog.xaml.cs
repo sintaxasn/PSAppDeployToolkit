@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -18,8 +18,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Threading;
 using PSADT.AccountManagement;
-using PSADT.ClientServer;
 using PSADT.DeviceManagement;
+using PSADT.Foundation;
+using PSADT.Interop;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
 using PSADT.Utilities;
@@ -90,9 +91,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             AppTitleTextBlock.Text = options.AppTitle;
             SubtitleTextBlock.Text = options.Subtitle;
 
-            // Set accessibility properties
-            AutomationProperties.SetName(this, options.AppTitle);
-
             // Set remaining properties from the options
             if (options.DialogPosition is not null)
             {
@@ -160,7 +158,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
 
             // Set up everything related to the dialog icon.
-            _dialogBitmapCache = new(new Dictionary<ApplicationTheme, BitmapSource>()
+            _dialogBitmapCache = new(new Dictionary<ApplicationTheme, BitmapSource>
             {
                 { ApplicationTheme.Light, GetIcon(options.AppIconImage) },
                 { ApplicationTheme.Dark, GetIcon(options.AppIconDarkImage ?? options.AppIconImage) },
@@ -168,7 +166,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 { ApplicationTheme.Auto, GetIcon(options.AppIconImage) },
 
             });
-            ApplicationThemeManager.Changed += ThemeManager_ActualThemeChanged;
             SetDialogIcon();
 
             // Set the expiry timer if specified.
@@ -307,6 +304,14 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Force software rendering.
             ((HwndSource)PresentationSource.FromVisual(this)).CompositionTarget.RenderMode = RenderMode.SoftwareOnly;
 
+            // Finish registration that must occur after construction has completed.
+            AutomationProperties.SetName(this, Title);
+            if (!_themeChangeHandlerRegistered)
+            {
+                ThemeManager.AddActualThemeChangedHandler(this, ThemeManager_ActualThemeChanged);
+                _themeChangeHandlerRegistered = true;
+            }
+
             // Update dialog layout
             UpdateButtonLayout();
             UpdateLayout();
@@ -329,7 +334,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             _expiryTimer?.Start();
 
             // Set the NoWait success flag as the caller may be waiting for it.
-            ClientServerUtilities.SetClientServerOperationSuccess();
+            ClientServerUtilities.SetOperationSuccessFlag();
         }
 
         /// <summary>
@@ -986,6 +991,11 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private bool _canClose;
 
         /// <summary>
+        /// Whether the theme-changed handler has been registered for this window instance.
+        /// </summary>
+        private bool _themeChangeHandlerRegistered;
+
+        /// <summary>
         /// The specified position of the dialog.
         /// </summary>
         private protected readonly DialogPosition _dialogPosition = DialogPosition.BottomRight;
@@ -1143,7 +1153,13 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 }
 
                 // Clean up resources.
-                ApplicationThemeManager.Changed -= ThemeManager_ActualThemeChanged;
+                if (_themeChangeHandlerRegistered)
+                {
+                    ThemeManager.RemoveActualThemeChangedHandler(this, ThemeManager_ActualThemeChanged);
+                    _themeChangeHandlerRegistered = false;
+                }
+                _hwndSource?.RemoveHook(WndProc);
+                _hwndSource?.Dispose();
                 _countdownTimer?.Dispose();
             }
             Disposed = true;

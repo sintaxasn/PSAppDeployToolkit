@@ -11,7 +11,7 @@ function Show-ADTInstallationRestartPrompt
         Displays a restart prompt with a countdown to a forced restart.
 
     .DESCRIPTION
-        Displays a restart prompt with a countdown to a forced restart. The prompt can be customized with a title, countdown duration, and whether it should be topmost. It also supports silent mode where the restart can be triggered without user interaction.
+        The `Show-ADTInstallationRestartPrompt` function displays a restart prompt with a countdown to a forced restart. The prompt can be customized with a title, countdown duration, and whether it should be topmost. It also supports silent mode where the restart can be triggered without user interaction.
 
     .PARAMETER CountdownSeconds
         Specifies the number of seconds to display the restart prompt.
@@ -84,61 +84,40 @@ function Show-ADTInstallationRestartPrompt
         [System.Management.Automation.SwitchParameter]$NoCountdown,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Countdown')]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CountdownSeconds -ProvidedValue $_ -ExceptionMessage 'The specified CountdownSeconds interval was null.'))
-                }
-                if ($_ -eq 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CountdownSeconds -ProvidedValue $_ -ExceptionMessage 'The specified CountdownSeconds interval must be greater than zero.'))
-                }
                 if ($_ -gt 86400)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CountdownSeconds -ProvidedValue $_ -ExceptionMessage 'The specified CountdownSeconds interval cannot exceed 86,400 seconds.'))
                 }
                 return !!$_
             })]
-        [System.Nullable[System.UInt32]]$CountdownSeconds = 60,
+        [System.UInt32]$CountdownSeconds = 60,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Countdown')]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CountdownNoHideSeconds -ProvidedValue $_ -ExceptionMessage 'The specified CountdownNoHideSeconds interval was null.'))
-                }
-                if ($_ -eq 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CountdownNoHideSeconds -ProvidedValue $_ -ExceptionMessage 'The specified CountdownNoHideSeconds interval must be greater than zero.'))
-                }
                 if ($_ -gt 86400)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName CountdownNoHideSeconds -ProvidedValue $_ -ExceptionMessage 'The specified CountdownNoHideSeconds interval cannot exceed 86,400 seconds.'))
                 }
                 return !!$_
             })]
-        [System.Nullable[System.UInt32]]$CountdownNoHideSeconds = 30,
+        [System.UInt32]$CountdownNoHideSeconds = 30,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'SilentRestart')]
         [System.Management.Automation.SwitchParameter]$SilentRestart,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'SilentRestart')]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName SilentCountdownSeconds -ProvidedValue $_ -ExceptionMessage 'The specified SilentCountdownSeconds interval was null.'))
-                }
-                if ($_ -eq 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName SilentCountdownSeconds -ProvidedValue $_ -ExceptionMessage 'The specified SilentCountdownSeconds interval must be greater than zero.'))
-                }
                 if ($_ -gt 86400)
                 {
                     $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName SilentCountdownSeconds -ProvidedValue $_ -ExceptionMessage 'The specified SilentCountdownSeconds interval cannot exceed 86,400 seconds.'))
                 }
                 return !!$_
             })]
-        [System.Nullable[System.UInt32]]$SilentCountdownSeconds = 5,
+        [System.UInt32]$SilentCountdownSeconds = 5,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
@@ -265,7 +244,7 @@ function Show-ADTInstallationRestartPrompt
                     }
                     else
                     {
-                        Invoke-ADTSilentRestart -Delay $SilentCountdownSeconds
+                        Invoke-ADTClientServerOperation -User ([PSADT.AccountManagement.AccountUtilities]::CallerRunAsActiveUser) -SilentRestart -Delay $SilentCountdownSeconds -NoWait
                     }
                     return
                 }

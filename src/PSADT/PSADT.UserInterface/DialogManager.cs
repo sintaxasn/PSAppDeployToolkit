@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using PSADT.AccountManagement;
-using PSADT.ClientServer;
+using PSADT.Foundation;
 using PSADT.Interop;
 using PSADT.ProcessManagement;
 using PSADT.UserInterface.DialogOptions;
@@ -148,15 +148,15 @@ namespace PSADT.UserInterface
             // Perform some result logging before returning.
             if ((options.CountdownDuration is not null) && (options.CountdownDuration - state.CountdownStopwatch.Elapsed) <= TimeSpan.Zero)
             {
-                if (result == CloseAppsDialogResult.Close)
+                if (result.Equals(CloseAppsDialogResult.Close))
                 {
                     state.LogAction("Close application(s) countdown timer has elapsed. Force closing application(s).", LogSeverity.Info);
                 }
-                else if (result == CloseAppsDialogResult.Defer)
+                else if (result.Equals(CloseAppsDialogResult.Defer))
                 {
                     state.LogAction("Countdown timer has elapsed and deferrals remaining. Force deferral.", LogSeverity.Info);
                 }
-                else if (result == CloseAppsDialogResult.Continue)
+                else if (result.Equals(CloseAppsDialogResult.Continue))
                 {
                     state.LogAction("Countdown timer has elapsed and no processes running. Force continue.", LogSeverity.Info);
                 }
@@ -270,7 +270,7 @@ namespace PSADT.UserInterface
                 {
                     progressDialog.Show();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex.Message is not null)
                 {
                     progressDialog.Dispose();
                     progressDialog = null;
@@ -381,7 +381,7 @@ namespace PSADT.UserInterface
             Registry.SetValue(regKey, "DisplayName", options.TrayTitle, RegistryValueKind.String);
             if (MiscUtilities.GetBase64StringBytes(options.TrayIcon) is not null)
             {
-                string trayIcon = Path.Combine(Path.GetTempPath(), "PSADT.UserInterface.TrayIcon.ico");
+                string trayIcon = Path.Join(Path.GetTempPath(), "PSADT.UserInterface.TrayIcon.ico");
                 using FileStream fs = new(trayIcon, FileMode.Create, FileAccess.Write, FileShare.None);
                 icon.Save(fs); Registry.SetValue(regKey, "IconUri", trayIcon, RegistryValueKind.ExpandString);
             }
@@ -394,7 +394,7 @@ namespace PSADT.UserInterface
             // It's worth noting that while a timeout can be specified, Windows doesn't necessarily honour it and will likely show for ~7 seconds only.
             using System.Windows.Forms.NotifyIcon notifyIcon = new() { Icon = icon, Visible = true, };
             using ManualResetEventSlim balloonTipClosed = new();
-            notifyIcon.BalloonTipShown += static (_, _) => ClientServerUtilities.SetClientServerOperationSuccess();
+            notifyIcon.BalloonTipShown += static (_, _) => ClientServerUtilities.SetOperationSuccessFlag();
             notifyIcon.BalloonTipClosed += (_, _) => balloonTipClosed.Set();
             notifyIcon.BalloonTipClicked += (_, _) => balloonTipClosed.Set();
             notifyIcon.ShowBalloonTip((int)options.BalloonTipTime, options.BalloonTipTitle, options.BalloonTipText, options.BalloonTipIcon);
@@ -516,9 +516,9 @@ namespace PSADT.UserInterface
         /// <summary>
         /// Dialog lookup table for dispatching to the correct dialog based on the style and type.
         /// </summary>
-        private static readonly ReadOnlyDictionary<DialogStyle, ReadOnlyDictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>> dialogDispatcher = new(new Dictionary<DialogStyle, ReadOnlyDictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>>()
+        private static readonly ReadOnlyDictionary<DialogStyle, ReadOnlyDictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>> dialogDispatcher = new(new Dictionary<DialogStyle, ReadOnlyDictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>>
         {
-            { DialogStyle.Classic, new(new Dictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>()
+            { DialogStyle.Classic, new(new Dictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>
             {
                 { DialogType.CloseAppsDialog, static (options, state) => new Interfaces.Classic.CloseAppsDialog((CloseAppsDialogOptions)options, (CloseAppsDialogState)(state ?? throw new ArgumentNullException(nameof(state)))) },
                 { DialogType.CustomDialog, static (options, state) => new Interfaces.Classic.CustomDialog((CustomDialogOptions)options) },
@@ -527,7 +527,7 @@ namespace PSADT.UserInterface
                 { DialogType.ProgressDialog, static (options, state) => new Interfaces.Classic.ProgressDialog((ProgressDialogOptions)options) },
                 { DialogType.RestartDialog, static (options, state) => new Interfaces.Classic.RestartDialog((RestartDialogOptions)options) },
             })},
-            { DialogStyle.Fluent, new(new Dictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>()
+            { DialogStyle.Fluent, new(new Dictionary<DialogType, Func<BaseDialogOptions, BaseDialogState?, IBaseDialog>>
             {
                 { DialogType.CloseAppsDialog, static (options, state) => new Interfaces.Fluent.CloseAppsDialog((CloseAppsDialogOptions)options, (CloseAppsDialogState)(state ?? throw new ArgumentNullException(nameof(state)))) },
                 { DialogType.CustomDialog, static (options, state) => new Interfaces.Fluent.CustomDialog((CustomDialogOptions)options) },

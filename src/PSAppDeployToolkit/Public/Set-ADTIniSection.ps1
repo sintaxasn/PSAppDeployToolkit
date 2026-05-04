@@ -1,6 +1,6 @@
 ﻿#-----------------------------------------------------------------------------
 #
-# MARK: Get-ADTIniSection
+# MARK: Set-ADTIniSection
 #
 #-----------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@ function Set-ADTIniSection
         Opens an INI file and sets the values of the specified section.
 
     .DESCRIPTION
-        Opens an INI file and sets the values of the specified section.
+        The `Set-ADTIniSection` function opens an INI file and sets the values of the specified section.
 
         Please note that the INI file provided cannot have a byte order mark (BOM) present as the underlying Win32 API cannot process it correctly.
 
@@ -24,7 +24,7 @@ function Set-ADTIniSection
 	.PARAMETER Content
 		A hashtable or dictionary object containing the key-value pairs to set in the specified section.
         Supply an ordered hashtable to preserve the order of supplied entries. Values can be strings, numbers, booleans, enums, or null.
-        Supply $null or an empty hashtable in combination with -Overwrite to empty an entire section.
+        Supply `$null` or an empty hashtable in combination with `-Overwrite` to empty an entire section.
 
     .PARAMETER Overwrite
         Specifies whether the provided INI content should overwrite all existing section content.
@@ -42,7 +42,6 @@ function Set-ADTIniSection
 
         This function does not return any output.
 
-
     .EXAMPLE
         Set-ADTIniSection -FilePath "$env:ProgramFilesX86\IBM\Notes\notes.ini" -Section 'Notes' -Content ([ordered]@{'KeyFileName' = 'MyFile.ID'; 'KeyFileType' = 'ID'})
 
@@ -53,16 +52,15 @@ function Set-ADTIniSection
 
         Overwrites the 'Notes' section to only contain the content specified.
 
-
     .EXAMPLE
         Set-ADTIniSection -FilePath "$env:ProgramFilesX86\IBM\Notes\notes.ini" -Section 'Notes' -Content $null -Overwrite
 
-        Sets the 'Notes' section to be empty by sending null content in combination with the -Overwrite switch.
+        Sets the 'Notes' section to be empty by sending null content in combination with the `-Overwrite` switch.
 
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
@@ -128,7 +126,10 @@ function Set-ADTIniSection
                 if (!$exists)
                 {
                     Write-ADTLogEntry -Message "Creating INI file: $FilePath."
-                    $null = New-Item -Path $FilePath -ItemType File -Force
+                    if ($PSCmdlet.ShouldProcess($FilePath, 'Create INI file'))
+                    {
+                        $null = New-Item -Path $FilePath -ItemType File -Force
+                    }
                 }
 
                 if ($null -eq $Content)

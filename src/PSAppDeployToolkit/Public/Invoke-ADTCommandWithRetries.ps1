@@ -11,7 +11,7 @@ function Invoke-ADTCommandWithRetries
         Drop-in replacement for any cmdlet/function where a retry is desirable due to transient issues.
 
     .DESCRIPTION
-        This function invokes the specified cmdlet/function, accepting all of its parameters but retries an operation for the configured value before throwing.
+        The `Invoke-ADTCommandWithRetries` function invokes the specified cmdlet/function, accepting all of its parameters but retries an operation for the configured value before throwing.
 
     .PARAMETER Command
         The name of the command to invoke.
@@ -23,7 +23,7 @@ function Invoke-ADTCommandWithRetries
         How long to sleep between retries.
 
     .PARAMETER MaximumElapsedTime
-        The maximum elapsed time allowed to passed while attempting retries. If the maximum elapsted time has passed and there are still attempts remaining they will be disgarded.
+        The maximum elapsed time allowed to pass while attempting retries. If the maximum elapsed time has passed and there are still attempts remaining they will be discarded.
 
         If this parameter is supplied and the `-Retries` parameter isn't, this command will continue to retry the provided command until the time limit runs out.
 
@@ -80,6 +80,7 @@ function Invoke-ADTCommandWithRetries
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Object])]
     param
     (
         [Parameter(Mandatory = $true, Position = 0)]
@@ -87,37 +88,15 @@ function Invoke-ADTCommandWithRetries
         [System.Object]$Command,
 
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ($null -eq $_)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Retries -ProvidedValue $_ -ExceptionMessage 'The specified Retries interval was null.'))
-                }
-                if ($_ -le 0)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName Retries -ProvidedValue $_ -ExceptionMessage 'The specified Retries interval must be greater than zero.'))
-                }
-                return !!$_
-            })]
-        [System.Nullable[System.UInt32]]$Retries = 3,
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
+        [System.UInt32]$Retries = 3,
 
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ($_ -le [System.TimeSpan]::Zero)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName SleepDuration -ProvidedValue $_ -ExceptionMessage 'The specified TimeSpan must be greater than zero.'))
-                }
-                return !!$_
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [System.TimeSpan]$SleepDuration = [System.TimeSpan]::FromSeconds(5),
 
         [Parameter(Mandatory = $false)]
-        [ValidateScript({
-                if ($_ -le [System.TimeSpan]::Zero)
-                {
-                    $PSCmdlet.ThrowTerminatingError((New-ADTValidateScriptErrorRecord -ParameterName MaximumElapsedTime -ProvidedValue $_ -ExceptionMessage 'The specified TimeSpan must be greater than zero.'))
-                }
-                return !!$_
-            })]
+        [PSAppDeployToolkit.Attributes.ValidateGreaterThanZero()]
         [System.TimeSpan]$MaximumElapsedTime,
 
         [Parameter(Mandatory = $false, ValueFromRemainingArguments = $true, DontShow = $true)]

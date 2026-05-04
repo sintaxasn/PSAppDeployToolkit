@@ -11,7 +11,7 @@ function Set-ADTRegistryKey
         Creates or sets a registry key name, value, and value data.
 
     .DESCRIPTION
-        Creates a registry key name, value, and value data; it sets the same if it already exists. This function can also handle registry keys for specific user SIDs and 32-bit registry on 64-bit systems.
+        The `Set-ADTRegistryKey` function creates a registry key name, value, and value data; it sets the same if it already exists. This function can also handle registry keys for specific user SIDs and 32-bit registry on 64-bit systems.
 
     .PARAMETER LiteralPath
         The registry key path.
@@ -28,10 +28,15 @@ function Set-ADTRegistryKey
         DWord should be specified as a decimal.
 
     .PARAMETER MultiStringValueMode
-        The mode to operate when working with MultiString objects. The default is Replace, but Add and Remove modes are supported also.
+        The mode to operate when working with MultiString objects. The default value for this parameter is `Replace`.
+
+        Valid values for this parameter are:
+        - `Replace`: Replaces the current value with the one(s) specified in `-Value`.
+        - `Add`: Appends the values from `-Value` to the current registry value.
+        - `Remove`: Removes the values from `-Value`.
 
     .PARAMETER Wow6432Node
-        Specify this switch to write to the 32-bit registry (Wow6432Node) on 64-bit systems.
+        Specify this switch to write to the 32-bit registry (WOW6432Node) on 64-bit systems.
 
     .PARAMETER RegistryOptions
         Extra options to use while creating the key. This is useful for creating volatile keys that do not survive a reboot.
@@ -39,7 +44,7 @@ function Set-ADTRegistryKey
     .PARAMETER SID
         The security identifier (SID) for a user. Specifying this parameter will convert a HKEY_CURRENT_USER registry key to the HKEY_USERS\$SID format.
 
-        Specify this parameter from the Invoke-ADTAllUsersRegistryAction function to read/edit HKCU registry settings for all users on the system.
+        Specify this parameter from the `Invoke-ADTAllUsersRegistryAction` function to read/edit HKCU registry settings for all users on the system.
 
     .INPUTS
         None
@@ -79,7 +84,7 @@ function Set-ADTRegistryKey
     .NOTES
         An active ADT session is NOT required to use this function.
 
-        This function supports the -WhatIf and -Confirm parameters for testing changes before applying them.
+        This function supports the `-WhatIf` and `-Confirm` parameters for testing changes before applying them.
 
         Tags: psadt<br />
         Website: https://psappdeploytoolkit.com<br />
