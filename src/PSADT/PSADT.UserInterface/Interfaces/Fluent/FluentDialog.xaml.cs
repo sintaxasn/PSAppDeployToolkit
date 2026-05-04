@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -20,7 +20,6 @@ using System.Windows.Threading;
 using PSADT.AccountManagement;
 using PSADT.DeviceManagement;
 using PSADT.Foundation;
-using PSADT.Interop;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
 using PSADT.Utilities;

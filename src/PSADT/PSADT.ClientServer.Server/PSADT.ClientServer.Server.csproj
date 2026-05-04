@@ -11,7 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.6" />
     <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.7" />
   </ItemGroup>
 
