@@ -68,14 +68,17 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
 
             // Initialize the theme and accent color for the dialog based on the provided options, defaulting to automatic theming and accent if not specified.
-            ApplicationThemeManager.Apply(ApplicationTheme.Auto, BackdropType.Acrylic, true);
+            ApplicationThemeManager.Apply(ApplicationTheme.Auto, BackdropType.Acrylic);
 
             // Initialize the window
             InitializeComponent();
 
-            // Apply ADT-specific background colors based on the resolved system theme.
-            // CurrentTheme is Auto after Apply(); detect actual system theme for initial colors.
-            ApplyAdtThemeColors(DetectSystemTheme());
+            // Apply ADT Specific Brush colors depending on the current theme
+            bool isDark = ApplicationThemeManager.IsSystemInDarkMode;
+
+            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0xA3, 0x10, 0x10, 0x10) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
+            SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x36, 0x36, 0x36) : Color.FromArgb(0xFD, 0xF6, 0xF6, 0xF6));
+            SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7A, 0x48, 0x48, 0x48) : Color.FromArgb(0x7A, 0xEA, 0xEA, 0xEA));
 
             // If the accent color is passed through, update via ThemeManager
             if (options.FluentAccentColor is not null)
@@ -107,7 +110,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
             IsMoveable = _dialogAllowMove;
 
-            // Minimize caption-button support is off by default to preserve existing dialog behavior;
+            // Minimize caption-button support is off by default to preserve existing dialog behavior
             // callers (and PSAppDeployToolkit's -AllowMinimize) must explicitly opt in by setting
             // DialogAllowMinimize=true in BaseDialogOptions. Because the base XAML for all fluent
             // dialogs uses ResizeMode="NoResize" (which normally collapses the minimize button), we
@@ -308,11 +311,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
 
             // Finish registration that must occur after construction has completed.
             AutomationProperties.SetName(this, Title);
-            if (!_themeChangeHandlerRegistered)
-            {
-                ThemeManager.AddActualThemeChangedHandler(this, ThemeManager_ActualThemeChanged);
-                _themeChangeHandlerRegistered = true;
-            }
 
             // Update dialog layout
             UpdateButtonLayout();
@@ -1002,11 +1000,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private bool _canClose;
 
         /// <summary>
-        /// Whether the theme-changed handler has been registered for this window instance.
-        /// </summary>
-        private bool _themeChangeHandlerRegistered;
-
-        /// <summary>
         /// The specified position of the dialog.
         /// </summary>
         private protected readonly DialogPosition _dialogPosition = DialogPosition.BottomRight;
@@ -1098,30 +1091,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             Resources[key] = new SolidColorBrush(color);
         }
 
-        private static ApplicationTheme DetectSystemTheme()
-        {
-            if (SystemParameters.HighContrast)
-            {
-                return ApplicationTheme.HighContrast;
-            }
 
-            try
-            {
-                using Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-                if (key?.GetValue("AppsUseLightTheme") is int val && val == 1)
-                {
-                    return ApplicationTheme.Light;
-                }
-            }
-            catch (System.Security.SecurityException)
-            {
-            }
-            catch (IOException)
-            {
-            }
-
-            return ApplicationTheme.Dark;
-        }
 
         /// <summary>
         /// Dispose managed resources
