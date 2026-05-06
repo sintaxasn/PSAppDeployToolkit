@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Bcl.Cryptography" Version="10.0.6" />
   </ItemGroup>
 
   <ItemGroup>

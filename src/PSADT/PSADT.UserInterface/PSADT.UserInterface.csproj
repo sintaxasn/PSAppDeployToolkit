@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Fluence.Wpf\Fluence.Wpf\Fluence.Wpf.csproj" />
+    <ProjectReference Include="..\..\..\lib\Fluence.Wpf\Fluence.Wpf\Fluence.Wpf.csproj" />
     <ProjectReference Include="..\PSADT\PSADT.csproj" />
     <ProjectReference Include="..\PSAppDeployToolkit\PSAppDeployToolkit.csproj" />
   </ItemGroup>
@@ -60,6 +60,5 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.6" />
   </ItemGroup>
 </Project>
