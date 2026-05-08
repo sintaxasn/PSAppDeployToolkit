@@ -76,9 +76,9 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Apply ADT Specific Brush colors depending on the current theme
             bool isDark = ApplicationThemeManager.IsSystemInDarkMode;
 
-            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0xA3, 0x10, 0x10, 0x10) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
-            SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x36, 0x36, 0x36) : Color.FromArgb(0xFD, 0xF6, 0xF6, 0xF6));
-            SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7A, 0x48, 0x48, 0x48) : Color.FromArgb(0x7A, 0xEA, 0xEA, 0xEA));
+            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0xB3, 0x0A, 0x0A, 0x0A) : Color.FromArgb(0xB3, 0xF3, 0xF3, 0xF3));
+            SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x2b, 0x2b, 0x2b) : Color.FromArgb(0xFD, 0xFB, 0xFB, 0xFB));
+            SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7F, 0x5A, 0x5A, 0x5A) : Color.FromArgb(0x7F, 0xFA, 0xFA, 0xFA));
 
             // If the accent color is passed through, update via ThemeManager
             if (options.FluentAccentColor is not null)
@@ -1081,7 +1081,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             bool isDark = resolvedTheme != ApplicationTheme.Light;
 
-            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0xA3, 0x10, 0x10, 0x10) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
+            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0x9A, 0x0C, 0x0C, 0x0C) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
             SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x36, 0x36, 0x36) : Color.FromArgb(0xFD, 0xF6, 0xF6, 0xF6));
             SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7A, 0x48, 0x48, 0x48) : Color.FromArgb(0x7A, 0xEA, 0xEA, 0xEA));
         }
