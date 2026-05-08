@@ -1,0 +1,170 @@
+﻿<UserControl
+    x:Class="Fluence.Wpf.Demo.Pages.GalleryGlyphsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"
+    d:DesignHeight="900"
+    d:DesignWidth="900"
+    mc:Ignorable="d">
+    <Grid x:Name="PageRoot" Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock
+                    Margin="0,0,0,4"
+                    ui:TextBlockExtensions.Typography="Title"
+                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                    Text="Iconography" />
+                <TextBlock
+                    MaxWidth="720"
+                    HorizontalAlignment="Left"
+                    Style="{StaticResource SectionDescriptionStyle}"
+                    Text="FontIcon renders glyphs from the Segoe Fluent Icons font. This catalog enumerates the private-use glyphs available from the installed font and shows friendly names where Fluence has source data." />
+            </StackPanel>
+
+        </Grid>
+
+        <TextBlock
+            x:Name="IconCatalogCountText"
+            Grid.Row="1"
+            Margin="0,16,0,12"
+            Style="{StaticResource SectionDescriptionStyle}" />
+
+        <Grid
+            x:Name="FontIconSampleContent"
+            Grid.Row="2"
+            Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="96" />
+            </Grid.ColumnDefinitions>
+
+            <ui:FontIcon
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Glyph="&#xE713;"
+                IconFontSize="24" />
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                Text="Settings" />
+            <TextBlock
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                FontFamily="Consolas"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="U+E713" />
+        </Grid>
+
+        <TextBlock
+            Grid.Row="3"
+            Margin="0,0,0,8"
+            Style="{StaticResource SectionHeaderStyle}"
+            Text="Installed glyph catalog" />
+
+        <ui:ListView
+            x:Name="IconCatalogList"
+            Grid.Row="4"
+            BorderThickness="0"
+            ScrollViewer.CanContentScroll="True"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            VirtualizingPanel.ScrollUnit="Pixel"
+            VirtualizingStackPanel.IsVirtualizing="True"
+            VirtualizingStackPanel.VirtualizationMode="Recycling">
+            <ui:ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListViewItem}">
+                    <Setter Property="Focusable" Value="False" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                <ContentPresenter
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    Content="{TemplateBinding Content}"
+                                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ui:ListView.ItemContainerStyle>
+            <ui:ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ui:ListView.ItemsPanel>
+            <ui:ListView.ItemTemplate>
+                <DataTemplate>
+                    <ItemsControl Margin="10,6" ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="4" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ui:Border
+                                    Width="176"
+                                    Height="104"
+                                    MinHeight="104"
+                                    Margin="6"
+                                    Style="{StaticResource IconGalleryCardStyle}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            FontFamily="Segoe Fluent Icons"
+                                            FontSize="28"
+                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                            Text="{Binding Glyph}"
+                                            TextAlignment="Center" />
+                                        <TextBlock
+                                            Grid.Row="1"
+                                            Margin="0,10,0,4"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                            Text="{Binding Name}"
+                                            TextAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="NoWrap" />
+                                        <TextBlock
+                                            Grid.Row="2"
+                                            HorizontalAlignment="Center"
+                                            FontFamily="Consolas"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding DisplayCode}" />
+                                    </Grid>
+                                </ui:Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DataTemplate>
+            </ui:ListView.ItemTemplate>
+        </ui:ListView>
+    </Grid>
+</UserControl>
