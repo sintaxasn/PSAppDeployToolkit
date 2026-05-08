@@ -1,4 +1,9 @@
-﻿# Getting started
+﻿---
+title: Getting started
+linkTitle: Getting started
+description: Reference Fluence.Wpf, initialize the theme manager, and host a FluenceWindow shell.
+weight: 10
+---
 
 ## Reference the library
 
@@ -16,7 +21,7 @@
     dotnet pack Fluence.Wpf/Fluence.Wpf.csproj -c Release -o ./artifacts
     ```
 
-The package id is **`Fluence.Wpf`** when publishing is enabled.
+The package id is **`Fluence.Wpf`**. Public feed publishing is a release decision; local packages are useful for consumer smoke tests before that point.
 
 ## Initialize theme and accent
 
@@ -66,7 +71,7 @@ Derive your main window from `Fluence.Wpf.Controls.FluenceWindow`, **or** call `
 ```xml
 <fluence:Card IsClickable="True" Click="OnCardClicked" Padding="16">
     <StackPanel>
-        <TextBlock Text="Window chrome" FontSize="18" FontWeight="SemiBold" />
+        <TextBlock Text="Title bar and window controls" FontSize="18" FontWeight="SemiBold" />
         <TextBlock Text="Backdrop, caption, extended title bar"
                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
     </StackPanel>

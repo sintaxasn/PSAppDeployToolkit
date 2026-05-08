@@ -26,9 +26,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Controls;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
-using Fluence.Wpf.Controls;
 
 namespace Fluence.Wpf.Automation
 {
@@ -36,6 +36,7 @@ namespace Fluence.Wpf.Automation
     /// Exposes <see cref="ProgressRing"/> to UI Automation as a progress indicator.
     /// </summary>
     /// <remarks>Initializes a new instance.</remarks>
+    /// <param name="owner">The <see cref="ProgressRing"/> control represented by this automation peer.</param>
     public class ProgressRingAutomationPeer(ProgressRing owner) : FrameworkElementAutomationPeer(owner), IRangeValueProvider
     {
         /// <inheritdoc />

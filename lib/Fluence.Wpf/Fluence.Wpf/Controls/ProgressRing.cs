@@ -26,6 +26,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Automation;
 using System;
 using System.Windows;
 using System.Windows.Automation.Peers;
@@ -33,7 +34,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
-using Fluence.Wpf.Automation;
 
 namespace Fluence.Wpf.Controls
 {
@@ -400,7 +400,7 @@ namespace Fluence.Wpf.Controls
                 // null out determinate arc data.  Code-driven angle animations render the
                 // caterpillar arc when the control is active.
                 ring.BeginAnimation(AnimatedFractionProperty, null);
-                _ = (ring._arcPath?.Data = null);
+                _ = ring._arcPath?.Data = null;
                 ring.UpdateIndeterminateAnimationState();
             }
             else
@@ -447,7 +447,7 @@ namespace Fluence.Wpf.Controls
                 return;
             }
 
-            // No tween before the template has applied — OnApplyTemplate will render the
+            // No tween before the template has applied - OnApplyTemplate will render the
             // initial frame synchronously.  Tweening here would race with the layout pass
             // and leave the arc blank when the dispatcher drains mid-animation.
             double targetFraction = ring.ComputeFraction();
@@ -530,7 +530,7 @@ namespace Fluence.Wpf.Controls
             _isIndeterminateAnimationRunning = false;
             IndeterminateStartAngle = IndeterminateStartAngleDefault;
             IndeterminateSweepAngle = IndeterminateMinimumSweepAngle;
-            _ = (_indeterminateArcPath?.Data = null);
+            _ = _indeterminateArcPath?.Data = null;
         }
 
         private static DoubleAnimationUsingKeyFrames CreateIndeterminateStartAnimation()
@@ -624,7 +624,7 @@ namespace Fluence.Wpf.Controls
             }
 
             // Defensive guard: if we've flipped to indeterminate while a tween is in flight,
-            // the AnimatedFraction Completed callback can still arrive — drop it.
+            // the AnimatedFraction Completed callback can still arrive - drop it.
             if (IsIndeterminate)
             {
                 _arcPath.Data = null;
@@ -685,7 +685,7 @@ namespace Fluence.Wpf.Controls
             }
             Point startPoint = GetArcPoint(center, radius, startAngle);
             Point endPoint = GetArcPoint(center, radius, startAngle + angle);
-            _ = (figure?.StartPoint = startPoint);
+            _ = figure?.StartPoint = startPoint;
             if (segment is not null)
             {
                 segment.Point = endPoint;

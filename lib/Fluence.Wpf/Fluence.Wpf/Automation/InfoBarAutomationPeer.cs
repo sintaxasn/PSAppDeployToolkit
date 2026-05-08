@@ -26,8 +26,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-using System.Windows.Automation.Peers;
 using Fluence.Wpf.Controls;
+using System.Windows.Automation.Peers;
 
 namespace Fluence.Wpf.Automation
 {
@@ -35,6 +35,7 @@ namespace Fluence.Wpf.Automation
     /// Exposes <see cref="InfoBar"/> to UI Automation as a status bar element.
     /// </summary>
     /// <remarks>Initializes a new instance.</remarks>
+    /// <param name="owner">The <see cref="InfoBar"/> control represented by this automation peer.</param>
     public class InfoBarAutomationPeer(InfoBar owner) : FrameworkElementAutomationPeer(owner)
     {
         /// <inheritdoc />

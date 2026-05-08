@@ -42,8 +42,7 @@ namespace Fluence.Wpf.Controls
     [TemplatePart(Name = "PART_RevealTextBox", Type = typeof(System.Windows.Controls.TextBox))]
     [TemplatePart(Name = "PART_RevealButton", Type = typeof(System.Windows.Controls.Button))]
     [TemplatePart(Name = "PART_CapsLockIndicator", Type = typeof(FrameworkElement))]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S2333:Redundant modifiers should not be used", Justification = "This needs to be partial for XAML.")]
-    public partial class PasswordBox : Control
+    public class PasswordBox : Control
     {
         // Precompiled regexes for password strength evaluation.
         private static readonly Regex LowercasePasswordRegex = new("[a-z]", RegexOptions.CultureInvariant | RegexOptions.Compiled);
@@ -70,6 +69,7 @@ namespace Fluence.Wpf.Controls
         public PasswordBox()
         {
             _capsPollTick = OnCapsPollTick;
+            Unloaded += OnUnloaded;
         }
 
         /// <summary>
@@ -364,8 +364,8 @@ namespace Fluence.Wpf.Controls
             control._isUpdatingPassword = true;
             try
             {
-                _ = (control._passwordBox?.Password = (string)e.NewValue ?? string.Empty);
-                _ = (control._revealTextBox?.Text = (string?)e.NewValue ?? string.Empty);
+                _ = control._passwordBox?.Password = (string)e.NewValue ?? string.Empty;
+                _ = control._revealTextBox?.Text = (string?)e.NewValue ?? string.Empty;
             }
             finally
             {
@@ -395,6 +395,11 @@ namespace Fluence.Wpf.Controls
             _capsPollTimer.Tick -= _capsPollTick;
             _capsPollTimer.Stop();
             _capsPollTimer = null;
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            StopCapsPoll();
         }
 
         private void OnInnerKeyboardFocusChanged(object sender, KeyboardFocusChangedEventArgs e)
@@ -431,7 +436,7 @@ namespace Fluence.Wpf.Controls
             try
             {
                 Password = _passwordBox?.Password ?? string.Empty;
-                _ = (_revealTextBox?.Text = _passwordBox?.Password ?? string.Empty);
+                _ = _revealTextBox?.Text = _passwordBox?.Password ?? string.Empty;
 
                 UpdatePasswordStrengthFromPassword();
                 UpdateStrengthMeter();
@@ -452,7 +457,7 @@ namespace Fluence.Wpf.Controls
             try
             {
                 Password = _revealTextBox?.Text ?? string.Empty;
-                _ = (_passwordBox?.Password = _revealTextBox?.Text ?? string.Empty);
+                _ = _passwordBox?.Password = _revealTextBox?.Text ?? string.Empty;
 
                 UpdatePasswordStrengthFromPassword();
                 UpdateStrengthMeter();

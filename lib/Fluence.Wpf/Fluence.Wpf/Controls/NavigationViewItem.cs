@@ -26,11 +26,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Automation;
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Fluence.Wpf.Automation;
 
 namespace Fluence.Wpf.Controls
 {
@@ -192,7 +192,6 @@ namespace Fluence.Wpf.Controls
                 return;
             }
             nav.InvokeItem(this);
-            _ = Focus();
             e.Handled = true;
         }
 
@@ -205,7 +204,7 @@ namespace Fluence.Wpf.Controls
         {
             if (icon?.ReadLocalValue(FontIcon.IconFontSizeProperty) == DependencyProperty.UnsetValue)
             {
-                icon.SetCurrentValue(FontIcon.IconFontSizeProperty, 20.0);
+                icon.SetCurrentValue(FontIcon.IconFontSizeProperty, 16.0);
             }
         }
     }

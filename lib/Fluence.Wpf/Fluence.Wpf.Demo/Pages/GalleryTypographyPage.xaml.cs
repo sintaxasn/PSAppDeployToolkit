@@ -37,110 +37,6 @@ namespace Fluence.Wpf.Demo.Pages
 {
     public partial class GalleryTypographyPage : UserControl
     {
-        private const string TypographyTableXamlSource = @"<UserControl
-    x:Class=""Fluence.Wpf.Demo.Pages.Typography.TypographyTable""
-    xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
-    xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width=""2.2*"" MinWidth=""180"" />
-            <ColumnDefinition Width=""1.2*"" MinWidth=""140"" />
-            <ColumnDefinition Width=""1*"" MinWidth=""120"" />
-            <ColumnDefinition Width=""1.7*"" MinWidth=""180"" />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height=""Auto"" />
-            <RowDefinition Height=""Auto"" />
-            <RowDefinition Height=""Auto"" />
-        </Grid.RowDefinitions>
-
-        <TextBlock
-            Margin=""24,0,16,16""
-            Style=""{StaticResource BodyStrongTextBlockStyle}""
-            Text=""Example"" />
-        <TextBlock
-            Grid.Column=""1""
-            Margin=""24,0,16,16""
-            Style=""{StaticResource BodyStrongTextBlockStyle}""
-            Text=""Variable Font"" />
-        <TextBlock
-            Grid.Column=""2""
-            Margin=""24,0,16,16""
-            Style=""{StaticResource BodyStrongTextBlockStyle}""
-            Text=""Size/Line height"" />
-        <TextBlock
-            Grid.Column=""3""
-            Margin=""24,0,16,16""
-            Style=""{StaticResource BodyStrongTextBlockStyle}""
-            Text=""Style"" />
-
-        <TextBlock
-            Grid.Row=""1""
-            Margin=""24,16""
-            Style=""{StaticResource BodyTextBlockStyle}""
-            Text=""Body"" />
-        <TextBlock
-            Grid.Row=""1""
-            Grid.Column=""1""
-            Margin=""24,16""
-            Style=""{StaticResource BodyTextBlockStyle}""
-            Text=""Text, Regular"" />
-        <TextBlock
-            Grid.Row=""1""
-            Grid.Column=""2""
-            Margin=""24,16""
-            Style=""{StaticResource BodyTextBlockStyle}""
-            Text=""14/20 epx"" />
-        <TextBlock
-            Grid.Row=""1""
-            Grid.Column=""3""
-            Margin=""24,16""
-            FontFamily=""Consolas""
-            Style=""{StaticResource BodyTextBlockStyle}""
-            Text=""BodyTextBlockStyle"" />
-
-        <TextBlock
-            Grid.Row=""2""
-            Margin=""24,16""
-            Style=""{StaticResource TitleTextBlockStyle}""
-            Text=""Title"" />
-        <TextBlock
-            Grid.Row=""2""
-            Grid.Column=""1""
-            Margin=""24,16""
-            Style=""{StaticResource BodyTextBlockStyle}""
-            Text=""Display, SemiBold"" />
-        <TextBlock
-            Grid.Row=""2""
-            Grid.Column=""2""
-            Margin=""24,16""
-            Style=""{StaticResource BodyTextBlockStyle}""
-            Text=""28/36 epx"" />
-        <TextBlock
-            Grid.Row=""2""
-            Grid.Column=""3""
-            Margin=""24,16""
-            FontFamily=""Consolas""
-            Style=""{StaticResource BodyTextBlockStyle}""
-            Text=""TitleTextBlockStyle"" />
-    </Grid>
-</UserControl>
-";
-
-        private const string TypographyTableCSharpSource = @"using System.Windows.Controls;
-
-namespace Fluence.Wpf.Demo.Pages.Typography
-{
-    public partial class TypographyTable : UserControl
-    {
-        public TypographyTable()
-        {
-            InitializeComponent();
-        }
-    }
-}
-";
-
         private const string CopyGlyph = "\uE8C8";
 
         private static readonly TypographyRow[] Rows =
@@ -159,7 +55,6 @@ namespace Fluence.Wpf.Demo.Pages.Typography
         {
             InitializeComponent();
             BuildTypographyTable();
-            WrapTypographyTable();
         }
 
         private void BuildTypographyTable()
@@ -183,7 +78,7 @@ namespace Fluence.Wpf.Demo.Pages.Typography
 
         private void AddHeader(int column, string text)
         {
-            TextBlock header = CreateTextBlock(text, "BodyStrongTextBlockStyle", new Thickness(24, 0, 16, 16));
+            TextBlock header = CreateTextBlock(text, "BodyStrongTextBlockStyle", new Thickness(12, 8, 16, 8));
             AddCell(header, 0, column);
         }
 
@@ -195,7 +90,7 @@ namespace Fluence.Wpf.Demo.Pages.Typography
                 {
                     CornerRadius = new CornerRadius(6),
                     IsHitTestVisible = false,
-                    Margin = new Thickness(0, 4, 0, 4)
+                    Margin = new Thickness(0, 2, 0, 2)
                 };
                 background.SetResourceReference(Border.BackgroundProperty, "SubtleFillColorSecondaryBrush");
                 Grid.SetRow(background, rowIndex);
@@ -203,10 +98,10 @@ namespace Fluence.Wpf.Demo.Pages.Typography
                 _ = TypographyTable.Children.Add(background);
             }
 
-            AddCell(CreateTextBlock(row.Example, row.StyleKey, new Thickness(24, 16, 16, 16)), rowIndex, 0);
-            AddCell(CreateTextBlock(row.VariableFont, "BodyTextBlockStyle", new Thickness(24, 16, 16, 16)), rowIndex, 1);
-            AddCell(CreateTextBlock(row.SizeAndLineHeight, "BodyTextBlockStyle", new Thickness(24, 16, 16, 16)), rowIndex, 2);
-            AddCell(CreateTextBlock(row.StyleKey, "BodyTextBlockStyle", new Thickness(24, 16, 16, 16)), rowIndex, 3);
+            AddCell(CreateTextBlock(row.Example, row.StyleKey, new Thickness(24, 8, 16, 8)), rowIndex, 0);
+            AddCell(CreateTextBlock(row.VariableFont, "BodyTextBlockStyle", new Thickness(12, 8, 16, 8)), rowIndex, 1);
+            AddCell(CreateTextBlock(row.SizeAndLineHeight, "BodyTextBlockStyle", new Thickness(12, 8, 16, 8)), rowIndex, 2);
+            AddCell(CreateTextBlock(row.StyleKey, "BodyTextBlockStyle", new Thickness(12, 8, 16, 8)), rowIndex, 3);
             AddCell(CreateCopyButton(row.StyleKey), rowIndex, 4);
         }
 
@@ -230,7 +125,7 @@ namespace Fluence.Wpf.Demo.Pages.Typography
                 Content = new Fluent.FontIcon { Glyph = CopyGlyph, IconFontSize = 16 },
                 Height = 36,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(16, 8, 24, 8),
+                Margin = new Thickness(12, 8, 24, 8),
                 MinWidth = 40,
                 Padding = new Thickness(0),
                 Tag = styleKey,
@@ -250,28 +145,6 @@ namespace Fluence.Wpf.Demo.Pages.Typography
             _ = TypographyTable.Children.Add(element);
         }
 
-        private void WrapTypographyTable()
-        {
-            if (TypographyTable.Parent is not Panel parent)
-            {
-                return;
-            }
-
-            int index = parent.Children.IndexOf(TypographyTable);
-            TypographyTable.Margin = new Thickness(0);
-            parent.Children.Remove(TypographyTable);
-            parent.Children.Insert(index, new DemoSampleControl
-            {
-                Margin = new Thickness(0, 12, 0, 0),
-                Title = "Typography scale",
-                Description = "Supported text styles, variable font roles, and line-height guidance.",
-                XamlSource = TypographyTableXamlSource,
-                CSharpSource = TypographyTableCSharpSource,
-                SampleContent = TypographyTable
-            });
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S6670:\"Trace.Write\" and \"Trace.WriteLine\" should not be used", Justification = "Don't care for now.")]
         private static void CopyStyleKey_Click(object sender, RoutedEventArgs e)
         {
             string? styleKey = sender is Fluent.Button button ? button.Tag as string : null;
@@ -286,11 +159,11 @@ namespace Fluence.Wpf.Demo.Pages.Typography
             }
             catch (ExternalException)
             {
-                System.Diagnostics.Trace.WriteLine("Clipboard was unavailable while copying a typography style key.");
+                System.Diagnostics.Debug.WriteLine("Clipboard was unavailable while copying a typography style key.");
             }
             catch (ThreadStateException)
             {
-                System.Diagnostics.Trace.WriteLine("Clipboard access requires an STA thread.");
+                System.Diagnostics.Debug.WriteLine("Clipboard access requires an STA thread.");
             }
         }
 

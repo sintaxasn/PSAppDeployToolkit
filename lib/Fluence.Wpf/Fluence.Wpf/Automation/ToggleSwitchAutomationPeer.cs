@@ -26,10 +26,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Controls;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
-using Fluence.Wpf.Controls;
 
 namespace Fluence.Wpf.Automation
 {
@@ -37,6 +37,7 @@ namespace Fluence.Wpf.Automation
     /// Exposes <see cref="ToggleSwitch"/> to UI Automation with the Toggle pattern.
     /// </summary>
     /// <remarks>Initializes a new instance.</remarks>
+    /// <param name="owner">The <see cref="ToggleSwitch"/> control represented by this automation peer.</param>
     public class ToggleSwitchAutomationPeer(ToggleSwitch owner) : FrameworkElementAutomationPeer(owner), IToggleProvider
     {
         /// <inheritdoc />

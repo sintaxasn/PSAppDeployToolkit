@@ -8,8 +8,8 @@
     d:DesignHeight="800"
     d:DesignWidth="900"
     mc:Ignorable="d">
-    <ui:SmoothScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24">
+    <ui:SmoothScrollViewer Style="{StaticResource GalleryPageScrollViewerStyle}">
+        <StackPanel Style="{StaticResource GalleryPageContentStackStyle}">
             <TextBlock
                 Margin="0,0,0,4"
                 Style="{StaticResource SectionHeaderStyle}"
@@ -21,7 +21,7 @@
                 Margin="0,12,0,0"
                 HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2.2*" MinWidth="180" />
+                    <ColumnDefinition Width="Auto" MinWidth="180" />
                     <ColumnDefinition Width="1.2*" MinWidth="140" />
                     <ColumnDefinition Width="1*" MinWidth="120" />
                     <ColumnDefinition Width="1.7*" MinWidth="180" />

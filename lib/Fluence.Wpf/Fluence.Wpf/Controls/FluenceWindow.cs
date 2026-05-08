@@ -26,6 +26,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Helpers;
+using Fluence.Wpf.Native;
 using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -36,8 +38,6 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
-using Fluence.Wpf.Helpers;
-using Fluence.Wpf.Native;
 
 namespace Fluence.Wpf.Controls
 {
@@ -288,12 +288,15 @@ namespace Fluence.Wpf.Controls
         }
 
         /// <summary>
-        /// Gets or sets custom content displayed in the title bar region.
-        /// When null and <see cref="ExtendsContentIntoTitleBar"/> is true, a default title bar with icon and title is shown.
+        /// Gets or sets custom content displayed in the title bar region, or <see langword="null"/> to use the default title bar.
         /// </summary>
-        public UIElement TitleBar
+        /// <remarks>
+        /// Assigning <see langword="null"/> clears custom title-bar content. When <see cref="ExtendsContentIntoTitleBar"/>
+        /// is <c>true</c>, the control template falls back to the built-in icon and title presentation.
+        /// </remarks>
+        public UIElement? TitleBar
         {
-            get => (UIElement)GetValue(TitleBarProperty);
+            get => (UIElement?)GetValue(TitleBarProperty);
             set => SetValue(TitleBarProperty, value);
         }
 
@@ -439,10 +442,10 @@ namespace Fluence.Wpf.Controls
         }
 
         /// <summary>
-        /// Sets a UIElement as the custom title bar content. The element becomes the
-        /// drag region for the window. Call with null to revert to the default title bar.
+        /// Sets custom title-bar content, or clears it to restore the default title bar.
         /// </summary>
-        public void SetTitleBar(UIElement titleBar)
+        /// <param name="titleBar">The custom title-bar element, or <see langword="null"/> to clear custom content.</param>
+        public void SetTitleBar(UIElement? titleBar)
         {
             TitleBar = titleBar;
         }
@@ -928,21 +931,18 @@ namespace Fluence.Wpf.Controls
             else if (msg == NativeConstants.WM_NCLBUTTONUP && wParam.ToInt32() == NativeConstants.HTMAXBUTTON)
             {
                 ClearSnapHover();
-                if (ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
+                if (WindowState == WindowState.Maximized)
                 {
-                    if (WindowState == WindowState.Maximized)
-                    {
-                        if (_restoreButton is not null && _restoreButton.Visibility == Visibility.Visible && _restoreButton.IsEnabled)
-                        {
-                            handled = true;
-                            SystemCommands.RestoreWindow(this);
-                        }
-                    }
-                    else if (_maximizeButton is not null && _maximizeButton.Visibility == Visibility.Visible && _maximizeButton.IsEnabled)
+                    if (_restoreButton is not null && _restoreButton.Visibility == Visibility.Visible && _restoreButton.IsEnabled)
                     {
                         handled = true;
-                        SystemCommands.MaximizeWindow(this);
+                        RestoreWindowDirect();
                     }
+                }
+                else if (_maximizeButton is not null && _maximizeButton.Visibility == Visibility.Visible && _maximizeButton.IsEnabled)
+                {
+                    handled = true;
+                    MaximizeWindowDirect();
                 }
             }
             return IntPtr.Zero;
@@ -954,6 +954,11 @@ namespace Fluence.Wpf.Controls
             int x = unchecked((short)(lParamValue & 0xFFFF));
             int y = unchecked((short)((lParamValue >> 16) & 0xFFFF));
             Point point = PointFromScreen(new(x, y));
+            if (TryGetTopResizeHit(point, out int resizeHit))
+            {
+                return resizeHit;
+            }
+
             if (point.Y < 0 || point.Y > TitleBarHeight)
             {
                 return 0;
@@ -985,6 +990,32 @@ namespace Fluence.Wpf.Controls
             // cursor (e.g. a search TextBox or ToggleSwitch in the TitleBar content area), return
             // HTCLIENT so Windows passes the click to WPF rather than treating it as a drag.
             return !IsOverInteractiveContent(point) && IsMoveable ? NativeConstants.HTCAPTION : 0;
+        }
+
+        private bool TryGetTopResizeHit(Point point, out int hit)
+        {
+            hit = 0;
+            if (WindowState == WindowState.Maximized ||
+                ResizeMode is ResizeMode.NoResize or ResizeMode.CanMinimize)
+            {
+                return false;
+            }
+
+            Thickness resizeBorder = _windowChrome.ResizeBorderThickness;
+            if (resizeBorder.Top <= 0.0 || point.Y < 0.0 || point.Y > resizeBorder.Top)
+            {
+                return false;
+            }
+
+            double leftCornerWidth = Math.Max(resizeBorder.Left, resizeBorder.Top);
+            double rightCornerWidth = Math.Max(resizeBorder.Right, resizeBorder.Top);
+            hit = point.X <= leftCornerWidth
+                ? NativeConstants.HTTOPLEFT
+                : point.X >= ActualWidth - rightCornerWidth
+                    ? NativeConstants.HTTOPRIGHT
+                    : NativeConstants.HTTOP;
+
+            return true;
         }
 
         private void SetSnapHover(System.Windows.Controls.Button? button)
@@ -1041,7 +1072,17 @@ namespace Fluence.Wpf.Controls
                 {
                     return true;
                 }
-                hit = VisualTreeHelper.GetParent(hit);
+
+                // ContentElement (e.g. Run, Hyperlink) is not a Visual; VisualTreeHelper.GetParent
+                // would throw InvalidOperationException. Walk content/logical tree until we reach
+                // a Visual, then continue up the visual tree.
+                hit = hit switch
+                {
+                    Visual or System.Windows.Media.Media3D.Visual3D => VisualTreeHelper.GetParent(hit),
+                    FrameworkContentElement fce => fce.Parent ?? LogicalTreeHelper.GetParent(fce),
+                    ContentElement ce => ContentOperations.GetParent(ce) ?? LogicalTreeHelper.GetParent(ce),
+                    _ => LogicalTreeHelper.GetParent(hit),
+                };
             }
             return false;
         }
@@ -1108,11 +1149,7 @@ namespace Fluence.Wpf.Controls
         // short-circuit via IsIconic/IsZoomed so there is no double-transition.
         private void OnMaximizeWindow(object sender, ExecutedRoutedEventArgs e)
         {
-            WindowState = WindowState.Maximized;
-            if (_handle != IntPtr.Zero)
-            {
-                _ = NativeMethods.MaximizeWindowNative(_handle);
-            }
+            MaximizeWindowDirect();
         }
 
         private void OnMinimizeWindow(object sender, ExecutedRoutedEventArgs e)
@@ -1126,7 +1163,23 @@ namespace Fluence.Wpf.Controls
 
         private void OnRestoreWindow(object sender, ExecutedRoutedEventArgs e)
         {
+            RestoreWindowDirect();
+        }
+
+        private void MaximizeWindowDirect()
+        {
+            WindowState = WindowState.Maximized;
+            UpdateCaptionButtons();
+            if (_handle != IntPtr.Zero)
+            {
+                _ = NativeMethods.MaximizeWindowNative(_handle);
+            }
+        }
+
+        private void RestoreWindowDirect()
+        {
             WindowState = WindowState.Normal;
+            UpdateCaptionButtons();
             if (_handle != IntPtr.Zero)
             {
                 _ = NativeMethods.RestoreWindowNative(_handle);
@@ -1181,5 +1234,6 @@ namespace Fluence.Wpf.Controls
         /// Represents the button control that is currently being hovered over for snap operations.
         /// </summary>
         private System.Windows.Controls.Button? _snapHoveredButton;
+
     }
 }

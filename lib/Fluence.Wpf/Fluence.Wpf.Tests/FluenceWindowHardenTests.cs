@@ -26,13 +26,13 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Controls;
+using Fluence.Wpf.Helpers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using System.Windows;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Fluence.Wpf.Controls;
 using System.Windows.Media;
-using Fluence.Wpf.Helpers;
 
 namespace Fluence.Wpf.Tests
 {
@@ -261,7 +261,7 @@ namespace Fluence.Wpf.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // 5. WindowPolicy.BuildBackdropPlan — None backdrop returns non-transparent bg
+        // 5. WindowPolicy.BuildBackdropPlan - None backdrop returns non-transparent bg
         // ---------------------------------------------------------------------------
 
         [TestMethod]

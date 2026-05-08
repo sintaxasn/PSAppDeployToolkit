@@ -49,7 +49,7 @@ namespace Fluence.Wpf.Demo
         [
             new("Home", "home", "overview welcome start", "\uE80F", true),
             new("Colors", "colors", "color brush swatch theme resource high contrast accent", "\uE790", false),
-            new("Iconography", "iconography", "fonticon icon glyph segoe fluent symbols", "\uED58", false),
+            new("Icons", "icons", "fonticon icon segoe fluent symbols", "\uED58", false),
             new("Typography", "typography", "text textblock font style type ramp", "\uE8D2", false),
             new("Buttons", "buttons", "button dropdownbutton splitbutton hyperlinkbutton repeatbutton togglebutton accent icon", "\uE8E5", false),
             new("Selection", "selection", "checkbox radio radiobutton toggleswitch combobox rating slider", "\uE73E", false),
@@ -63,8 +63,7 @@ namespace Fluence.Wpf.Demo
             new("Tabs", "tabs", "tabcontrol tabview tab tabs document close add", "\uF22C", false),
             new("Layout", "layout", "border dockpanel stackpanel expander separator layout surface", "\uECA5", false),
             new("Status", "status", "infobar infobadge progressbar progressring personpicture progress ring busy", "\uE916", false),
-            new("Accessibility", "accessibility", "screen reader narrator automation keyboard focus contrast rtl", "\uE776", false),
-            new("Windowing", "window", "fluencewindow window theme backdrop mica acrylic titlebar caption chrome", "\uE737", false)
+            new("Accessibility", "accessibility", "screen reader narrator automation keyboard focus contrast rtl", "\uE776", false)
         ];
 
         public static IEnumerable<DemoNavigationItem> Items => CatalogItems;

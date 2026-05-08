@@ -37,7 +37,7 @@ namespace Fluence.Wpf.Controls
 {
     /// <summary>
     /// Fluent-styled combo box with placeholder, icon, and rounded dropdown.
-    /// Authority: WinUI 3 ComboBox_themeresources.xaml (FocusedStates / EditableFocusedStates VSM groups — WI-3 C18).
+    /// Authority: WinUI 3 ComboBox_themeresources.xaml (FocusedStates / EditableFocusedStates VSM groups - WI-3 C18).
     /// </summary>
     [TemplatePart(Name = PART_Popup, Type = typeof(Popup))]
     [TemplatePart(Name = PART_DropdownBorder, Type = typeof(System.Windows.Controls.Border))]
@@ -232,7 +232,7 @@ namespace Fluence.Wpf.Controls
         {
             base.OnDropDownClosed(e);
             IsDropDownOpenedUpward = false;
-            _ = (_popup?.Placement = PlacementMode.Bottom);
+            _ = _popup?.Placement = PlacementMode.Bottom;
         }
 
         /// <inheritdoc />

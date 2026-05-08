@@ -8,6 +8,7 @@
     <AssemblyName>Fluence.Wpf.Demo</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <ApplicationIcon>Resources\fluence-wpf-appicon-256.ico</ApplicationIcon>
+    <!-- slopwatch-ignore: SW005 Demo projects intentionally suppress XML docs and WPF threading analyzer noise outside the library API. -->
     <NoWarn>$(NoWarn);CS1591;IDE0330;VSTHRD001</NoWarn>
   </PropertyGroup>
 
@@ -16,12 +17,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Update="Properties\DesignTimeResources.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
+    </Page>
     <Resource Include="Resources\ControlImages\*.png" />
     <Resource Include="Resources\fluence-wpf-appicon-256.ico" />
     <Resource Include="Resources\fluence-wpf-banner-*.png" />
     <Page Remove="Resources\fluence-wpf-banner-*.xaml" />
-    <None Remove="Fluence.Wpf.Demo.csproj.lscache" />
-    <Resource Include="Fluence.Wpf.Demo.csproj.lscache" />
     <Resource Include="Resources\SegoeFluentIcons.tsv" />
   </ItemGroup>
 

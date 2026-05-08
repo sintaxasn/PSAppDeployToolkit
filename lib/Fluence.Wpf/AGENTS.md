@@ -1,4 +1,4 @@
-﻿# Fluence.Wpf - developer handbook
+﻿# Fluence.Wpf - Developer Handbook
 
 Self-contained persistent memory for engineers (human and AI) working in this repository. Read top-to-bottom before touching code. This file is the single source of truth for conventions, architecture, reference authority, testing policy, and workflow; do **not** rely on out-of-repo agent bundles, external skill packs, or downstream-consumer-specific paths.
 
@@ -9,8 +9,8 @@ Self-contained persistent memory for engineers (human and AI) working in this re
 ## 1. Project overview
 
 - **Fluence.Wpf** is a WPF control library that recreates the **Windows 11 Fluent / WinUI 3** visual language and interaction patterns on WPF.
-- **Target frameworks** (library + tests): `net472` (primary) and `net10.0-windows`. Gallery demo (`Fluence.Wpf.Demo`) targets `net472`; MVVM demo (`Fluence.Wpf.Demo.Mvvm`) targets `net10.0-windows`.
-- **Language**: `LangVersion=latest` across all TFMs, set centrally in `Directory.Build.props` — no per-TFM language restriction. `net472` still constrains **runtime API** availability (see §4.3); avoid APIs that don't ship in `net472`, but C# language features themselves are not restricted. Nullable reference types are **enabled** (`Nullable=enable` in `Directory.Build.props`); individual projects may override with `<Nullable>disable</Nullable>` (e.g. `Fluence.Wpf.Demo.Mvvm`).
+- **Target frameworks** (library + tests): `net472` (primary) and `net10.0-windows10.0.26100.0`. Gallery demo (`Fluence.Wpf.Demo`) targets `net472` and `net10.0-windows10.0.26100.0`; MVVM demo (`Fluence.Wpf.Demo.Mvvm`) targets `net10.0-windows10.0.26100.0`.
+- **Language**: `LangVersion=latest` across all TFMs, set centrally in `Directory.Build.props` - no per-TFM language restriction. `net472` still constrains **runtime API** availability (see §4.3); avoid APIs that don't ship in `net472`, but C# language features themselves are not restricted. Nullable reference types are **enabled** (`Nullable=enable` in `Directory.Build.props`); individual projects may override with `<Nullable>disable</Nullable>` (e.g. `Fluence.Wpf.Demo.Mvvm`).
 - **License**: BSD 3-Clause. Every `.cs` file begins with the same 27-line header; copy it verbatim from any existing library file when adding new sources. Do not edit the copyright year unless the user asks.
 - **OS**: Windows 10 1809+ baseline. Mica and rounded-corner extras light up on Windows 11.
 - **XML namespace URI**: `http://schemas.fluencewpf.com` - suggested prefix `fluence`.
@@ -19,9 +19,9 @@ Self-contained persistent memory for engineers (human and AI) working in this re
 
 ```text
 Fluence.Wpf.sln
-├── Fluence.Wpf/             Control library (multi-TFM: net472 + net10.0-windows)
-├── Fluence.Wpf.Demo/        Gallery app (net472) - visual verification for all controls
-├── Fluence.Wpf.Demo.Mvvm/   MVVM Task Manager demo (net10.0-windows) - CommunityToolkit.Mvvm example
+├── Fluence.Wpf/             Control library (multi-TFM: net472 + net10.0-windows10.0.26100.0)
+├── Fluence.Wpf.Demo/        Gallery app (net472 + net10.0-windows10.0.26100.0) - visual verification for all controls
+├── Fluence.Wpf.Demo.Mvvm/   MVVM Task Manager demo (net10.0-windows10.0.26100.0) - CommunityToolkit.Mvvm example
 └── Fluence.Wpf.Tests/       MSTest v3.2 suite (multi-TFM)
 ```
 
@@ -45,11 +45,13 @@ XAML themes are under `Fluence.Wpf/Themes/` and are **not** a CLR namespace.
 
 Every `.cs` file in the library, demo, and tests starts with the BSD 3-Clause header used by any existing source file (e.g. `Fluence.Wpf/ApplicationThemeManager.cs` lines 1-27). Never delete, shorten, or paraphrase it.
 
+
 ### Language features
 
+- Avoid em dash or en dash characters anywhere in documentation or comments.
 - All TFMs use `LangVersion=latest` (set in `Directory.Build.props`). Use modern C# features freely; verify any runtime API is available in `net472` before using it.
 - Do not guard blocks with `#if NET10_0_OR_GREATER` to gain runtime APIs not present in `net472`; instead apply §4.3 guidance.
-- Nullable reference types are **enabled** (`Nullable=enable` in `Directory.Build.props`). Library and test code must be nullable-clean — annotate parameters and returns with `?` only where genuinely nullable.
+- Nullable reference types are **enabled** (`Nullable=enable` in `Directory.Build.props`). Library and test code must be nullable-clean - annotate parameters and returns with `?` only where genuinely nullable.
 - `public` API must have `///` XML doc comments. The library builds with `<DocumentationFile>` and does not suppress `CS1591` / `CS1574`; missing comments fail the build.
 - **File encoding**: All `.cs`, `.xaml`, and `.csproj` files must be saved as **UTF-8 with BOM** (EF BB BF). Never commit UTF-16 LE files - they produce spurious full-file diffs, break `grep`-based tooling, and may cause XML parser failures on some build agents. If your editor does not default to UTF-8 with BOM, configure it project-wide (Visual Studio: Tools → Advanced Save Options; VS Code: `"files.encoding": "utf8bom"`). Verify with `[System.IO.File]::ReadAllBytes($path)[0..2]` - must be `0xEF 0xBB 0xBF`.
 
@@ -60,19 +62,21 @@ Every `.cs` file in the library, demo, and tests starts with the BSD 3-Clause he
 - **`TreatWarningsAsErrors=True`** and **`WarningLevel=9999`**: every diagnostic is a build error. Fix root cause; never suppress without an explicit entry.
 - **`AnalysisLevel=latest-all`** + **`EnforceCodeStyleInBuild=true`**: all Roslyn analyzers and IDE style rules run as build-time errors across every project.
 - **`CheckForOverflowUnderflow=True`**: arithmetic that overflows fails the build. Win32 bit-mask operations (HIWORD/LOWORD extractions from `lParam`) **must** be wrapped in `unchecked { }`. See `FluenceWindow.HitTestTitleBar` for the canonical pattern.
-- **`Microsoft.CodeAnalysis.BannedApiAnalyzers`** (RS0030) reads `BannedSymbols.txt` at the solution root. **`string.IsNullOrEmpty()` is banned** — always use `string.IsNullOrWhiteSpace()`. Adding new banned symbols requires updating `BannedSymbols.txt`.
+- **`Microsoft.CodeAnalysis.BannedApiAnalyzers`** (RS0030) reads `BannedSymbols.txt` at the solution root. **`string.IsNullOrEmpty()` is banned** - always use `string.IsNullOrWhiteSpace()`. Adding new banned symbols requires updating `BannedSymbols.txt`.
 - **`Microsoft.Extensions.StaticAnalysis`** (SonarAnalyzer): Sxxx rules run as errors; see `.editorconfig` for the suppressed subset.
 
-**Suppressions in `.editorconfig`** — do not re-enable without discussion:
-- `IDE0056` / `IDE0057` — index/range operators (net472 runtime gap)
-- `CA1307` / `CA1310` / `CA1847` / `CA1866` — string ordinal/span overloads (net472 API gap)
-- SonarAnalyzer: `S103`, `S104`, `S107`, `S109`, `S1067`, `S1121`, `S1449`, `S1659`, `S3358`, `S3458`, `S3532`, `S3869`
+**Suppressions in `.editorconfig`** - do not re-enable without discussion:
+- `IDE0056` / `IDE0057` - index/range operators (net472 runtime gap)
+- `CA1307` / `CA1310` / `CA1847` / `CA1866` - string ordinal/span overloads (net472 API gap)
+- SonarAnalyzer: `S103`, `S104`, `S107`, `S109`, `S1067`, `S1121`, `S1449`, `S1659`, `S3358`, `S3458`, `S3869`
 
 **Per-library suppressions** (in `Fluence.Wpf.csproj` `<NoWarn>`):
-- `SYSLIB1045` — regex source generator (not available on `net472`)
-- `IDE0330` — `using` alias preference (style override)
-- `S1244` — floating-point equality (necessary for pixel math)
-- `VSTHRD001` — task/thread analyzer (WPF dispatcher pattern conflict)
+- `SYSLIB1045` - regex source generator (not available on `net472`)
+- `IDE0330` - `System.Threading.Lock` preference (not available on `net472`)
+- `S1244` - floating-point equality (necessary for pixel math)
+- `VSTHRD001` - task/thread analyzer (WPF dispatcher pattern conflict)
+
+Project-level `<NoWarn>` entries must be preceded by a `slopwatch-ignore: SW005` comment explaining why the suppression is still necessary. Remove obsolete suppressions instead of documenting them.
 
 Prefer `EventArgs.Empty`, `nameof(...)`, explicit `readonly`, and immutable helpers. **Never** use inline `#pragma warning disable` except in exceptional third-party interop cases.
 
@@ -81,7 +85,7 @@ Prefer `EventArgs.Empty`, `nameof(...)`, explicit `readonly`, and immutable help
 `EnforceCodeStyleInBuild=true` + `AnalysisLevel=latest-all` make the following patterns **mandatory** (violations are build errors):
 
 - **Explicit types over `var`**: `Color customColor = ...` not `var customColor = ...`. Exception: anonymous types have no explicit form.
-- **Target-typed `new()`**: `MainWindow mainWindow = new()` not `var mainWindow = new MainWindow()` — use when the type is clear from the declaration.
+- **Target-typed `new()`**: `MainWindow mainWindow = new()` not `var mainWindow = new MainWindow()` - use when the type is clear from the declaration.
 - **Discard ignored returns with `_`**: methods that return a value must have the return consumed or explicitly discarded. `_ = Dispatcher.BeginInvoke(...)`, `_ = list.ApplyTemplate()`.
 - **`default` not `default(T)`**: `Assert.AreNotEqual(default, value)` not `Assert.AreNotEqual(default(Color), value)`.
 - **`is not` for null pattern checks**: `if (x is not FrameworkElement fe) throw ...` instead of `x as T; if (x is null) throw ...`.
@@ -221,7 +225,7 @@ When adding a new control or materially changing an existing one:
 ## 6. Testing
 
 - **Framework**: MSTest v3.2 via `Microsoft.NET.Test.Sdk`.
-- **TFMs**: `net472` **and** `net10.0-windows`; both must pass.
+- **TFMs**: `net472` **and** `net10.0-windows10.0.26100.0`; both must pass.
 - **Parallelization**: `[assembly: DoNotParallelize]` (`DisableParallelization.cs`). WPF's shared `ResourceDictionary` / storyboard sealing is not thread-safe across parallel fixtures.
 - **STA**: `WpfTestSta` in the test project owns a single STA thread + `Dispatcher`. All UI-touching work goes through `WpfTestSta.Invoke(...)` / `RunOnStaThread(...)`.
 - **Application**: `WpfTestSta.EnsureApplication()` creates an `Application` with `ShutdownMode.OnExplicitShutdown` so tests do not tear it down.
@@ -235,7 +239,7 @@ When adding a new control or materially changing an existing one:
 - **InternalsVisibleTo**: the test assembly sees library internals; theme tests can call `ApplicationThemeManager.ResetForTesting()` to isolate fixtures.
 - **Baseline policy**: the HEAD-of-branch test count is the floor. Add tests, do not weaken it. If a test is legitimately obsoleted by a design change, remove the whole file in the same commit that supersedes it, record the rationale in `CHANGELOG.md`, and update this handbook if the testing pattern itself changed.
 - **Known pre-existing failures**: any currently-failing test must be tracked in `KNOWN_ISSUES.md` with a reproduction and the intended fix. A green local run is `total - skipped - known-failures = passed`; do not merge if your own changes add to the known-failure count.
-- **Screenshot harness**: `Fluence.Wpf.Tests/GalleryScreenshotHarness.cs` regenerates `docs/screenshots/banner-{theme}-{scale}x.png` via `RenderTargetBitmap`. The test is gated on `FLUENCE_CAPTURE_SCREENSHOTS=1`; without it, it reports `Inconclusive` so ordinary CI runs never overwrite committed images. DWM backdrops (Mica / Acrylic) are _not_ captured by `RenderTargetBitmap`, so the harness hosts `GalleryHomePage` inside a plain `Window` with a solid `SolidBackgroundFillColorBaseBrush`.
+- **Screenshot harness**: `Fluence.Wpf.Tests/GalleryScreenshotHarness.cs` regenerates `docs/screenshots/banner-{theme}-{scale}x.png` via `RenderTargetBitmap` during normal full test runs. DWM backdrops (Mica / Acrylic) are _not_ captured by `RenderTargetBitmap`, so the harness hosts `GalleryHomePage` inside a plain `Window` with a solid `SolidBackgroundFillColorBaseBrush`.
 
 ---
 
@@ -249,23 +253,23 @@ dotnet test    Fluence.Wpf.Tests/Fluence.Wpf.Tests.csproj -c Debug
 ```
 
 - Zero errors, zero warnings - the library is `TreatWarningsAsErrors`.
-- The demo is run with `dotnet run -p Fluence.Wpf.Demo` (net472, Windows).
+- The gallery demo is run with `dotnet run --project Fluence.Wpf.Demo/Fluence.Wpf.Demo.csproj -f net472` or the matching `net10.0-windows10.0.26100.0` TFM.
 - For visual verification: exercise Light / Dark / High Contrast / Auto, a couple of accent swatches, Mica / Acrylic / Tabbed / None backdrops, and at least one control per gallery page.
 
 ---
 
 ## 8. Demo applications
 
-### Fluence.Wpf.Demo (gallery, net472)
+### Fluence.Wpf.Demo (gallery, net472 + net10.0-windows10.0.26100.0)
 
-- `MainWindow` is a `FluenceWindow` with `ExtendsContentIntoTitleBar="True"`; the title bar hosts the app icon, title, a `TextBox` **search** bound to filter menu items, and caption buttons.
-- `NavigationView` named `DemoNav`: default `PaneDisplayMode="Left"` in source (demo currently opens in `LeftCompact` with `IsPaneOpen="True"` to showcase expansion - verify at review time).
-- Menu items carry `Tag` strings; `MainWindow.NavigateTo(string tag)` does a switch to the matching `Gallery*Page` inside the content frame. The back stack has been intentionally removed; navigation is tag-driven.
-- `GalleryHomePage` shows a theme-aware hero banner (`BannerLight.png` / `BannerDark.png`) and four large **clickable `Card`** tiles that route to Buttons, Selection, Navigation, and Window pages via the same `NavigateTo` helper.
-- 11 gallery pages: Home, Buttons, Selection, Inputs, Data, Tabs, Navigation, Window, Status, Colors, Glyphs - grouped under three `NavigationViewItemHeader` sections.
-- Run: `dotnet run -p Fluence.Wpf.Demo` (net472, Windows).
+- `MainWindow` is a `FluenceWindow` with `ExtendsContentIntoTitleBar="False"` in source, `SystemBackdropType="Mica"`, and a custom `TitleBar` slot hosting the app icon, title, a `TextBox` **search** bound to filter menu items, and caption buttons.
+- `NavigationView` named `DemoNav`: default `PaneDisplayMode="Left"` in source and opens expanded with `IsPaneOpen="True"` to showcase the full pane.
+- Menu items carry `Tag` strings; `MainWindow.NavigateTo(string tag)` does a switch to the matching `Gallery*Page` inside the content frame. Navigation remains tag-driven, with a lightweight visited-page stack only for the shell Back button.
+- `GalleryHomePage` shows a theme-aware hero banner (`BannerLight.png` / `BannerDark.png`) and large **clickable `Card`** tiles that route through the same `NavigateTo` helper. Window controls and app-level theme/navigation/backdrop options live on the Settings page.
+- 16 gallery pages: Home, Icons, Typography, Buttons, Selection, Inputs, Forms, Data, Data binding, Trees, Menus, Navigation, Tabs, Layout, Status, and Accessibility.
+- Run: `dotnet run --project Fluence.Wpf.Demo/Fluence.Wpf.Demo.csproj -f net472` or `dotnet run --project Fluence.Wpf.Demo/Fluence.Wpf.Demo.csproj -f net10.0-windows10.0.26100.0`.
 
-### Fluence.Wpf.Demo.Mvvm (MVVM Task Manager, net10.0-windows)
+### Fluence.Wpf.Demo.Mvvm (MVVM Task Manager, net10.0-windows10.0.26100.0)
 
 - Minimal Task Manager demonstrating `FluenceWindow` + Fluence controls with **zero code-behind**.
 - Uses **CommunityToolkit.Mvvm** 8.4: `[ObservableProperty]`, `[RelayCommand(CanExecute=nameof(CanAdd))]`, `partial void OnXxxChanged` source-generated callbacks.
@@ -285,7 +289,7 @@ dotnet test    Fluence.Wpf.Tests/Fluence.Wpf.Tests.csproj -c Debug
 - **Skipping `[assembly: DoNotParallelize]`** on a new test project / renaming the file ⇒ intermittent `ResourceReferenceExpression` / sealed-storyboard failures.
 - **Assuming the old "subtle stroke" for selection rings** ⇒ RadioButton / CheckBox rings disappear in light theme. Fix: use `ControlStrongStrokeColorDefaultBrush` (and `…Disabled` for disabled state).
 - **Hard-coding caption metrics or backdrop flags in child controls** ⇒ breaks on Windows 10 / unsupported DWM builds. Fix: read `OsVersionHelper` and honour `FluenceWindow` policy.
-- **Navigating via an external back-stack** in the demo ⇒ divergence with the current tag-based `NavigateTo`. The back stack is intentionally not wired up.
+- **Replacing the demo's tag navigation with an external navigation service** ⇒ divergence with the current `NavigateTo` contract. Keep routes tag-driven; the only stack is the lightweight shell Back history in `MainWindow`.
 - **Holding designer-only brushes as immutable resources** ⇒ designer no longer matches runtime after a theme change. Fix: keep `DesignTime.xaml` minimal and aligned with Light + `#0078D4`.
 - **Relying on a previous test's theme state leaking into yours** ⇒ intermittent color-alpha mismatches when tests run as a suite but pass in isolation. Fix: always call `MergeGenericDictionary(Application.Current)` (which resets managers, clears dictionaries, and applies a known theme) as the first step of any control test body.
 - **Using `string.IsNullOrEmpty()`** ⇒ build error RS0030 (banned via `BannedApiAnalyzers` + `BannedSymbols.txt`). Fix: always use `string.IsNullOrWhiteSpace()`.
@@ -328,11 +332,17 @@ When you are editing this repository, you are acting as a **senior C#/.NET WPF e
 6. **Docs synced**: public changes update `CHANGELOG.md`, and any of `README.md` / `docs/controls.md` / `docs/theming.md` that a consumer would rely on.
 7. **Scope discipline**: do not touch unrelated files or rename things unless explicitly asked; do not commit without the user's explicit request.
 
+### Consumer build compatibility
+
+`Fluence.Wpf` has adopted the stricter consumer build requirements used by PSADT for release gating: warnings as errors, `latest-all` analyzers, code style enforcement, banned APIs, XML documentation generation, and the `net472` plus `net10.0-windows10.0.26100.0` build matrix. Treat the stricter consumer policy as authoritative for release conformance. If this repo drifts from it, correct the drift unless an exception is explicit, documented in this handbook or the affected project file, and approved by the user.
+
+Consumer build compatibility is a release gate. For build-policy, public API, project metadata, resource-copy, or packaging changes that can affect downstream consumption, verify the standalone Fluence build and the current release-gate consumer build. PSADT-specific paths or build artifacts may be cited only as release-gate evidence; do not make this handbook depend on consumer-local layout.
+
 ---
 
 ## 12. Exclusions (apply to _this_ handbook)
 
-- No filesystem paths, build steps, or deployment artifacts specific to a downstream consumer product.
+- No filesystem paths, build steps, or deployment artifacts specific to a downstream consumer product, except concise release-gate evidence when validating consumer build compatibility.
 - No endorsement of, or dependency on, any particular third-party WPF library; keep comparisons, migration notes, and naming advice generic.
 - No references to external agent bundles, skill packs, or remote tooling that are not already part of this repository.
 - No speculative roadmap items; everything in this file must reflect code that exists on the current branch.
@@ -371,8 +381,8 @@ WORKFLOW:
  3. If the change is visual or behavioural, cite the authority from §4 that justifies it.
  4. For any new control, follow §5 (Control authoring checklist) exactly.
  5. For any theme / brush change, update the matching entries in Theme.{Light|Dark|HighContrast}.xaml AND Brushes.xaml together; never one without the other.
- 6. TDD: add or extend an MSTest before writing implementation. Run just that test on net10 first (fast feedback), then both TFMs.
- 7. dotnet build Fluence.Wpf.sln -c Debug - 0 errors / 0 warnings on net472 + net10.0-windows.
+ 6. TDD: add or extend an MSTest before writing implementation. Run just that test on `net10.0-windows10.0.26100.0` first (fast feedback), then both TFMs.
+ 7. dotnet build Fluence.Wpf.sln -c Debug - 0 errors / 0 warnings on net472 + net10.0-windows10.0.26100.0.
  8. dotnet test Fluence.Wpf.Tests/Fluence.Wpf.Tests.csproj -c Debug - all tests pass on both TFMs; pre-existing KNOWN_ISSUES.md failures unchanged.
  9. Update docs: CHANGELOG.md (always), docs/*.md (when the public surface changes), KNOWN_ISSUES.md (when a gap is opened or closed).
 10. Stage changes; show diffs; wait for the user's explicit commit instruction.
@@ -387,56 +397,173 @@ ACCEPTANCE:
 STOP CONDITION: working tree is "git-clean minus your intended diff"; wait for explicit user approval before committing.
 ```
 
-### 13.2 PSADT-integrated workflow (downstream consumer)
+---
+
+## 14. Demo Sample Pages
+
+Control samples in `Fluence.Wpf.Demo` render through `DemoSampleControl`. Design reference pages that mirror WinUI Gallery catalog surfaces, such as Typography, may render directly when a trailing source expander would diverge from the reference.
+
+### 14.1 Page skeleton
 
 ```text
-ROLE: Senior WPF engineer working on Fluence.Wpf with PSADT (PSAppDeployToolkit) as the primary downstream consumer. PSADT references Fluence.Wpf via ProjectReference; the consumer-side test harness is PSADT.UserInterface.TestHarness.
-
-CONTEXT (read before touching code):
-- Fluence.Wpf/AGENTS.md - this handbook (authoritative for library concerns)
-- Fluence.Wpf/docs/controls.md, docs/theming.md, KNOWN_ISSUES.md, CHANGELOG.md
-- PSAppDeployToolkit/AGENTS.md - consumer-side rules and migration state
-- PSAppDeployToolkit/MIGRATION_PLAN.md - consumer migration checklist
-
-Reference authority (see §4 of this handbook): in-tree precedent → WinUI 3 CommonStyles / .NET 10 WPF Themes (per domain) → Windows 11 docs.
-
-POLICY:
-- Fluence.Wpf may be modified when a change benefits both projects. Flag any such cross-project change in the commit body so it can be spot-reviewed.
-- Never introduce PSADT-specific paths, constants, or assumptions into Fluence.Wpf source, XAML, or public API. Consumer-specific integration belongs on the consumer side.
-- The TestHarness is the authoritative visual-verification surface for PSADT consumption; all dialogs / screens used by PSADT must render correctly there on both TFMs.
-
-TASK: <one sentence describing the concrete change>
-
-WORKFLOW:
- 1. Re-read the relevant section(s) of AGENTS.md (§3 Theme architecture, §4 Reference priority, §5 Control authoring, §6 Testing, §12 Exclusions).
- 2. Decide the lowest layer that resolves the issue for both consumers:
-    - Fluence.Wpf (when the fix generalises)
-    - PSADT.UserInterface (when the fix is consumer-specific behaviour)
-    - PSADT.UserInterface.TestHarness (when only the harness itself is affected)
- 3. TDD:
-    - Fluence.Wpf changes: add / extend MSTests in Fluence.Wpf.Tests.
-    - PSADT.UserInterface changes: add / extend the consumer-side tests where applicable.
-    - Visual parity: plan a TestHarness session that exercises every dialog the change touches, on both TFMs.
- 4. Build order (both must be 0 errors / 0 warnings on net472 + net10.0-windows):
-      dotnet build Fluence.Wpf.sln -c Debug
-      dotnet build PSAppDeployToolkit/PSADT.slnx -c Debug
- 5. Run Fluence.Wpf tests: dotnet test Fluence.Wpf.Tests/Fluence.Wpf.Tests.csproj -c Debug - both TFMs green.
- 6. Run the TestHarness (net10 first, then net472):
-      dotnet run --project PSAppDeployToolkit/src/PSADT/PSADT.UserInterface.TestHarness
-    Exercise: Light / Dark / High Contrast swap, each affected dialog, each supported backdrop (Mica / Acrylic / None). Capture screenshots if the visual contract changes.
-    If the harness reaches the restart dialog, terminate the TestHarness process immediately. Do not click `Restart Now`; automatic restart behavior is not part of this visual verification.
- 7. Update docs on both sides:
-    - Fluence.Wpf: CHANGELOG.md (always), docs/*.md (public surface), KNOWN_ISSUES.md (gaps).
-    - PSADT: MIGRATION_PLAN.md (when a migration checkpoint moves), consumer docs if the visible contract changes.
- 8. Stage changes; show diffs grouped by repo; wait for the user's explicit commit instruction.
-
-ACCEPTANCE:
-- Fluence.Wpf build: 0/0 on both TFMs
-- PSADT.slnx build: 0/0 on both TFMs
-- Fluence.Wpf tests: no new regressions; any pre-existing KNOWN_ISSUES.md failures unchanged
-- TestHarness launches cleanly and renders correctly on both TFMs, across theme / backdrop combinations touched by the change
-- No new third-party WPF runtime dependency introduced on either side; every visual / behavioural choice has a cited authority from §4
-- Any Fluence.Wpf edits driven by PSADT needs are flagged in the commit body for spot review
-
-STOP CONDITION: both working trees are "git-clean minus intended diff"; wait for explicit user approval before committing.
+ScrollViewer
+└── StackPanel (page root)
+    ├── TextBlock        - Page name              [Title typography]
+    ├── TextBlock        - Page description       [Body, secondary foreground]
+    └── for each sample:
+        └── DemoSampleControl
+            ├── SampleDescription                [Body Strong]
+            ├── DemoContent                      [live sample]
+            ├── OutputContent                    [optional interaction result]
+            ├── RightRailContent                 [optional options pane]
+            └── Source expander                  [XAML and C# tabs]
 ```
+
+### 14.2 Color layering
+
+Demo sample surfaces use the native Fluence brush resources and control defaults directly. Do not add demo-only brush aliases, do not shadow color-key names with brush resources, and do not reintroduce a demo refresh layer for surface promotion.
+
+| Layer | Brush resource |
+| --- | --- |
+| Page background | Leave to `NavigationView` / `SmoothScrollViewer` control defaults unless a specific page has no host surface. |
+| Sample card surface | `CardBackgroundFillColorDefaultBrush` |
+| Right rail / options pane | `CardBackgroundFillColorSecondaryBrush` |
+| Expander header | `ControlFillColorDefaultBrush` |
+| Expander expanded content | `SolidBackgroundFillColorBaseBrush` |
+| Secondary labels | `TextFillColorSecondaryBrush` |
+
+Use `DynamicResource` for these role brushes so theme, accent, and high-contrast changes flow through the standard `ApplicationThemeManager` slots.
+
+### 14.3 DemoSampleControl contract
+
+`DemoSampleControl` is the only reusable surface for demo samples. Its public surface is intentionally small:
+
+- `SampleDescription` (`string`) renders bold text above the sample card.
+- `XamlSource` (`string`) supplies the XAML source tab.
+- `CSharpSource` (`string`) supplies the C# source tab.
+- `DemoContent` (`object`) hosts the live control region.
+- `OutputContent` (`object`) optionally hosts interaction results.
+- `RightRailContent` (`object`) optionally hosts property toggles and options.
+
+Composition requirements:
+
+- Outer card uses the sample card brush, card stroke brush, and `CornerRadius="8,8,0,0"`.
+- Demo region uses a `*, Auto` layout. Output content lives inside the demo region, not the right rail.
+- Right rail collapses when empty, uses the right-rail brush, and keeps `CornerRadius="0,8,0,0"`.
+- Source expander is attached below the card with `CornerRadius="0,0,8,8"`, header text `Source code`, the source-header brush when collapsed, and the source-content brush when expanded.
+- Source content uses a `TabControl` with `XAML` and `C#` tabs. Each tab hosts the syntax-highlighted, copy-enabled RichTextBox viewer owned by `DemoSampleControl`.
+- Do not use or reintroduce legacy `Title`, `Description`, `SampleContent`, `ReplaceSourceLink(...)`, obsolete forwarding members, or source-link placeholder buttons.
+
+Named live controls must not be declared directly inside `DemoSampleControl` property elements because WPF raises `MC3093`. Prefer page-owned hidden `ContentControl` slots plus `DemoSamplePageWiring.Apply(...)` from code-behind with typed `DemoSampleSource` registrations. The helper owns slot discovery, content transfer, source assignment, duplicate-slot detection, missing-source detection, and clearing the hidden slots after handoff. Catalog pages may stay outside `DemoSampleControl` when the WinUI Gallery reference itself is a direct catalog or guidance surface.
+
+### 14.4 Catalog surfaces
+
+Icons and Accessibility are part of this standard for discrete demonstrations. Typography is a direct WinUI Gallery-style reference page and does not add a trailing source expander.
+
+### 14.5 Definition of done
+
+A new or updated sample page is done only when:
+
+- Every discrete control demonstration uses `DemoSampleControl`; direct catalog/reference pages document their exception in tests and docs.
+- All five surface tokens resolve in Light, Dark, and High Contrast after runtime theme changes.
+- Card and source expander corners follow the `8,8,0,0` plus `0,0,8,8` pattern with no visible seam artifact.
+- The source expander shows copy-enabled XAML and C# tabs that match the visible sample.
+- Page heading, description, sample description, card, and source spacing use centralized demo resources. No inline `Margin`, `Padding`, `CornerRadius`, hex color, or font-size literals in sample page XAML.
+- Right-rail options mutate the demo control through binding where the target property allows it. Code-behind is acceptable for command-style results such as click counters.
+- The page renders without binding errors or resource-resolution warnings in Light and Dark.
+- `dotnet build Fluence.Wpf.sln -c Debug` and focused tests for the affected area pass with zero warnings.
+
+
+<claude-mem-context>
+# Memory Context
+
+# [Fluence.Wpf] recent context, 2026-05-20 8:36pm EDT
+
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
+Format: ID TIME TYPE TITLE
+Fetch details: get_observations([IDs]) | Search: mem-search skill
+
+Stats: 50 obs (16,201t read) | 376,293t work | 96% savings
+
+### May 11, 2026
+S80 Remove PSADT-related section (§13.2) from documentation; user asking about applying additional Change B (one-liner in §10 about docs/plans/ as transient plan files) (May 11, 4:09 PM)
+S81 Verification that AGENTS.md has been cleaned up after removing PSADT-related section (§13.2) (May 11, 4:18 PM)
+S82 User encountered ultraplan session creation failure with bundle upload 502 error; Claude advised connecting GitHub account on claude.ai/code (May 11, 4:18 PM)
+S83 Explore Fluence.Wpf demo application structure and create an implementation plan to bring all 17 gallery content pages into visual parity with GalleryHomePage, fix dark-mode contrast on GalleryColorsPage, and fix DemoSampleControl Expander border. (May 11, 4:46 PM)
+S85 Fix customization evaluation diagnostics (May 11, 4:58 PM)
+### May 12, 2026
+S86 Visual Design Polish — WinUI3 Look & Feel Alignment for Fluent.Wpf codebase. Revise all pages to use #272727 background, update DemoSampleControl with #202020 surfaces and #323232 code sections, replace top ToggleSwitch with Settings gear icon, redesign layout to match WinUI Settings patterns, fix Visual Focus state cutoff, and update KNOWN_ISSUES and CHANGELOG. (May 12, 12:44 AM)
+S87 WinUI 3 Visual Polish — DemoSampleControl Standardization: Refactor Fluence.Wpf Demo app to use a single reusable DemoSampleControl with WinUI 3 Gallery-consistent layout, spacing, color layering, and corner-radius treatment across all sample pages. (May 12, 1:10 AM)
+S88 Collapse public surface of theme runtime—consolidate ApplicationThemeManager, ApplicationAccentColorManager, and SystemThemeWatcher into unified entry points. (May 12, 2:06 PM)
+### May 14, 2026
+S89 Refactor MainWindow navigation state management by creating a dedicated DemoNavigationShellState module to centralize pane display mode, open/closed state, and chrome button visibility logic. (May 14, 10:45 AM)
+S90 User initiated quit command (t/quit/qi) to exit the Claude Code session (May 14, 3:02 PM)
+### May 20, 2026
+4187 6:42p 🔵 Hugo dev server rebuild triggered by CSS changes
+4188 " 🔵 Hugo documentation site styling work plan progressing
+4189 6:43p 🔵 Screenshot harness tests passing successfully
+4190 6:44p 🔵 Screenshot harness tests passing on .NET 10.0 target
+4191 " 🔵 Hugo documentation build successful with updated CSS
+4192 " 🔵 Documentation build script completed successfully with CSS changes
+4193 6:45p 🔵 Screenshot asset references verified complete
+4194 " ✅ Screenshot integration and documentation updates committed to working directory
+4195 " 🔵 Hugo documentation site refresh project completed
+4196 " ✅ Screenshot harness implementation and documentation expansion
+4197 " 🔵 Screenshot gallery generated with comprehensive coverage
+4198 " 🔵 Screenshot library covers accessibility, controls, themes, MVVM, and PowerShell patterns
+4199 6:54p ⚖️ Design System Selected for Fluence.Wpf Documentation Frontend
+4200 6:55p 🔵 Fluence.Wpf Documentation Artifacts and Demo Infrastructure Identified
+4201 " 🔵 Fluence.Wpf Documentation Site Structure and Screenshot Placeholders Identified
+4202 " 🔵 Repository Working State: Modified Docs and New Screenshots Directories
+4203 " 🔵 DocFX API Reference Generated with 40+ Control Definitions
+4204 " 🔵 Documentation Site Built and Deployed with Complete Navigation and API Reference
+4205 " 🔵 Complete Screenshot Set Captured: 40 Gallery Pages + MVVM and PowerShell Demos in Light/Dark
+4206 6:56p 🔵 API Reference Enumerations and Configuration Types Generated for Fluence Controls
+4207 " ✅ Front Page Updated with Fluence Banner and Expanded Screenshots Section
+4208 6:57p ✅ CSS Styling Added for Front Page Brand Banner and Screenshot Sections
+4209 6:58p 🟣 Control Documentation Enhanced with Screenshots and API References for All 18 Gallery Categories
+4210 7:00p 🔵 Repository Changes Confirmed: Documentation Files Updated and Screenshot Directories Created
+4211 7:04p 🔵 PowerShell Profile Import Error During Chrome Screenshot Execution
+4212 " 🔵 Screenshot Generated Successfully from Hugo Site
+4214 7:05p 🔵 Hugo Site Structure: Home Page and Controls Page Mismatch Detected
+4215 " 🔵 Controls Documentation Page Structure: 16 Themed Control Galleries with API References
+4216 " 🔵 Hugo Site Configuration: Hextra Theme with DocFX API Integration
+4217 7:06p 🔴 Fixed Broken Screenshot Set Documentation Link
+4218 " 🔵 Hugo Build Successful After Link Fix
+4219 " 🔵 Complete Documentation Build Pipeline Verification
+4220 " 🔵 Corrected Screenshot Link Successfully Rendered in Built HTML
+4221 " 🔵 Screenshot Documentation Link Now Resolves to GitHub Repository
+4222 7:07p ✅ Improved Screenshot Documentation Link with Absolute Hugo Site Path
+4223 " 🔵 Hugo Rebuild Successful After HTML Link Enhancement
+4224 " 🔵 Final Site Structure Verification: All Components Rendered Correctly
+4225 " 🔵 Tall Controls Page Screenshot Captured Successfully
+4226 7:09p 🔴 Fixed horizontal overflow and responsive layout issues in Hugo site CSS
+4227 " 🔵 Hugo build completed successfully after CSS fixes
+4228 " 🔵 Mobile home page screenshot captured successfully
+4229 " 🔵 Mobile controls documentation page screenshot captured successfully
+4230 " 🔵 Mobile home page screenshot verified with responsive layout fixes applied
+4231 7:10p 🔵 Hugo Site DOM Structure Inspection
+4232 " 🔵 Hugo Site Head and Structure Analysis
+**4233** " 🔵 **Hugo Dev Server Build Activity Log**
+The Hugo development server is actively running with hot-reload enabled. Recent activity shows the controls documentation was being edited and custom CSS was modified. Build times are fast (6-482 ms), indicating a healthy development environment. The controls.md file appears to be a key documentation file being actively worked on, with multiple save-and-rebuild cycles suggesting iterative editing.
+~251t 🔍 1,096
+
+**4234** 7:11p 🔴 **Mobile Viewport Overflow and Width Issues Fixed**
+Fixed mobile responsiveness issues where content was overflowing horizontally on smaller viewports. The changes constrain the root html and body elements to viewport width with hidden overflow, then explicitly set content container widths to 100vw with !important flags to override any competing styles. Child elements are also constrained with max-width: 100% and min-width: 0 to prevent content from expanding beyond the viewport. Heading text now wraps properly with overflow-wrap: anywhere to prevent long text from causing layout shifts on mobile devices.
+~358t 🛠️ 1,329
+
+**4235** " 🔵 **Hugo Build Verification Successful**
+The Hugo build verification ran successfully after CSS changes were applied. The site builds cleanly with 14 pages and no errors, indicating that the mobile viewport overflow fixes did not break the build system or create any template/content issues. The build is efficient with fast render times, suggesting the Hextra theme is properly configured. Static file handling and image processing completed without issues.
+~253t 🔍 738
+
+**4236** " 🔵 **Hugo Dev Server Hot Reload of CSS Changes**
+The Hugo development server detected the mobile viewport CSS fixes applied to custom.css and hot-reloaded the site automatically. The fast 8ms rebuild time indicates the asset change was quickly processed and served to connected browsers via live reload, making the UI/UX fixes immediately visible during development.
+~168t 🔍 817
+
+**4237** 7:12p 🔵 **Mobile Screenshot of Fluence.Wpf Homepage**
+Mobile screenshot verification of the Fluence.Wpf homepage captured at 390x1600px resolution shows the site rendering properly on mobile devices. The hero section with "Windows 11 Fluent controls for WPF" messaging is displayed, and the layout appears to respect the mobile viewport constraints. This screenshot serves as visual verification that the CSS mobile overflow fixes applied earlier are functioning correctly and the site displays without horizontal scrolling issues on mobile devices.
+~272t 🔍 130,669
+
+
+Access 376k tokens of past work via get_observations([IDs]) or mem-search skill.
+</claude-mem-context>

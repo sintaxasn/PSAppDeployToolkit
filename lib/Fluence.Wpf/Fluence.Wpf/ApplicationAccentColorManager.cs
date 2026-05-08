@@ -26,11 +26,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Helpers;
+using Fluence.Wpf.Native;
 using System;
 using System.Windows;
 using System.Windows.Media;
-using Fluence.Wpf.Helpers;
-using Fluence.Wpf.Native;
 
 namespace Fluence.Wpf
 {
@@ -73,12 +73,12 @@ namespace Fluence.Wpf
         public static Color SystemAccentColor { get; private set; }
 
         /// <summary>
-        /// Gets the lightest tint on the generated accent ramp. Default matches <see cref="SystemAccentColor"/> until the ramp is loaded.
+        /// Gets the first light tint on the generated accent ramp. Default matches <see cref="SystemAccentColor"/> until the ramp is loaded.
         /// </summary>
         public static Color SystemAccentColorLight1 { get; private set; }
 
         /// <summary>
-        /// Gets the second lightest tint on the generated accent ramp.
+        /// Gets the second light tint on the generated accent ramp.
         /// </summary>
         public static Color SystemAccentColorLight2 { get; private set; }
 
@@ -161,7 +161,6 @@ namespace Fluence.Wpf
             }
             ApplicationTheme resolvedTheme = ApplicationThemeManager.GetResolvedTheme();
             UpdateThemeAdaptiveColors(resolvedTheme);
-            UpdateResources();
         }
 
         /// <summary>
@@ -183,7 +182,6 @@ namespace Fluence.Wpf
             GenerateAccentRamp(color);
             ApplicationTheme resolvedTheme = ApplicationThemeManager.GetResolvedTheme();
             UpdateThemeAdaptiveColors(resolvedTheme);
-            UpdateResources();
         }
 
         internal static void UpdateThemeAdaptiveColors(ApplicationTheme resolvedTheme)
@@ -201,7 +199,6 @@ namespace Fluence.Wpf
                 SystemAccentColorTertiary = SystemAccentColorDark3;
             }
             UpdateResources();
-            UpdateTextOnAccentColors(resolvedTheme);
         }
 
         internal static void UpdateThemeDependentColors(ApplicationTheme resolvedTheme)
@@ -212,6 +209,7 @@ namespace Fluence.Wpf
             }
             ResourceDictionary resources = Application.Current.Resources;
             UpdateDisabledAccentFill(resources, resolvedTheme);
+            UpdateSystemAttentionFill(resources, resolvedTheme);
             UpdateAccentTextBrushes(resources);
             UpdateTextOnAccentColors(resolvedTheme);
         }
@@ -264,7 +262,6 @@ namespace Fluence.Wpf
             {
                 ApplicationTheme resolvedTheme = ApplicationThemeManager.GetResolvedTheme();
                 UpdateThemeAdaptiveColors(resolvedTheme);
-                UpdateResources();
             }
             else
             {
@@ -330,9 +327,25 @@ namespace Fluence.Wpf
             resources["AccentFillColorTertiaryBrush"] = new SolidColorBrush(HsvColorHelper.WithAlpha(SystemAccentColorPrimary, 0xCC));
             ApplicationTheme resolvedTheme = ApplicationThemeManager.GetResolvedTheme();
             UpdateDisabledAccentFill(resources, resolvedTheme);
+            UpdateSystemAttentionFill(resources, resolvedTheme);
             UpdateAccentTextBrushes(resources);
+            UpdateTextOnAccentColors(resolvedTheme);
             UpdateTitleBarColors(resources);
             OnAccentColorChanged();
+        }
+
+        private static void UpdateSystemAttentionFill(ResourceDictionary resources, ApplicationTheme resolvedTheme)
+        {
+            if (resolvedTheme == ApplicationTheme.HighContrast)
+            {
+                return;
+            }
+
+            Color attentionFill = resolvedTheme == ApplicationTheme.Dark
+                ? SystemAccentColorLight2
+                : SystemAccentColor;
+            resources["SystemFillColorAttention"] = attentionFill;
+            resources["SystemFillColorAttentionBrush"] = new SolidColorBrush(attentionFill);
         }
 
         private static void UpdateDisabledAccentFill(ResourceDictionary resources, ApplicationTheme resolvedTheme)

@@ -26,11 +26,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FluenceTreeView = Fluence.Wpf.Controls.TreeView;
 using FluenceTreeViewItem = Fluence.Wpf.Controls.TreeViewItem;
 using WpfBorder = System.Windows.Controls.Border;
@@ -65,6 +65,10 @@ namespace Fluence.Wpf.Tests
                 // Template applied → ScrollViewer present
                 ScrollViewer? sv = FindVisualChild<ScrollViewer>(tv);
                 Assert.IsNotNull(sv, "TreeView template must contain a ScrollViewer.");
+                Assert.IsInstanceOfType(sv, typeof(Controls.SmoothScrollViewer),
+                    "TreeView must use Fluence SmoothScrollViewer so its scrollbars use the shared Fluent style.");
+                Assert.AreSame(app?.TryFindResource("ScrollViewerStyle"), sv.Style,
+                    "TreeView SmoothScrollViewer must use the shared ScrollViewerStyle resource.");
                 w.Close();
             });
         }
@@ -295,6 +299,8 @@ namespace Fluence.Wpf.Tests
 
                 ScrollViewer? sv = FindVisualChild<ScrollViewer>(tv);
                 Assert.IsNotNull(sv, "TreeView template must still contain ScrollViewer after theme cycle.");
+                Assert.IsInstanceOfType(sv, typeof(Controls.SmoothScrollViewer),
+                    "TreeView must keep Fluence SmoothScrollViewer after theme changes.");
 
                 w.Close();
             });

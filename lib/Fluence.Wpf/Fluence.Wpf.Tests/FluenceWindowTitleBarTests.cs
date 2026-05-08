@@ -26,18 +26,18 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Controls;
+using Fluence.Wpf.Native;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Shell;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Fluence.Wpf.Controls;
-using Fluence.Wpf.Native;
-using System.Windows.Media;
-using System.Collections.ObjectModel;
 
 namespace Fluence.Wpf.Tests
 {
@@ -174,12 +174,11 @@ namespace Fluence.Wpf.Tests
                 "NativeConstants." + fieldName + " must match the Win32 value.");
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0004:Cast is redundant", Justification = "This is necessary on net472.")]
         private static IntPtr MakeLParamScreen(double screenX, double screenY)
         {
             int x = (int)screenX;
             int y = (int)screenY;
-            return (IntPtr)((y << 16) | (x & 0xffff));
+            return new IntPtr((y << 16) | (x & 0xffff));
         }
 
         private static System.Windows.Controls.Button? GetCaptionButtonField(FluenceWindow window, string fieldName)
@@ -320,6 +319,9 @@ namespace Fluence.Wpf.Tests
                 System.Windows.Controls.TextBlock customElement = new() { Text = "Custom Title" };
                 w.SetTitleBar(customElement);
                 Assert.IsNotNull(w.TitleBar);
+                w.SetTitleBar(null);
+                Assert.IsNull(w.TitleBar,
+                    "SetTitleBar(null) should clear the custom TitleBar content.");
             });
         }
 
@@ -335,7 +337,7 @@ namespace Fluence.Wpf.Tests
                 WindowChrome chrome = WindowChrome.GetWindowChrome(w);
                 Assert.IsNotNull(chrome, "FluenceWindow should have a WindowChrome attached.");
                 Assert.AreEqual(0d, chrome.CaptionHeight,
-                    "CaptionHeight must always be 0 — drag region is handled by WM_NCHITTEST.");
+                    "CaptionHeight must always be 0 - drag region is handled by WM_NCHITTEST.");
 
                 w.ExtendsContentIntoTitleBar = true;
 
@@ -362,7 +364,7 @@ namespace Fluence.Wpf.Tests
 
         #endregion
 
-        #region Bug Fix Tests — Title Bar Flash and Theme Switching
+        #region Bug Fix Tests - Title Bar Flash and Theme Switching
 
         [TestMethod]
         public void CaptionHeight_IsZero_EvenBeforeExtendsContentIntoTitleBar()
@@ -372,7 +374,7 @@ namespace Fluence.Wpf.Tests
                 WindowChrome chrome = WindowChrome.GetWindowChrome(w);
                 Assert.IsNotNull(chrome);
                 Assert.AreEqual(0d, chrome.CaptionHeight,
-                    "CaptionHeight must be 0 from construction — WM_NCHITTEST handles all drag regions.");
+                    "CaptionHeight must be 0 from construction - WM_NCHITTEST handles all drag regions.");
             });
         }
 
@@ -692,6 +694,38 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
+        public void HitTestTitleBar_TopResizeBand_ReturnsHtTopBeforeCaption()
+        {
+            RunWithShownWindow(w =>
+            {
+                w.UpdateLayout();
+                Point screen = w.PointToScreen(new Point(w.ActualWidth / 2.0, 1.0));
+                int? hit = InvokeHitTestTitleBar(w, MakeLParamScreen(screen.X, screen.Y));
+                Assert.AreEqual(NativeConstants.HTTOP, hit,
+                    "The upper resize band must win over the caption drag region.");
+            });
+        }
+
+        [TestMethod]
+        public void HitTestTitleBar_UpperCorners_ReturnResizeCornersBeforeCaption()
+        {
+            RunWithShownWindow(w =>
+            {
+                w.UpdateLayout();
+
+                Point topLeft = w.PointToScreen(new Point(1.0, 1.0));
+                int? leftHit = InvokeHitTestTitleBar(w, MakeLParamScreen(topLeft.X, topLeft.Y));
+                Assert.AreEqual(NativeConstants.HTTOPLEFT, leftHit,
+                    "The upper-left resize corner must win over the caption drag region.");
+
+                Point topRight = w.PointToScreen(new Point(w.ActualWidth - 1.0, 1.0));
+                int? rightHit = InvokeHitTestTitleBar(w, MakeLParamScreen(topRight.X, topRight.Y));
+                Assert.AreEqual(NativeConstants.HTTOPRIGHT, rightHit,
+                    "The upper-right resize corner must win over caption buttons and caption drag.");
+            });
+        }
+
+        [TestMethod]
         public void HitTestTitleBar_IsMoveableFalse_TitleBarDragAreaReturnsZero()
         {
             RunWithShownWindow(w =>
@@ -722,6 +756,56 @@ namespace Fluence.Wpf.Tests
             });
         }
 
+        [TestMethod]
+        public void WndProc_NcLeftButtonUpHtMaxButton_UsesDirectMaximizeAndRefreshesCaptionButtons()
+        {
+            RunWithShownWindow(w =>
+            {
+                System.Windows.Controls.Button? max = GetCaptionButtonField(w, "_maximizeButton");
+                System.Windows.Controls.Button? restore = GetCaptionButtonField(w, "_restoreButton");
+                Assert.IsNotNull(max, "Maximize template part should exist after Show.");
+                Assert.IsNotNull(restore, "Restore template part should exist after Show.");
+                Assert.AreEqual(Visibility.Visible, max.Visibility,
+                    "Precondition: maximize button should be visible before HTMAXBUTTON click.");
+                Assert.AreEqual(Visibility.Collapsed, restore.Visibility,
+                    "Precondition: restore button should be hidden before HTMAXBUTTON click.");
+
+                _ = InvokeWndProc(
+                    w,
+                    NativeConstants.WM_NCLBUTTONUP,
+                    new IntPtr(NativeConstants.HTMAXBUTTON),
+                    IntPtr.Zero,
+                    out bool handled);
+                w.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+
+                Assert.IsTrue(handled,
+                    "WM_NCLBUTTONUP/HTMAXBUTTON should be handled by FluenceWindow.");
+                Assert.AreEqual(WindowState.Maximized, w.WindowState,
+                    "HTMAXBUTTON click should use the same direct WindowState path as the command handler.");
+                Assert.AreEqual(Visibility.Collapsed, max.Visibility,
+                    "After one maximize click, the maximize icon should be hidden.");
+                Assert.AreEqual(Visibility.Visible, restore.Visibility,
+                    "After one maximize click, only the restore icon should be visible.");
+
+                _ = InvokeWndProc(
+                    w,
+                    NativeConstants.WM_NCLBUTTONUP,
+                    new IntPtr(NativeConstants.HTMAXBUTTON),
+                    IntPtr.Zero,
+                    out handled);
+                w.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+
+                Assert.IsTrue(handled,
+                    "Second WM_NCLBUTTONUP/HTMAXBUTTON should be handled by FluenceWindow.");
+                Assert.AreEqual(WindowState.Normal, w.WindowState,
+                    "Second HTMAXBUTTON click should restore through the same direct path as the command handler.");
+                Assert.AreEqual(Visibility.Visible, max.Visibility,
+                    "After one restore click, only the maximize icon should be visible.");
+                Assert.AreEqual(Visibility.Collapsed, restore.Visibility,
+                    "After one restore click, the restore icon should be hidden.");
+            });
+        }
+
         #endregion
 
         #region Caption button DP overrides (authoritative when explicitly set)
@@ -731,7 +815,7 @@ namespace Fluence.Wpf.Tests
         {
             RunWithShownWindow(w =>
             {
-                // Mirror the real PSADT lifecycle: XAML sets IsMinimizeButtonVisible=Collapsed
+                // XAML sets IsMinimizeButtonVisible=Collapsed
                 // on the FluentDialog template, then code-behind flips it back to Visible when
                 // DialogAllowMinimize is honoured (IsMinimizeButtonVisible=Visibility.Visible).
                 w.IsMinimizeButtonVisible = Visibility.Collapsed;
@@ -990,8 +1074,8 @@ namespace Fluence.Wpf.Tests
             // HideNativeCaptionButtons → NativeMethods.HideAllWindowButtons, which strips
             // WS_SYSMENU on the native HWND. Without WS_SYSMENU (and the implicitly-disabled
             // WS_MINIMIZEBOX) DefWindowProc silently drops WM_SYSCOMMAND/SC_MINIMIZE, so
-            // SystemCommands.MinimizeWindow(this) would be a no-op — exactly the production
-            // symptom that made the PSADT AllowMinimize caption button look clickable but
+            // SystemCommands.MinimizeWindow(this) would be a no-op - exactly the production
+            // symptom that made the AllowMinimize caption button look clickable but
             // refuse to actually minimize. The Executed handler must bypass the sysmenu gate
             // by assigning WindowState directly so the transition always lands.
             RunWithShownWindow(w =>
@@ -1135,13 +1219,12 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Bug", "S1226:Method parameters, caught exceptions and foreach variables' initial values should not be ignored", Justification = "We're discarding anyway.")]
         public void MinimizeButton_EndToEnd_WorksUnderShowDialogModalPsadtConfig()
         {
             // Same topology as the Show() variant above, but uses ShowDialog() which is what
             // PSADT's DialogManager actually invokes (see DialogManager.ShowModalDialog -> dialog.ShowDialog()).
             // Modal WPF windows push a nested Dispatcher frame, disable their owner, and in the
-            // PSADT case are also Topmost — a combination that can mask bugs a Show() test misses.
+            // PSADT case are also Topmost - a combination that can mask bugs a Show() test misses.
             // We schedule the click via Dispatcher.BeginInvoke(ApplicationIdle) from Loaded so
             // the command fires after the modal frame is pumping, then verify WindowState.
             RunOnFreshStaThread(() =>
@@ -1153,7 +1236,7 @@ namespace Fluence.Wpf.Tests
                 bool minimizeCommandCanExecute = false;
                 bool minimizeButtonIsEnabled = false;
                 Visibility minimizeButtonVisibility = Visibility.Collapsed;
-                Exception? scenarioException = null;
+                ExceptionDispatchInfo? scenarioExceptionInfo = null;
 
                 try
                 {
@@ -1174,7 +1257,7 @@ namespace Fluence.Wpf.Tests
                     };
 
                     FluenceWindow capturedWindow = window;
-                    capturedWindow.Loaded += (_, __) =>
+                    capturedWindow.Loaded += (loadedSender, loadedArgs) =>
                     {
                         _ = capturedWindow.Dispatcher.BeginInvoke(() =>
                         {
@@ -1203,14 +1286,14 @@ namespace Fluence.Wpf.Tests
                                     }
                                     catch (Exception exInner)
                                     {
-                                        scenarioException = exInner;
+                                        scenarioExceptionInfo = ExceptionDispatchInfo.Capture(exInner);
                                         capturedWindow.Close();
                                     }
                                 }, DispatcherPriority.ApplicationIdle);
                             }
                             catch (Exception exOuter)
                             {
-                                scenarioException = exOuter;
+                                scenarioExceptionInfo = ExceptionDispatchInfo.Capture(exOuter);
                                 capturedWindow.Close();
                             }
                         }, DispatcherPriority.ApplicationIdle);
@@ -1218,10 +1301,7 @@ namespace Fluence.Wpf.Tests
 
                     _ = window.ShowDialog();
 
-                    if (scenarioException is not null)
-                    {
-                        ExceptionDispatchInfo.Capture(scenarioException).Throw();
-                    }
+                    scenarioExceptionInfo?.Throw();
 
                     Assert.AreEqual(Visibility.Visible, minimizeButtonVisibility,
                         "PSADT ShowDialog flow: IsMinimizeButtonVisible must render Visible after Loaded flip.");
@@ -1252,7 +1332,6 @@ namespace Fluence.Wpf.Tests
         #region 8. PasswordBox.SelectAll
 
         [TestMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Suppress this for now.")]
         public void PasswordBox_SelectAll_DoesNotThrowWithoutTemplate()
         {
             RunOnFreshStaThread(() =>
@@ -1262,8 +1341,14 @@ namespace Fluence.Wpf.Tests
 
                 try
                 {
-                    PasswordBox passwordBox = new();
+                    PasswordBox passwordBox = new()
+                    {
+                        Password = "hidden"
+                    };
                     passwordBox.SelectAll();
+
+                    Assert.AreEqual("hidden", passwordBox.Password,
+                        "SelectAll without a template should not alter the password value.");
                 }
                 finally
                 {
@@ -1339,17 +1424,17 @@ namespace Fluence.Wpf.Tests
 
         #endregion
 
-        #region WI-1 F4 — Caption buttons must remain hit-testable when ExtendsContentIntoTitleBar=true
+        #region WI-1 F4 - Caption buttons must remain hit-testable when ExtendsContentIntoTitleBar=true
 
         // When ExtendsContentIntoTitleBar=true, the content area moves into Grid.Row=0 (same row
         // as the title bar). Because WPF paints siblings in document order, whichever sibling is
         // declared last wins the top of the z-stack. The title bar grid (and its caption button
-        // panel) must therefore win — otherwise opaque client content covers min/max/close and
+        // panel) must therefore win - otherwise opaque client content covers min/max/close and
         // clicks are swallowed by the content, not the button.
         //
         // This test plants an opaque full-size Border as the window Content. If the title bar
         // grid is correctly on top, a hit-test at a caption-button center hits the button or one
-        // of its Path children — not the Border.
+        // of its Path children - not the Border.
         [TestMethod]
         public void CaptionButtons_AboveContent_WhenExtendsContentIntoTitleBar()
         {

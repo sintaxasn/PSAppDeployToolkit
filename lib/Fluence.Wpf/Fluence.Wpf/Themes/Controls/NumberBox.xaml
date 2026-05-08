@@ -12,6 +12,7 @@
         <Setter Property="Width" Value="32" />
         <Setter Property="Height" Value="30" />
         <Setter Property="Focusable" Value="True" />
+        <Setter Property="IsTabStop" Value="False" />
         <!--  Fire Click immediately on MouseDown so a quick press-release registers  -->
         <!--  (default Release mode waits for the internal timer's first tick).  -->
         <Setter Property="ClickMode" Value="Press" />
@@ -46,7 +47,7 @@
             IsTabStop=False: the outer NumberBox shell must not be a tab stop.
             Focus is hosted by PART_TextBox (inner element).  Without this,
             Shift+Tab from PART_TextBox lands on the NumberBox shell which
-            immediately redirects focus back to PART_TextBox — an infinite loop
+            immediately redirects focus back to PART_TextBox - an infinite loop
             that prevents Shift+Tab from escaping to the previous outer control.
         -->
         <Setter Property="IsTabStop" Value="False" />
@@ -205,21 +206,24 @@
                             <Setter TargetName="SpinPanel" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="SpinButtonPlacementMode" Value="{x:Static fluence:SpinButtonPlacementMode.Compact}">
-                            <Setter TargetName="SpinPanel" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="SpinPanel" Property="Opacity" Value="0" />
+                            <Setter TargetName="SpinPanel" Property="IsHitTestVisible" Value="False" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="SpinButtonPlacementMode" Value="{x:Static fluence:SpinButtonPlacementMode.Compact}" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="SpinPanel" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="SpinPanel" Property="Opacity" Value="1" />
+                            <Setter TargetName="SpinPanel" Property="IsHitTestVisible" Value="True" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="SpinButtonPlacementMode" Value="{x:Static fluence:SpinButtonPlacementMode.Compact}" />
                                 <Condition Property="IsKeyboardFocusWithin" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="SpinPanel" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="SpinPanel" Property="Opacity" Value="1" />
+                            <Setter TargetName="SpinPanel" Property="IsHitTestVisible" Value="True" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />

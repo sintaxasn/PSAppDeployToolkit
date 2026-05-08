@@ -26,9 +26,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Windows;
 using System.Windows.Media;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Fluence.Wpf.Tests
 {
@@ -97,6 +98,62 @@ namespace Fluence.Wpf.Tests
                 Assert.AreNotEqual(ApplicationAccentColorManager.SystemAccentColorLight1,
                     ApplicationAccentColorManager.SystemAccentColorDark1,
                     "Light1 and Dark1 should differ");
+            });
+        }
+
+        [TestMethod]
+        public void ApplyApplicationAccent_RaisesAccentColorChangedOnce()
+        {
+            WpfTestSta.Invoke(() =>
+            {
+                ApplicationThemeManager.Apply(ApplicationTheme.Light, BackdropType.None, false);
+
+                int eventCount = 0;
+                void OnAccentColorChanged(object? sender, EventArgs e)
+                {
+                    eventCount++;
+                }
+
+                ApplicationAccentColorManager.AccentColorChanged += OnAccentColorChanged;
+                try
+                {
+                    ApplicationAccentColorManager.ApplyApplicationAccent();
+                }
+                finally
+                {
+                    ApplicationAccentColorManager.AccentColorChanged -= OnAccentColorChanged;
+                }
+
+                Assert.AreEqual(1, eventCount,
+                    "Applying the application accent should publish one AccentColorChanged notification.");
+            });
+        }
+
+        [TestMethod]
+        public void ApplyCustomAccent_RaisesAccentColorChangedOnce()
+        {
+            WpfTestSta.Invoke(() =>
+            {
+                ApplicationThemeManager.Apply(ApplicationTheme.Light, BackdropType.None, false);
+
+                int eventCount = 0;
+                void OnAccentColorChanged(object? sender, EventArgs e)
+                {
+                    eventCount++;
+                }
+
+                ApplicationAccentColorManager.AccentColorChanged += OnAccentColorChanged;
+                try
+                {
+                    ApplicationAccentColorManager.ApplyCustomAccent(Color.FromRgb(0xFF, 0x88, 0x00));
+                }
+                finally
+                {
+                    ApplicationAccentColorManager.AccentColorChanged -= OnAccentColorChanged;
+                }
+
+                Assert.AreEqual(1, eventCount,
+                    "Applying a custom accent should publish one AccentColorChanged notification.");
             });
         }
 

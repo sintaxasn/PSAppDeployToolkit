@@ -26,12 +26,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections;
 
 namespace Fluence.Wpf.Tests
 {
@@ -43,7 +43,7 @@ namespace Fluence.Wpf.Tests
     public partial class ControlTests
     {
         // ---------------------------------------------------------------------------
-        // WI-5A.3 ScrollBar — PART names found in ScrollViewer
+        // WI-5A.3 ScrollBar - PART names found in ScrollViewer
         // ---------------------------------------------------------------------------
 
         private static void AssertScrollBarVisualStateDoubleKeyFrame(
@@ -150,7 +150,7 @@ namespace Fluence.Wpf.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // WI-5A.3 ScrollBar — VSM ScrollingIndicatorStates
+        // WI-5A.3 ScrollBar - VSM ScrollingIndicatorStates
         // ---------------------------------------------------------------------------
 
         [TestMethod]
@@ -169,7 +169,7 @@ namespace Fluence.Wpf.Tests
                     Maximum = 100,
                     Value = 0,
                     ViewportSize = 10,
-                    Width = 6,
+                    Width = 12,
                     Height = 200
                 };
 
@@ -186,9 +186,11 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(WpfTestSta.Dispatcher);
 
                     Assert.IsTrue(stateApplied,
-                        "GoToState('MouseIndicator') must return true — VSM group must be present.");
+                        "GoToState('MouseIndicator') must return true - VSM group must be present.");
 
                     AssertScrollBarVisualStateDoubleKeyFrame(sb, "MouseIndicator", "Root", "Width", 10.0);
+                    AssertScrollBarVisualStateDoubleKeyFrame(sb, "MouseIndicator", "DecreaseButton", "Opacity", 1.0);
+                    AssertScrollBarVisualStateDoubleKeyFrame(sb, "MouseIndicator", "IncreaseButton", "Opacity", 1.0);
                 }
                 finally
                 {
@@ -213,7 +215,7 @@ namespace Fluence.Wpf.Tests
                     Maximum = 100,
                     Value = 0,
                     ViewportSize = 10,
-                    Width = 6,
+                    Width = 12,
                     Height = 200
                 };
 
@@ -232,9 +234,11 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(WpfTestSta.Dispatcher);
 
                     Assert.IsTrue(stateApplied,
-                        "GoToState('NoIndicator') must return true — VSM group must be present.");
+                        "GoToState('NoIndicator') must return true - VSM group must be present.");
 
                     AssertScrollBarVisualStateDoubleKeyFrame(sb, "NoIndicator", "Root", "Width", 6.0);
+                    AssertScrollBarVisualStateDoubleKeyFrame(sb, "NoIndicator", "DecreaseButton", "Opacity", 0.0);
+                    AssertScrollBarVisualStateDoubleKeyFrame(sb, "NoIndicator", "IncreaseButton", "Opacity", 0.0);
                 }
                 finally
                 {
@@ -259,7 +263,7 @@ namespace Fluence.Wpf.Tests
                     Maximum = 100,
                     Value = 0,
                     ViewportSize = 10,
-                    Height = 6,
+                    Height = 12,
                     Width = 200
                 };
 
@@ -277,6 +281,59 @@ namespace Fluence.Wpf.Tests
                         "GoToState('MouseIndicator') on horizontal ScrollBar must return true.");
 
                     AssertScrollBarVisualStateDoubleKeyFrame(sb, "MouseIndicator", "Root", "Height", 10.0);
+                    AssertScrollBarVisualStateDoubleKeyFrame(sb, "MouseIndicator", "DecreaseButton", "Opacity", 1.0);
+                    AssertScrollBarVisualStateDoubleKeyFrame(sb, "MouseIndicator", "IncreaseButton", "Opacity", 1.0);
+                }
+                finally
+                {
+                    CloseWindowAndDrain(window);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void ScrollBar_DefaultLayout_ReservesExpandedSlotWithCompactIndicator()
+        {
+            WpfTestSta.Invoke(() =>
+            {
+                Application? app = EnsureApplication();
+                _ = MergeGenericDictionary(app);
+
+                ScrollBar sb = new()
+                {
+                    Orientation = Orientation.Vertical,
+                    Style = app?.TryFindResource("VerticalScrollBarStyle") as Style,
+                    Minimum = 0,
+                    Maximum = 100,
+                    Value = 0,
+                    ViewportSize = 10,
+                    Height = 200
+                };
+
+                Window window = new() { Width = 60, Height = 300, Content = sb };
+                try
+                {
+                    window.Show();
+                    _ = sb.ApplyTemplate();
+                    DrainDispatcher(WpfTestSta.Dispatcher);
+
+                    Grid? root = FindVisualChildByName<Grid>(sb, "Root");
+                    Assert.IsNotNull(root, "Root Grid must be present in ScrollBar template.");
+                    Assert.AreEqual(10.0, sb.ActualWidth, 0.5,
+                        "Vertical ScrollBar should reserve the 10px layout slot after the requested 2px reduction.");
+                    Assert.AreEqual(6.0, root.Width, 0.5,
+                        "Vertical ScrollBar indicator should start at the compact 6px thumb width after the requested 2px reduction.");
+                    Assert.AreEqual(HorizontalAlignment.Right, root.HorizontalAlignment,
+                        "Compact vertical indicator should align to the outside edge of the reserved slot.");
+
+                    RepeatButton? decreaseButton = FindVisualChildByName<RepeatButton>(sb, "DecreaseButton");
+                    RepeatButton? increaseButton = FindVisualChildByName<RepeatButton>(sb, "IncreaseButton");
+                    Assert.IsNotNull(decreaseButton, "Vertical ScrollBar must include the top line button for hover expansion.");
+                    Assert.IsNotNull(increaseButton, "Vertical ScrollBar must include the bottom line button for hover expansion.");
+                    Assert.AreEqual(0.0, decreaseButton.Opacity, 0.01,
+                        "Line buttons should be hidden until the ScrollBar enters the hover/MouseIndicator state.");
+                    Assert.AreEqual(0.0, increaseButton.Opacity, 0.01,
+                        "Line buttons should be hidden until the ScrollBar enters the hover/MouseIndicator state.");
                 }
                 finally
                 {
@@ -286,7 +343,7 @@ namespace Fluence.Wpf.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // WI-5A.3 ScrollBar — disabled state reduces opacity
+        // WI-5A.3 ScrollBar - disabled state reduces opacity
         // ---------------------------------------------------------------------------
 
         [TestMethod]
@@ -305,7 +362,7 @@ namespace Fluence.Wpf.Tests
                     Maximum = 100,
                     Value = 0,
                     ViewportSize = 10,
-                    Width = 6,
+                    Width = 12,
                     Height = 200
                 };
 
@@ -331,7 +388,7 @@ namespace Fluence.Wpf.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // WI-5A.3 ScrollBar — theme cycle
+        // WI-5A.3 ScrollBar - theme cycle
         // ---------------------------------------------------------------------------
 
         [TestMethod]
@@ -344,6 +401,9 @@ namespace Fluence.Wpf.Tests
 
                 string[] keys =
                 [
+                    "ScrollBarSize",
+                    "ScrollBarCompactThumbSize",
+                    "ScrollViewerScrollBarMargin",
                     "ControlStrongFillColorDefaultBrush",
                     "SubtleFillColorSecondaryBrush"
                 ];

@@ -348,11 +348,11 @@ namespace Fluence.Wpf.Controls
                     case ValidationState.None:
                         break;
                     default:
-                        break;
+                        return;
                 }
                 return;
             }
-            _ = (icon?.Visibility = Visibility.Collapsed);
+            _ = icon?.Visibility = Visibility.Collapsed;
             helper.Text = HelperText;
             helper.Visibility = string.IsNullOrWhiteSpace(HelperText) ? Visibility.Collapsed : Visibility.Visible;
             helper.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");

@@ -26,13 +26,14 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FluenceTextBox = Fluence.Wpf.Controls.TextBox;
 using FluencePasswordBox = Fluence.Wpf.Controls.PasswordBox;
+using FluenceTextBox = Fluence.Wpf.Controls.TextBox;
 using WpfBorder = System.Windows.Controls.Border;
 using WpfTextBlock = System.Windows.Controls.TextBlock;
 
@@ -108,6 +109,39 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
+        public void PasswordBox_Unloaded_StopsCapsLockPollingTimer()
+        {
+            WpfTestSta.Invoke(() =>
+            {
+                Application? app = EnsureApplication();
+                _ = MergeGenericDictionary(app);
+
+                FluencePasswordBox pb = new() { PlaceholderText = "Password" };
+                Window w = new() { Content = pb, Width = 300, Height = 60 };
+                w.Show();
+                DrainDispatcher(w.Dispatcher);
+
+                MethodInfo? startCapsPoll = typeof(FluencePasswordBox).GetMethod(
+                    "StartCapsPoll",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo? capsPollTimer = typeof(FluencePasswordBox).GetField(
+                    "_capsPollTimer",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.IsNotNull(startCapsPoll, "PasswordBox must expose the expected internal caps-poll start method.");
+                Assert.IsNotNull(capsPollTimer, "PasswordBox must keep the expected caps-poll timer field.");
+
+                _ = startCapsPoll.Invoke(pb, null);
+                Assert.IsNotNull(capsPollTimer.GetValue(pb), "The caps-poll timer should be active after polling starts.");
+
+                pb.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent, pb));
+                DrainDispatcher(w.Dispatcher);
+
+                Assert.IsNull(capsPollTimer.GetValue(pb), "PasswordBox must stop caps-polling when unloaded.");
+                w.Close();
+            });
+        }
+
+        [TestMethod]
         public void TextBox_PlaceholderTextBlock_ThemeCycle_StillTertiaryBrush()
         {
             WpfTestSta.Invoke(() =>
@@ -177,7 +211,7 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void TextBox_HelperAndValidationText_UsesTwoPixelTopMargin()
+        public void TextBox_HelperAndValidationText_UsesSevenPixelTopMarginAndCenteredContent()
         {
             WpfTestSta.Invoke(() =>
             {
@@ -196,11 +230,17 @@ namespace Fluence.Wpf.Tests
 
                 WpfTextBlock? helper = FindVisualChildByName<WpfTextBlock>(tb, "PART_HelperText");
                 Assert.IsNotNull(helper, "TextBox template must expose PART_HelperText.");
+                WpfTextBlock? icon = FindVisualChildByName<WpfTextBlock>(tb, "PART_ValidationIcon");
+                Assert.IsNotNull(icon, "TextBox template must expose PART_ValidationIcon.");
 
                 StackPanel? helperRow = VisualTreeHelper.GetParent(helper) as StackPanel;
                 Assert.IsNotNull(helperRow, "Helper text should be hosted in the validation/helper row.");
-                Assert.AreEqual(new Thickness(12, 2, 12, 0), helperRow.Margin,
-                    "Helper and validation text should sit 2px below the input chrome.");
+                Assert.AreEqual(new Thickness(12, 7, 12, 0), helperRow.Margin,
+                    "Helper and validation text should sit 7px below the input chrome.");
+                Assert.AreEqual(VerticalAlignment.Center, helper.VerticalAlignment,
+                    "Helper text should be vertically centered with the validation icon.");
+                Assert.AreEqual(VerticalAlignment.Center, icon.VerticalAlignment,
+                    "Validation icon should be vertically centered with helper text.");
 
                 w.Close();
             });

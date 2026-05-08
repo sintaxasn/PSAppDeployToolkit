@@ -26,7 +26,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Automation;
+using Fluence.Wpf.Helpers;
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
@@ -35,7 +40,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using Fluence.Wpf.Automation;
 
 namespace Fluence.Wpf.Controls
 {
@@ -48,6 +52,9 @@ namespace Fluence.Wpf.Controls
     [TemplatePart(Name = PartPaneItemsScrollViewer, Type = typeof(ScrollViewer))]
     [TemplatePart(Name = PartPaneToggleButton, Type = typeof(System.Windows.Controls.Button))]
     [TemplatePart(Name = PartSelectionIndicator, Type = typeof(FrameworkElement))]
+    [TemplatePart(Name = PartPaneColumn, Type = typeof(ColumnDefinition))]
+    [TemplatePart(Name = PartTopItemsHost, Type = typeof(FrameworkElement))]
+    [TemplatePart(Name = PartTopOverflowButton, Type = typeof(System.Windows.Controls.Button))]
     [TemplateVisualState(GroupName = "BackButtonStates", Name = "BackButtonVisible")]
     [TemplateVisualState(GroupName = "BackButtonStates", Name = "BackButtonCollapsed")]
     public class NavigationView : Selector
@@ -77,9 +84,33 @@ namespace Fluence.Wpf.Controls
         /// </summary>
         public const string PartSelectionIndicator = "PART_SelectionIndicator";
 
-        // Margins and offsets used in indicator positioning calculations
+        /// <summary>
+        /// Name of the top pane items host template part.
+        /// </summary>
+        public const string PartTopItemsHost = "PART_TopItemsHost";
+
+        /// <summary>
+        /// Name of the top pane overflow button template part.
+        /// </summary>
+        public const string PartTopOverflowButton = "PART_TopOverflowButton";
+
+        private const string PartPaneColumn = "PaneColumn";
+        private const double PaneClosedWidth = 48.0;
+        private const double PaneClosedWithBackWidth = 96.0;
+        private const double PaneOpenWidth = 280.0;
+        private const double PaneAnimationMilliseconds = 167.0;
+
+        private static readonly DependencyProperty IsTopOverflowCollapsedProperty =
+            DependencyProperty.RegisterAttached(
+                "IsTopOverflowCollapsed",
+                typeof(bool),
+                typeof(NavigationView),
+                new PropertyMetadata(false));
+
+        // Margins and offsets used in indicator and top overflow positioning calculations
         private const double NavigationItemOuterHorizontalMargin = 4.0;
         private const double NavigationItemChildIndicatorOffset = 44.0;
+        private const double TopOverflowReservedEndPadding = 12.0;
 
         /// <summary>
         /// Identifies the <see cref="PaneDisplayMode"/> dependency property.
@@ -109,7 +140,7 @@ namespace Fluence.Wpf.Controls
             "IsBackButtonVisible",
             typeof(bool),
             typeof(NavigationView),
-            new PropertyMetadata(false, OnIsBackButtonVisibleChanged));
+            new PropertyMetadata(false, OnBackButtonStateChanged));
 
         /// <summary>
         /// Identifies the <see cref="IsBackEnabled"/> dependency property.
@@ -118,7 +149,7 @@ namespace Fluence.Wpf.Controls
             "IsBackEnabled",
             typeof(bool),
             typeof(NavigationView),
-            new PropertyMetadata(true, OnIsBackEnabledChanged));
+            new PropertyMetadata(true, OnBackButtonStateChanged));
 
         /// <summary>
         /// Identifies the <see cref="IsPaneToggleButtonVisible"/> dependency property.
@@ -127,7 +158,11 @@ namespace Fluence.Wpf.Controls
             "IsPaneToggleButtonVisible",
             typeof(bool),
             typeof(NavigationView),
-            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsMeasure));
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.AffectsMeasure,
+                null,
+                CoerceIsPaneToggleButtonVisible));
 
         /// <summary>
         /// Identifies the <see cref="Header"/> dependency property.
@@ -183,7 +218,7 @@ namespace Fluence.Wpf.Controls
             "IsPaneOpen",
             typeof(bool),
             typeof(NavigationView),
-            new FrameworkPropertyMetadata(true, OnIsPaneOpenChanged));
+            new FrameworkPropertyMetadata(true, OnIsPaneOpenChanged, CoerceIsPaneOpen));
 
         /// <summary>
         /// Identifies the <see cref="Content"/> dependency property.
@@ -212,6 +247,8 @@ namespace Fluence.Wpf.Controls
         /// </summary>
         public NavigationView()
         {
+            Loaded += OnLoaded;
+            SizeChanged += OnSizeChanged;
             Unloaded += OnUnloaded;
         }
 
@@ -348,16 +385,34 @@ namespace Fluence.Wpf.Controls
         {
             _backButton?.Click -= OnBackButtonClick;
             _paneToggleButton?.Click -= OnPaneToggleButtonClick;
+            _topOverflowButton?.Click -= OnTopOverflowButtonClick;
+            StopPaneColumnAnimation();
             base.OnApplyTemplate();
             _backButton = GetTemplateChild(PartBackButton) as System.Windows.Controls.Button;
             _backButton?.Click += OnBackButtonClick;
             _paneToggleButton = GetTemplateChild(PartPaneToggleButton) as System.Windows.Controls.Button;
             _paneToggleButton?.Click += OnPaneToggleButtonClick;
+            _topItemsHost = GetTemplateChild(PartTopItemsHost) as FrameworkElement;
+            if (GetTemplateChild(PartTopOverflowButton) is System.Windows.Controls.Button topOverflowButton)
+            {
+                _topOverflowButton = topOverflowButton;
+                _topOverflowButton.Click += OnTopOverflowButtonClick;
+            }
+            else
+            {
+                _topOverflowButton = null;
+            }
+
+            _paneColumn = GetTemplateChild(PartPaneColumn) as ColumnDefinition;
             _selectionIndicator = GetTemplateChild(PartSelectionIndicator) as FrameworkElement;
             _indicatorHost = _selectionIndicator is not null ? VisualTreeHelper.GetParent(_selectionIndicator) as FrameworkElement : null;
             _indicatorPositioned = false;
             StopAnimation();
+            CoerceTopPaneProperties();
+            UpdateTitleBarExtensionForPaneMode();
             UpdateBackButtonState(false);
+            UpdatePaneColumnWidth(false);
+            ScheduleTopOverflowUpdate();
             ScheduleIndicatorPosition(false);
         }
 
@@ -369,6 +424,13 @@ namespace Fluence.Wpf.Controls
                 : null;
             base.OnSelectionChanged(e);
             _ = Dispatcher.BeginInvoke(new Action(() => PositionIndicator(true, previousItem)), DispatcherPriority.Loaded);
+        }
+
+        /// <inheritdoc />
+        protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
+        {
+            base.OnItemsChanged(e);
+            ScheduleTopOverflowUpdate();
         }
 
         /// <inheritdoc />
@@ -426,6 +488,10 @@ namespace Fluence.Wpf.Controls
                 navItem.Selected += OnNavigationViewItemSelected;
                 navItem.Loaded -= OnNavigationViewItemLoaded;
                 navItem.Loaded += OnNavigationViewItemLoaded;
+                navItem.SizeChanged -= OnNavigationViewItemSizeChanged;
+                navItem.SizeChanged += OnNavigationViewItemSizeChanged;
+                navItem.IsVisibleChanged -= OnNavigationViewItemIsVisibleChanged;
+                navItem.IsVisibleChanged += OnNavigationViewItemIsVisibleChanged;
             }
         }
 
@@ -436,6 +502,8 @@ namespace Fluence.Wpf.Controls
             {
                 navItem.Selected -= OnNavigationViewItemSelected;
                 navItem.Loaded -= OnNavigationViewItemLoaded;
+                navItem.SizeChanged -= OnNavigationViewItemSizeChanged;
+                navItem.IsVisibleChanged -= OnNavigationViewItemIsVisibleChanged;
             }
             base.ClearContainerForItemOverride(element, item);
         }
@@ -457,6 +525,20 @@ namespace Fluence.Wpf.Controls
             return _selectionIndicator;
         }
 
+        internal double GetPaneColumnWidthForTesting()
+        {
+            return _paneColumn?.Width.Value ?? double.NaN;
+        }
+
+        internal Point CalculateDepartPositionForTesting(
+            Point fromPosition,
+            NavigationViewItem? previousItem,
+            bool topMode,
+            double direction)
+        {
+            return CalculateDepartPosition(fromPosition, previousItem, topMode, direction);
+        }
+
         internal void InvokeItem(NavigationViewItem item)
         {
             if (item is null || !item.IsEnabled)
@@ -470,20 +552,36 @@ namespace Fluence.Wpf.Controls
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
+            _topOverflowButton?.Click -= OnTopOverflowButtonClick;
+            DetachTitleBarWindowWatcher();
             StopAnimation();
+            StopPaneColumnAnimation();
+            _paneColumn = null;
             _selectionIndicator = null;
             _indicatorHost = null;
+            _topItemsHost = null;
+            _topOverflowButton = null;
             _indicatorPositioned = false;
         }
 
-        private static void OnIsBackButtonVisibleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            ((NavigationView)d).UpdateBackButtonState(true);
+            AttachTitleBarWindowWatcher();
+            CoerceTopPaneProperties();
+            UpdateTitleBarExtensionForPaneMode();
+            ScheduleTopOverflowUpdate();
         }
 
-        private static void OnIsBackEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            ((NavigationView)d).UpdateBackButtonState(true);
+            ScheduleTopOverflowUpdate();
+        }
+
+        private static void OnBackButtonStateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            NavigationView nav = (NavigationView)d;
+            nav.UpdateBackButtonState(true);
+            nav.UpdatePaneColumnWidth(false);
         }
 
         /// <summary>
@@ -528,6 +626,22 @@ namespace Fluence.Wpf.Controls
             {
                 ScheduleIndicatorPosition(false);
             }
+
+            ScheduleTopOverflowUpdate();
+        }
+
+        private void OnNavigationViewItemSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ScheduleTopOverflowUpdate();
+        }
+
+        private void OnNavigationViewItemIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (!_updatingTopOverflow && sender is NavigationViewItem navItem)
+            {
+                navItem.ClearValue(IsTopOverflowCollapsedProperty);
+                ScheduleTopOverflowUpdate();
+            }
         }
 
         private static void OnIsPaneOpenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -543,6 +657,8 @@ namespace Fluence.Wpf.Controls
                 nav.PaneClosed?.Invoke(nav, EventArgs.Empty);
             }
             nav._indicatorPositioned = false;
+            nav.UpdatePaneColumnWidth(true);
+            nav.ScheduleTopOverflowUpdate();
             nav.ScheduleIndicatorPosition(false);
         }
 
@@ -554,8 +670,170 @@ namespace Fluence.Wpf.Controls
             {
                 nav.SetCurrentValue(IsPaneOpenProperty, false);
             }
+            nav.CoerceTopPaneProperties();
+            nav.UpdateTitleBarExtensionForPaneMode();
             nav._indicatorPositioned = false;
+            nav.UpdatePaneColumnWidth(false);
+            nav.ScheduleTopOverflowUpdate();
             nav.ScheduleIndicatorPosition(false);
+        }
+
+        private static object CoerceIsPaneOpen(DependencyObject d, object baseValue)
+        {
+            NavigationView nav = (NavigationView)d;
+            return nav.PaneDisplayMode == NavigationViewPaneDisplayMode.Top || (bool)baseValue;
+        }
+
+        private static object CoerceIsPaneToggleButtonVisible(DependencyObject d, object baseValue)
+        {
+            _ = baseValue;
+            NavigationView nav = (NavigationView)d;
+            return nav.PaneDisplayMode != NavigationViewPaneDisplayMode.Top;
+        }
+
+        private void CoerceTopPaneProperties()
+        {
+            CoerceValue(IsPaneOpenProperty);
+            CoerceValue(IsPaneToggleButtonVisibleProperty);
+        }
+
+        private void UpdateTitleBarExtensionForPaneMode()
+        {
+            if (Window.GetWindow(this) is not FluenceWindow window || _updatingTitleBarExtension)
+            {
+                return;
+            }
+
+            bool? desiredValue = null;
+            if (PaneDisplayMode == NavigationViewPaneDisplayMode.Left)
+            {
+                desiredValue = true;
+            }
+            else if (PaneDisplayMode == NavigationViewPaneDisplayMode.Top)
+            {
+                desiredValue = false;
+            }
+
+            if (desiredValue is null || window.ExtendsContentIntoTitleBar == desiredValue.Value)
+            {
+                return;
+            }
+
+            _updatingTitleBarExtension = true;
+            try
+            {
+                window.SetCurrentValue(FluenceWindow.ExtendsContentIntoTitleBarProperty, desiredValue.Value);
+            }
+            finally
+            {
+                _updatingTitleBarExtension = false;
+            }
+        }
+
+        private void AttachTitleBarWindowWatcher()
+        {
+            FluenceWindow? window = Window.GetWindow(this) as FluenceWindow;
+            if (ReferenceEquals(window, _titleBarExtensionWindow))
+            {
+                return;
+            }
+
+            DetachTitleBarWindowWatcher();
+            _titleBarExtensionWindow = window;
+
+            if (_titleBarExtensionWindow is not null)
+            {
+                _titleBarExtensionDescriptor ??= DependencyPropertyDescriptor.FromProperty(
+                    FluenceWindow.ExtendsContentIntoTitleBarProperty,
+                    typeof(FluenceWindow));
+                _titleBarExtensionDescriptor?.AddValueChanged(_titleBarExtensionWindow, OnTitleBarExtensionChanged);
+            }
+        }
+
+        private void DetachTitleBarWindowWatcher()
+        {
+            if (_titleBarExtensionWindow is not null)
+            {
+                _titleBarExtensionDescriptor?.RemoveValueChanged(_titleBarExtensionWindow, OnTitleBarExtensionChanged);
+                _titleBarExtensionWindow = null;
+            }
+        }
+
+        private void OnTitleBarExtensionChanged(object? sender, EventArgs e)
+        {
+            UpdateTitleBarExtensionForPaneMode();
+        }
+
+        private void UpdatePaneColumnWidth(bool useAnimation)
+        {
+            if (_paneColumn is null)
+            {
+                return;
+            }
+
+            if (PaneDisplayMode is not NavigationViewPaneDisplayMode.Left and not NavigationViewPaneDisplayMode.LeftCompact)
+            {
+                StopPaneColumnAnimation();
+                return;
+            }
+
+            double targetWidth = IsPaneOpen ? PaneOpenWidth : GetClosedPaneWidth();
+            if (!useAnimation)
+            {
+                StopPaneColumnAnimation();
+                _paneColumn.Width = new GridLength(targetWidth);
+                return;
+            }
+
+            double currentWidth = GetCurrentPaneColumnWidth();
+            if (Math.Abs(currentWidth - targetWidth) <= 0.1)
+            {
+                StopPaneColumnAnimation();
+                _paneColumn.Width = new GridLength(targetWidth);
+                return;
+            }
+
+            ColumnDefinition paneColumn = _paneColumn;
+            int animationGeneration = ++_paneColumnAnimationGeneration;
+            GridLengthAnimation animation = new()
+            {
+                From = new GridLength(currentWidth),
+                To = new GridLength(targetWidth),
+                Duration = new Duration(TimeSpan.FromMilliseconds(PaneAnimationMilliseconds)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+                FillBehavior = FillBehavior.Stop
+            };
+
+            animation.Completed += delegate
+            {
+                if (animationGeneration != _paneColumnAnimationGeneration || !ReferenceEquals(paneColumn, _paneColumn))
+                {
+                    return;
+                }
+
+                paneColumn.BeginAnimation(ColumnDefinition.WidthProperty, null);
+                paneColumn.Width = new GridLength(targetWidth);
+            };
+
+            paneColumn.BeginAnimation(ColumnDefinition.WidthProperty, animation, HandoffBehavior.SnapshotAndReplace);
+        }
+
+        private double GetCurrentPaneColumnWidth()
+        {
+            if (_paneColumn is null)
+            {
+                return GetClosedPaneWidth();
+            }
+
+            GridLength current = _paneColumn.Width;
+            return current.GridUnitType == GridUnitType.Pixel
+                ? current.Value
+                : GetClosedPaneWidth();
+        }
+
+        private double GetClosedPaneWidth()
+        {
+            return IsBackButtonVisible && IsBackEnabled ? PaneClosedWithBackWidth : PaneClosedWidth;
         }
 
         private void ScheduleIndicatorPosition(bool animate)
@@ -899,7 +1177,7 @@ namespace Fluence.Wpf.Controls
         private void HideIndicator()
         {
             StopAnimation();
-            _ = (_selectionIndicator?.Opacity = 0);
+            _ = _selectionIndicator?.Opacity = 0;
             _indicatorPositioned = false;
         }
 
@@ -925,6 +1203,12 @@ namespace Fluence.Wpf.Controls
                     translate.BeginAnimation(TranslateTransform.YProperty, null);
                 }
             }
+        }
+
+        private void StopPaneColumnAnimation()
+        {
+            _paneColumnAnimationGeneration++;
+            _paneColumn?.BeginAnimation(ColumnDefinition.WidthProperty, null);
         }
 
         /// <summary>
@@ -980,6 +1264,235 @@ namespace Fluence.Wpf.Controls
             return (data != DependencyProperty.UnsetValue && data is not null) ? data : navItem;
         }
 
+        private void OnTopOverflowButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (_topOverflowButton?.ContextMenu is null || _topOverflowButton.ContextMenu.Items.Count == 0)
+            {
+                return;
+            }
+
+            _topOverflowButton.ContextMenu.PlacementTarget = _topOverflowButton;
+            _topOverflowButton.ContextMenu.Placement = PlacementMode.Bottom;
+            _topOverflowButton.ContextMenu.IsOpen = true;
+        }
+
+        private void OnTopOverflowMenuItemClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem { Tag: NavigationViewItem navItem })
+            {
+                InvokeItem(navItem);
+            }
+        }
+
+        private void ScheduleTopOverflowUpdate()
+        {
+            if (_topOverflowUpdateScheduled)
+            {
+                return;
+            }
+
+            _topOverflowUpdateScheduled = true;
+            _ = Dispatcher.BeginInvoke(
+                new Action(UpdateTopOverflow),
+                DispatcherPriority.Loaded);
+        }
+
+        private void UpdateTopOverflow()
+        {
+            _topOverflowUpdateScheduled = false;
+
+            if (_updatingTopOverflow)
+            {
+                return;
+            }
+
+            _updatingTopOverflow = true;
+            try
+            {
+                List<NavigationViewItem> navItems = GetTopNavigationItems();
+                foreach (NavigationViewItem navItem in navItems)
+                {
+                    if ((bool)navItem.GetValue(IsTopOverflowCollapsedProperty))
+                    {
+                        navItem.Visibility = Visibility.Visible;
+                        navItem.ClearValue(IsTopOverflowCollapsedProperty);
+                    }
+                }
+
+                if (PaneDisplayMode != NavigationViewPaneDisplayMode.Top || _topOverflowButton is null || _topItemsHost is null)
+                {
+                    if (_topOverflowButton is not null)
+                    {
+                        _topOverflowButton.Visibility = Visibility.Collapsed;
+                        _topOverflowButton.ContextMenu = null;
+                        SetTopOverflowButtonOffset(0.0);
+                    }
+
+                    return;
+                }
+
+                _topOverflowButton.Visibility = Visibility.Collapsed;
+                _topOverflowButton.ContextMenu = null;
+                SetTopOverflowButtonOffset(0.0);
+                UpdateLayout();
+
+                double availableWidth = _topItemsHost.ActualWidth;
+                if (availableWidth <= 0.0)
+                {
+                    return;
+                }
+
+                double totalItemWidth = 0.0;
+                foreach (NavigationViewItem navItem in navItems)
+                {
+                    if (navItem.Visibility == Visibility.Visible)
+                    {
+                        totalItemWidth += GetElementWidth(navItem);
+                    }
+                }
+
+                _topOverflowButton.Visibility = Visibility.Visible;
+                _topOverflowButton.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+                double overflowButtonWidth = GetElementWidth(_topOverflowButton);
+                if (totalItemWidth <= availableWidth)
+                {
+                    _topOverflowButton.Visibility = Visibility.Collapsed;
+                    SetTopOverflowButtonOffset(0.0);
+                    return;
+                }
+
+                double visibleItemsWidthLimit = Math.Max(
+                    0.0,
+                    availableWidth - overflowButtonWidth - TopOverflowReservedEndPadding);
+                double usedWidth = 0.0;
+                List<NavigationViewItem> overflowItems = [];
+
+                foreach (NavigationViewItem navItem in navItems)
+                {
+                    if (navItem.Visibility != Visibility.Visible)
+                    {
+                        continue;
+                    }
+
+                    double itemWidth = GetElementWidth(navItem);
+                    if (usedWidth + itemWidth <= visibleItemsWidthLimit)
+                    {
+                        usedWidth += itemWidth;
+                    }
+                    else
+                    {
+                        navItem.SetValue(IsTopOverflowCollapsedProperty, true);
+                        navItem.Visibility = Visibility.Collapsed;
+                        overflowItems.Add(navItem);
+                    }
+                }
+
+                double overflowOffset = usedWidth;
+
+                if (overflowItems.Count == 0)
+                {
+                    _topOverflowButton.Visibility = Visibility.Collapsed;
+                    SetTopOverflowButtonOffset(0.0);
+                    return;
+                }
+
+                SetTopOverflowButtonOffset(overflowOffset);
+                _topOverflowButton.ContextMenu = CreateTopOverflowMenu(overflowItems);
+            }
+            finally
+            {
+                _updatingTopOverflow = false;
+            }
+        }
+
+        private List<NavigationViewItem> GetTopNavigationItems()
+        {
+            List<NavigationViewItem> navItems = [];
+            foreach (object item in Items)
+            {
+                NavigationViewItem? navItem = item as NavigationViewItem
+                    ?? ItemContainerGenerator.ContainerFromItem(item) as NavigationViewItem;
+
+                if (navItem is not null)
+                {
+                    navItems.Add(navItem);
+                }
+            }
+
+            return navItems;
+        }
+
+        private void SetTopOverflowButtonOffset(double x)
+        {
+            if (_topOverflowButton is null)
+            {
+                return;
+            }
+
+            _topOverflowButton.RenderTransform = null;
+            if (x > 0.0)
+            {
+                _topOverflowButton.RenderTransform = new TranslateTransform(Math.Max(0.0, x), 0.0);
+            }
+        }
+
+        private System.Windows.Controls.ContextMenu CreateTopOverflowMenu(IReadOnlyList<NavigationViewItem> overflowItems)
+        {
+            ContextMenu menu = new();
+            foreach (NavigationViewItem navItem in overflowItems)
+            {
+                MenuItem menuItem = new()
+                {
+                    Header = GetOverflowItemText(navItem),
+                    Icon = CreateOverflowIcon(navItem),
+                    MinWidth = 280,
+                    MinHeight = 44,
+                    Tag = navItem
+                };
+                menuItem.Click += OnTopOverflowMenuItemClick;
+                _ = menu.Items.Add(menuItem);
+            }
+
+            return menu;
+        }
+
+        private static object? CreateOverflowIcon(NavigationViewItem navItem)
+        {
+            if (navItem.Icon is not FontIcon fontIcon)
+            {
+                return null;
+            }
+
+            FontIcon overflowIcon = new()
+            {
+                Glyph = fontIcon.Glyph,
+                IconFontFamily = fontIcon.IconFontFamily,
+                IconFontSize = 16.0,
+                MirroredWhenRightToLeft = fontIcon.MirroredWhenRightToLeft
+            };
+            overflowIcon.SetResourceReference(ForegroundProperty, "TextFillColorSecondaryBrush");
+
+            return overflowIcon;
+        }
+
+        private static string GetOverflowItemText(NavigationViewItem navItem)
+        {
+            string text = navItem.Content as string
+                ?? navItem.Content?.ToString()
+                ?? navItem.Tag as string
+                ?? string.Empty;
+
+            return string.IsNullOrWhiteSpace(text) ? navItem.GetType().Name : text;
+        }
+
+        private static double GetElementWidth(FrameworkElement element)
+        {
+            element.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double desiredWidth = Math.Max(element.DesiredSize.Width, element.MinWidth);
+            return desiredWidth > 0.0 ? desiredWidth : element.ActualWidth;
+        }
+
         private static NavigationViewItem? FindNavigationViewItem(DependencyObject? focused)
         {
             DependencyObject? current = focused;
@@ -1004,6 +1517,16 @@ namespace Fluence.Wpf.Controls
         /// </summary>
         private System.Windows.Controls.Button? _paneToggleButton;
 
+        private FrameworkElement? _topItemsHost;
+
+        private System.Windows.Controls.Button? _topOverflowButton;
+
+        private FluenceWindow? _titleBarExtensionWindow;
+
+        private DependencyPropertyDescriptor? _titleBarExtensionDescriptor;
+
+        private ColumnDefinition? _paneColumn;
+
         /// <summary>
         /// Represents the visual element used to indicate the current selection within the user interface.
         /// </summary>
@@ -1021,6 +1544,14 @@ namespace Fluence.Wpf.Controls
         /// allowing the system to determine if a new animation sequence should be started or if the current one remains
         /// valid.</remarks>
         private int _indicatorAnimationGeneration;
+
+        private int _paneColumnAnimationGeneration;
+
+        private bool _topOverflowUpdateScheduled;
+
+        private bool _updatingTopOverflow;
+
+        private bool _updatingTitleBarExtension;
 
         /// <summary>
         /// Indicates whether the indicator has been positioned.
