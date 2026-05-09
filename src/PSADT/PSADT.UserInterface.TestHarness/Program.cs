@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -104,18 +104,12 @@ namespace PSADT.UserInterface.TestHarness
             string appIconImage = (string?)assetsTable["Logo"]!;
             string appIconDarkImage = (string?)assetsTable["Logo"]!;
             string appBannerImage = (string?)assetsTable["Banner"]!;
-            // var FluentAccentColor = ValueTypeConverter.ToInt(0xFF01C9D9); // Cyan
-            const DialogPosition dialogPosition = DialogPosition.BottomRight;
-            const bool dialogTopMost = false;
-            const bool dialogAllowMove = true;
-            const bool dialogAllowMinimize = true;
             const DeploymentType deploymentType = DeploymentType.Install;
 
             ReadOnlyCollection<ProcessDefinition> appsToClose = new(
             [
                 new("remotedesktopmanager", "Remote Desktop Manager"),
                 new("chrome", "Google Chrome"),
-                // new("msedge", "Microsoft Edge", null, null, null),
                 new("firefox", "Mozilla FireFox"),
                 new("notepad++", "NotePad++"),
                 new("spotify", "Spotify"),
@@ -127,7 +121,6 @@ namespace PSADT.UserInterface.TestHarness
                 new("outlook", "Microsoft Office Outlook"),
                 new("powerpnt", "Microsoft Office PowerPoint"),
                 new("winword", "Microsoft Office Word"),
-                // new("cmd", "Windows Command Prompt"),
                 new("notepad", "Windows Notepad"),
                 new("regedit", "Windows Registry Editor"),
                 new("taskmgr", "Windows Task Manager")
@@ -149,8 +142,8 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             const string progressMessageText = "Performing [accent]pre-flight checks[/accent]…";
             const string progressDetailMessageText = "Testing your [accent]system to ensure compatibility[/accent]. Please wait…";
 
-            TimeSpan restartCountdownDuration = TimeSpan.FromSeconds(80);
-            TimeSpan restartCountdownNoMinimizeDuration = TimeSpan.FromSeconds(70);
+            TimeSpan restartCountdownDuration = TimeSpan.FromSeconds(540); // Set this high so we have 9 mins before we accidentally reboot ourselves
+            TimeSpan restartCountdownNoMinimizeDuration = TimeSpan.FromSeconds(120); // 2 mins before the user can no longer minimize the restart dialog
 
             const string customDialogMessageText = "The installation requires you to have an exceptional amount of patience, as well an almost superhuman ability to not lose your temper. Given that you have not had much and seem to be super-cranky, are you sure you want to proceed? [bold]URL Formatting Tests:[/bold] Visit [url]https://psappdeploytoolkit.com[/url] or check our [url=https://github.com/PSAppDeployToolkit/PSAppDeployToolkit]GitHub Repository[/url] for support.";
             const string customDialogButtonLeftText = "LeftButton";
@@ -172,11 +165,8 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             Hashtable closeAppsDialogOptions = new()
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                //{ "FluentAccentColor", ValueTypeConverter.ToInt(0xFF107C10) }, // Accent Color: Green #107C10
-                { "DialogPosition", dialogPosition },
-                { "DialogTopMost", dialogTopMost },
-                { "DialogAllowMinimize", dialogAllowMinimize },
-                { "DialogAllowMove", dialogAllowMove },
+                { "DialogTopMost", true },
+                { "DialogAllowMove", true },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -192,11 +182,8 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             ProgressDialogOptions progressDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFFFB900) }, // Accent Color: Yellow #FFB900
-                { "DialogPosition", dialogPosition },
-                { "DialogTopMost", dialogTopMost },
-                { "DialogAllowMove", dialogAllowMove },
-                { "DialogAllowMinimize", dialogAllowMinimize },
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF00CC6A) }, // Accent Color: Green #00CC6A
+                { "DialogAllowMinimize", true },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -210,11 +197,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             CustomDialogOptions customDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF00B7C3) }, // Accent Color: Cyan #00B7C3
-                { "DialogPosition", dialogPosition },
-                { "DialogTopMost", dialogTopMost },
-                { "DialogAllowMove", dialogAllowMove },
-                { "DialogAllowMinimize", dialogAllowMinimize },
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF0099BC) }, // Accent Color: Cyan #0099BC
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -230,14 +213,46 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "MessageAlignment", DialogMessageAlignment.Left }
             });
 
+            CustomDialogOptions customDialog2Options = new(new Hashtable
+            {
+                { "DialogExpiryDuration", dialogExpiryDuration },
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF4A5459) }, // Accent Color: Navy Blue #4A5459
+                { "AppTitle", appTitle },
+                { "Subtitle", subtitle },
+                { "AppIconImage", appIconImage },
+                { "AppIconDarkImage", appIconDarkImage },
+                { "AppBannerImage", appBannerImage },
+                { "MessageText", customDialogMessageText },
+                { "ButtonLeftText", customDialogButtonLeftText },
+                { "ButtonRightText", customDialogButtonRightText },
+                { "Icon", DialogSystemIcon.Information },
+                { "MinimizeWindows", false },
+                { "Language", CultureInfo.CurrentCulture },
+                { "MessageAlignment", DialogMessageAlignment.Left }
+            });
+
+
+            CustomDialogOptions customDialog3Options = new(new Hashtable
+            {
+                { "DialogExpiryDuration", dialogExpiryDuration },
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFF7630C) }, // Accent Color: Orange #F7630C
+                { "AppTitle", appTitle },
+                { "Subtitle", subtitle },
+                { "AppIconImage", appIconImage },
+                { "AppIconDarkImage", appIconDarkImage },
+                { "AppBannerImage", appBannerImage },
+                { "MessageText", customDialogMessageText },
+                { "ButtonRightText", customDialogButtonRightText },
+                { "Icon", DialogSystemIcon.Information },
+                { "MinimizeWindows", false },
+                { "Language", CultureInfo.CurrentCulture },
+                { "MessageAlignment", DialogMessageAlignment.Left }
+            });
+
             ListSelectionDialogOptions listSelectionDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF2AB243) }, // Accent Color: Blue #00D326
-                { "DialogPosition", dialogPosition },
-                { "DialogTopMost", dialogTopMost },
-                { "DialogAllowMove", dialogAllowMove },
-                { "DialogAllowMinimize", dialogAllowMinimize },
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFF600CE) }, // Accent Color: Purple #F600CE
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -257,11 +272,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             InputDialogOptions inputDialogOptions = new(new Hashtable
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFE81123) }, // Accent Color: Red #E81123
-                { "DialogPosition", dialogPosition },
-                { "DialogTopMost", dialogTopMost },
-                { "DialogAllowMove", dialogAllowMove },
-                { "DialogAllowMinimize", dialogAllowMinimize },
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFFFB900) }, // Accent Color: Yellow #FFB900
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -279,11 +290,10 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             Hashtable restartDialogOptions = new()
             {
                 { "DialogExpiryDuration", dialogExpiryDuration },
-                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF9C266F) }, // Accent Color: Purple #E3008C
-                { "DialogPosition", dialogPosition },
-                { "DialogTopMost", dialogTopMost },
-                { "DialogAllowMove", dialogAllowMove },
-                { "DialogAllowMinimize", dialogAllowMinimize },
+                { "FluentAccentColor", ValueTypeConverter.ToInt(0xFFE81123) }, // Accent Color: Red #E81123
+                { "DialogTopMost", true },
+                { "DialogAllowMove", true },
+                { "DialogAllowMinimize", true },
                 { "AppTitle", appTitle },
                 { "Subtitle", subtitle },
                 { "AppIconImage", appIconImage },
@@ -339,6 +349,25 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             // #################################################################################
 
+            // Show Custom2 Dialog
+
+            string custom2Result = DialogManager.ShowCustomDialog(dialogStyle, customDialog2Options);
+
+            if (customResult == customDialogButtonRightText)
+            {
+                Environment.Exit(0);
+            }
+
+            // #################################################################################
+
+            // Show Custom3 Dialog
+
+            string custom3Result = DialogManager.ShowCustomDialog(dialogStyle, customDialog3Options);
+
+            // This dialog only has one button, so we don't need to bother checking the result.
+
+            // #################################################################################
+
             // Show List Selection Dialog
 
             ListSelectionDialogResult listSelectionResult = DialogManager.ShowListSelectionDialog(dialogStyle, listSelectionDialogOptions);
@@ -366,7 +395,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             // #################################################################################
 
             // Show Restart Dialog
-            _ = DialogManager.ShowRestartDialog(dialogStyle, new RestartDialogOptions(deploymentType, restartDialogOptions));
+            _ = DialogManager.ShowRestartDialog(dialogStyle, new RestartDialogOptions(deploymentType restartDialogOptions));
 
             // No need to check the result of the Restart Dialog
         }
