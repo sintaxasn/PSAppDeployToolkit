@@ -395,7 +395,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
             // #################################################################################
 
             // Show Restart Dialog
-            _ = DialogManager.ShowRestartDialog(dialogStyle, new RestartDialogOptions(deploymentType restartDialogOptions));
+            _ = DialogManager.ShowRestartDialog(dialogStyle, new RestartDialogOptions(deploymentType, restartDialogOptions));
 
             // No need to check the result of the Restart Dialog
         }
