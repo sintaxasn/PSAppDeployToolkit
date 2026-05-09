@@ -1,4 +1,4 @@
-﻿<ui:FluenceWindow
+<ui:FluenceWindow
     x:Class="PSADT.UserInterface.Interfaces.Fluent.FluentDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -14,8 +14,6 @@
     x:ClassModifier="internal"
     AutomationProperties.AutomationId="PSAppDeployToolkitDialog"
     AutomationProperties.Name="PSAppDeployToolkit Dialog"
-    BorderThickness="1"
-    CornerStyle="RoundSmall"
     ExtendsContentIntoTitleBar="True"
     FontSize="14"
     FontWeight="Regular"
@@ -69,21 +67,6 @@
                 <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
                 <Setter Property="FontWeight" Value="ExtraBold" />
             </Style>
-
-            <!--
-                Light
-            -->
-            <SolidColorBrush x:Key="adtFluentWindowBackgroundBrush" Color="#A7F0F0F0" />
-            <SolidColorBrush x:Key="adtFluentCardBackgroundBrush" Color="#FDF6F6F6" />
-            <SolidColorBrush x:Key="adtFluentCardPanelFillBrush" Color="#7AEAEAEA" />
-
-            <!--
-            Dark
-            <SolidColorBrush x:Key="adtFluentWindowBackgroundBrush" Color="#9A292929" />
-            <SolidColorBrush x:Key="adtFluentCardBackgroundBrush" Color="#FD363636" />
-            <SolidColorBrush x:Key="adtFluentCardPanelFillBrush" Color="#7A484848" />
-            -->
-
 
         </ResourceDictionary>
     </ui:FluenceWindow.Resources>
@@ -252,7 +235,6 @@
                         ui:TextBlockExtensions.Typography="Body"
                         AutomationProperties.Name="Message Text"
                         Text="This is the dialog primary message. This will be replaced when the application dialog is displayed."
-                        TextAlignment="Left"
                         TextWrapping="Wrap"
                         />
 
@@ -262,7 +244,6 @@
                         ui:TextBlockExtensions.Typography="Body"
                         AutomationProperties.Name="Additional Message Text"
                         Text="This is a custom message that can be added to the CloseApps and Restart dialogs directly via PowerShell."
-                        TextAlignment="Left"
                         TextWrapping="Wrap"
                         />
 
@@ -350,7 +331,6 @@
                                             FontSize="12"
                                             Foreground="{DynamicResource AccentFillColorTertiaryBrush}"
                                             Text="{Binding Name, Mode=OneWay}"
-                                            TextAlignment="Left"
                                             TextTrimming="CharacterEllipsis"
                                             TextWrapping="Wrap"
                                             />
@@ -368,7 +348,7 @@
                     Orientation="Vertical"
                     >
 
-                    <Separator
+                    <ui:Separator
                         x:Name="ProgressPanelSeparator"
                         Background="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
                         />
@@ -379,7 +359,6 @@
                         ui:TextBlockExtensions.Typography="Body"
                         AutomationProperties.Name="Progress Detail Text"
                         Text="Secondary Progress Message for more details ..."
-                        TextAlignment="Left"
                         TextWrapping="Wrap"
                         />
 
@@ -607,7 +586,6 @@
                     Margin="0,0,4,0"
                     HorizontalAlignment="Stretch"
                     ui:TextBlockExtensions.Typography="Body"
-                    Appearance="Accent"
                     AutomationProperties.Name="Left Action Button"
                     Click="ButtonLeft_Click"
                     Content="Left Action Button"
