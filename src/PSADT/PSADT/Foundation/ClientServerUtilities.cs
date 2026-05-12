@@ -153,14 +153,16 @@ namespace PSADT.Foundation
         /// <remarks>This method updates a specific registry key to signal that a no-wait operation has
         /// completed successfully. It is intended for internal use and should not be called directly by external
         /// code.</remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetOperationSuccessFlag()
         {
+<<<<<<< HEAD
             if (!CallerIsClientServerClient)
+=======
+            if (CallerIsClientServerExecutable)
+>>>>>>> 308e36ea0 (`ClientServerUtilities.SetOperationSuccessFlag()` shouldn't be inlined.)
             {
-                return;
+                Registry.SetValue(UserRegistryPath, OperationSuccessRegistryProperty, 1, RegistryValueKind.DWord);
             }
-            Registry.SetValue(UserRegistryPath, OperationSuccessRegistryProperty, 1, RegistryValueKind.DWord);
         }
 
         /// <summary>
