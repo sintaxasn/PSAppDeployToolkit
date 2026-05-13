@@ -23,9 +23,17 @@ using PSADT.Foundation;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
 using PSADT.Utilities;
+<<<<<<< HEAD
 using Fluence.Wpf;
 using Fluence.Wpf.Controls;
 using Button = Fluence.Wpf.Controls.Button;
+=======
+using PSADT.WindowManagement;
+using Windows.Win32.Foundation;
+using iNKORE.UI.WPF.Modern;
+using iNKORE.UI.WPF.Modern.Controls;
+using iNKORE.UI.WPF.Modern.Controls.Primitives;
+>>>>>>> 8952b00ac (Use `WindowTools.BringWindowToFront()` to try and help make dialogs show on top.)
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
@@ -333,6 +341,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
 
             // Set the NoWait success flag as the caller may be waiting for it.
             ClientServerUtilities.SetOperationSuccessFlag();
+            try
+            {
+                WindowTools.BringWindowToFront((HWND)new WindowInteropHelper(this).Handle);
+            }
+            catch
+            {
+                return;
+                throw;
+            }
         }
 
         /// <summary>
