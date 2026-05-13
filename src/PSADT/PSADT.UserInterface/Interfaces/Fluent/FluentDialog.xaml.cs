@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -23,9 +23,11 @@ using PSADT.Foundation;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
 using PSADT.Utilities;
-using Fluence.Wpf;
-using Fluence.Wpf.Controls;
-using Button = Fluence.Wpf.Controls.Button;
+using PSADT.WindowManagement;
+using Windows.Win32.Foundation;
+using iNKORE.UI.WPF.Modern;
+using iNKORE.UI.WPF.Modern.Controls;
+using iNKORE.UI.WPF.Modern.Controls.Primitives;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
@@ -333,6 +335,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
 
             // Set the NoWait success flag as the caller may be waiting for it.
             ClientServerUtilities.SetOperationSuccessFlag();
+            try
+            {
+                WindowTools.BringWindowToFront((HWND)new WindowInteropHelper(this).Handle);
+            }
+            catch
+            {
+                return;
+                throw;
+            }
         }
 
         /// <summary>
