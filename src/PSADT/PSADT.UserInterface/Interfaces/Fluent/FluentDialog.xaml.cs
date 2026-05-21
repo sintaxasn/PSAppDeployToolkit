@@ -23,11 +23,11 @@ using PSADT.Foundation;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.Utilities;
 using PSADT.Utilities;
-using PSADT.WindowManagement;
-using Windows.Win32.Foundation;
 using Fluence.Wpf;
 using Fluence.Wpf.Controls;
 using Button = Fluence.Wpf.Controls.Button;
+using PSADT.WindowManagement;
+using Windows.Win32.Foundation;
 
 namespace PSADT.UserInterface.Interfaces.Fluent
 {
@@ -75,10 +75,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
 
             // Apply ADT Specific Brush colors depending on the current theme
             bool isDark = ApplicationThemeManager.IsSystemInDarkMode;
-
-            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0xB3, 0x0A, 0x0A, 0x0A) : Color.FromArgb(0xB3, 0xF3, 0xF3, 0xF3));
-            SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x2b, 0x2b, 0x2b) : Color.FromArgb(0xFD, 0xFB, 0xFB, 0xFB));
-            SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7F, 0x5A, 0x5A, 0x5A) : Color.FromArgb(0x7F, 0xFA, 0xFA, 0xFA));
 
             // If the accent color is passed through, update via ThemeManager
             if (options.FluentAccentColor is not null)
@@ -398,7 +394,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private void ThemeManager_ActualThemeChanged(object? sender, ThemeChangedEventArgs e)
         {
             SetDialogIcon();
-            ApplyAdtThemeColors(e.Theme);
         }
 
         /// <summary>
@@ -961,11 +956,14 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Update text color based on remaining time using style application
             if (_countdownRemainingTime.TotalSeconds <= 60)
             {
-                CountdownValueTextBlock.Style = (Style)FindResource("CriticalTextBlockStyle");
+                CountdownValueTextBlock.SetResourceReference(ForegroundProperty, "SystemFillColorCriticalBrush");
+                CountdownValueTextBlock.FontWeight = FontWeights.ExtraBold;
+
             }
             else if (_countdownWarningDuration.HasValue && _countdownRemainingTime <= _countdownWarningDuration.Value)
             {
-                CountdownValueTextBlock.Style = (Style)FindResource("CautionTextBlockStyle");
+                CountdownValueTextBlock.SetResourceReference(ForegroundProperty, "SystemFillColorCautionBrush");
+                CountdownValueTextBlock.FontWeight = FontWeights.ExtraBold;
             }
         }
 
@@ -1071,27 +1069,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Dialog icon cache for improved performance
         /// </summary>
         private static readonly Dictionary<string, BitmapSource> _dialogIconCache = [];
-
-        /// <summary>
-        /// Updates the ADT-specific background brushes (defined inline in XAML) to match the resolved theme.
-        /// Because the XAML elements reference these brushes via DynamicResource, changing
-        /// <see cref="SolidColorBrush.Color"/> triggers an immediate visual update.
-        /// </summary>
-        private void ApplyAdtThemeColors(ApplicationTheme resolvedTheme)
-        {
-            bool isDark = resolvedTheme != ApplicationTheme.Light;
-
-            SetBrushColor("adtFluentWindowBackgroundBrush", isDark ? Color.FromArgb(0x9A, 0x0C, 0x0C, 0x0C) : Color.FromArgb(0xA7, 0xF0, 0xF0, 0xF0));
-            SetBrushColor("adtFluentCardBackgroundBrush", isDark ? Color.FromArgb(0xFD, 0x36, 0x36, 0x36) : Color.FromArgb(0xFD, 0xF6, 0xF6, 0xF6));
-            SetBrushColor("adtFluentCardPanelFillBrush", isDark ? Color.FromArgb(0x7A, 0x48, 0x48, 0x48) : Color.FromArgb(0x7A, 0xEA, 0xEA, 0xEA));
-        }
-
-        private void SetBrushColor(string key, Color color)
-        {
-            Resources[key] = new SolidColorBrush(color);
-        }
-
-
 
         /// <summary>
         /// Dispose managed resources

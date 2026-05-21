@@ -11,8 +11,11 @@
     <AssemblyDescription>This product provides user interface capabilities to PSAppDeployToolkit.</AssemblyDescription>
     <NoWarn>SYSLIB1045;VSTHRD001</NoWarn>
   </PropertyGroup>
-
   <ItemGroup>
+    <Page Remove="Properties\DesignTimeResources.xaml" />
+  </ItemGroup>
+
+    <ItemGroup>
     <ProjectReference Include="..\..\..\lib\Fluence.Wpf\Fluence.Wpf\Fluence.Wpf.csproj" />
     <ProjectReference Include="..\PSADT\PSADT.csproj" />
     <ProjectReference Include="..\PSAppDeployToolkit\PSAppDeployToolkit.csproj" />
@@ -61,4 +64,12 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.8" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Properties\DesignTimeResources.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
+    </Page>
+  </ItemGroup>
+
 </Project>
