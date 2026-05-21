@@ -1,19 +1,7 @@
-{
-  "enabledPlugins": {
-    "microsoft-docs@claude-plugins-official": true,
-    "wpf-dev-pack@dotnet-claude-plugins": true
-  },
+﻿{
   "permissions": {
     "allow": [
-      "mcp__microsoft-learn__*",
-      "mcp__claude_ai_Microsoft_Learn__*",
-      "mcp__HandMirrorMcp__*",
-      "Skill(microsoft-docs:*)",
-      "Skill(wpf-dev-pack:*)",
       "Agent(winui-parity-reviewer)",
-      "Agent(wpf-dev-pack:*)",
-      "Agent(wpf-code-reviewer)",
-      "Agent(wpf-performance-optimizer)"
     ]
   },
   "hooks": {
@@ -29,5 +17,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "microsoft-docs@claude-plugins-official": true
   }
 }

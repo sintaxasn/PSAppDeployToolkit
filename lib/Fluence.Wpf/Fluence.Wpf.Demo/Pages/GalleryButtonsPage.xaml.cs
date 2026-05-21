@@ -26,6 +26,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using System.Globalization;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace Fluence.Wpf.Demo.Pages
@@ -37,31 +39,28 @@ namespace Fluence.Wpf.Demo.Pages
     xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
     xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
     xmlns:ui=""clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"">
-    <WrapPanel>
-        <ui:Button Margin=""0,0,8,8"" Content=""Standard"" />
-        <ui:Button
-            Margin=""0,0,8,8""
-            Appearance=""Accent""
-            Content=""Accent"" />
-        <ui:Button
-            Margin=""0,0,8,8""
-            Appearance=""Subtle""
-            Content=""Subtle"" />
-        <ui:Button
-            Margin=""0,0,8,8""
-            Content=""Standard""
-            IsEnabled=""False"" />
-        <ui:Button
-            Margin=""0,0,8,8""
-            Appearance=""Accent""
-            Content=""Accent""
-            IsEnabled=""False"" />
-        <ui:Button
-            Margin=""0,0,8,8""
-            Appearance=""Subtle""
-            Content=""Subtle""
-            IsEnabled=""False"" />
-    </WrapPanel>
+    <StackPanel>
+        <WrapPanel VerticalAlignment=""Center"">
+            <ui:Button
+                Margin=""0,0,8,8""
+                Content=""Standard""
+                IsEnabled=""{Binding IsChecked, Source={x:Reference ButtonEnableCheckBox}}"" />
+            <ui:Button
+                Margin=""0,0,8,8""
+                Appearance=""Accent""
+                Content=""Accent""
+                IsEnabled=""{Binding IsChecked, Source={x:Reference ButtonEnableCheckBox}}"" />
+            <ui:Button
+                Margin=""0,0,8,8""
+                Appearance=""Subtle""
+                Content=""Subtle""
+                IsEnabled=""{Binding IsChecked, Source={x:Reference ButtonEnableCheckBox}}"" />
+        </WrapPanel>
+        <ui:CheckBox
+            x:Name=""ButtonEnableCheckBox""
+            Content=""Enable buttons""
+            IsChecked=""True"" />
+    </StackPanel>
 </UserControl>
 ";
 
@@ -83,7 +82,7 @@ namespace Fluence.Wpf.Demo.Pages.Buttons
     xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
     xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
     xmlns:ui=""clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"">
-    <WrapPanel>
+    <WrapPanel VerticalAlignment=""Center"">
         <ui:Button Margin=""0,0,8,8"" Content=""Icon Left"">
             <ui:Button.Icon>
                 <ui:FontIcon Glyph=""&#xE774;"" IconFontSize=""14"" />
@@ -127,7 +126,7 @@ namespace Fluence.Wpf.Demo.Pages.Buttons
     xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
     xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
     xmlns:ui=""clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"">
-    <WrapPanel>
+    <WrapPanel VerticalAlignment=""Center"">
         <ui:HyperlinkButton
             Margin=""0,0,16,8""
             Content=""Documentation""
@@ -170,7 +169,7 @@ namespace Fluence.Wpf.Demo.Pages.Buttons
     xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
     xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
     xmlns:ui=""clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"">
-    <WrapPanel>
+    <WrapPanel VerticalAlignment=""Center"">
         <ui:DropDownButton Margin=""0,0,8,8"" Content=""New"">
             <ui:DropDownButton.Flyout>
                 <StackPanel MinWidth=""180"" Margin=""4"">
@@ -236,7 +235,7 @@ namespace Fluence.Wpf.Demo.Pages.Buttons
     xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
     xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
     xmlns:ui=""clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"">
-    <WrapPanel>
+    <WrapPanel VerticalAlignment=""Center"">
         <ui:SplitButton Margin=""0,0,8,8"" Content=""Save"">
             <ui:SplitButton.Flyout>
                 <StackPanel MinWidth=""180"" Margin=""4"">
@@ -307,55 +306,72 @@ namespace Fluence.Wpf.Demo.Pages.Buttons
     xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
     xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
     xmlns:ui=""clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"">
-    <WrapPanel>
-        <ui:ToggleButton
-            Margin=""0,0,8,8""
-            Content=""Bold""
-            IsChecked=""True"" />
-        <ui:ToggleButton
-            Margin=""0,0,8,8""
-            Appearance=""Accent""
-            Content=""Pinned""
-            IsChecked=""True"" />
-        <ui:ToggleButton
-            Margin=""0,0,8,8""
-            Content=""Disabled""
-            IsEnabled=""False"" />
+    <WrapPanel VerticalAlignment=""Center"">
         <ui:RepeatButton
+            x:Name=""RepeatCounterButton""
             Margin=""0,0,8,8""
+            Click=""RepeatCounterButton_Click""
             Content=""Hold to repeat"" />
-        <ui:RepeatButton
-            Margin=""0,0,8,8""
-            Appearance=""Accent""
-            Content=""Accent repeat"" />
+        <TextBlock
+            x:Name=""RepeatButtonCountText""
+            Margin=""0,0,16,8""
+            VerticalAlignment=""Center""
+            Foreground=""{DynamicResource TextFillColorSecondaryBrush}""
+            Text=""Clicks: 0"" />
     </WrapPanel>
 </UserControl>
 ";
 
-        private const string ToggleAndRepeatButtonsCSharpSource = @"using System.Windows.Controls;
+        private const string ToggleAndRepeatButtonsCSharpSource = @"using System.Globalization;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace Fluence.Wpf.Demo.Pages.Buttons
 {
     public partial class ToggleAndRepeatButtons : UserControl
     {
+        private int repeatButtonClickCount;
+
         public ToggleAndRepeatButtons()
         {
             InitializeComponent();
+        }
+
+        private void RepeatCounterButton_Click(object sender, RoutedEventArgs e)
+        {
+            repeatButtonClickCount++;
+            RepeatButtonCountText.Text = string.Format(
+                CultureInfo.CurrentCulture,
+                ""Clicks: {0}"",
+                repeatButtonClickCount);
         }
     }
 }
 ";
 
+        private int _repeatButtonClickCount;
+
         public GalleryButtonsPage()
         {
             InitializeComponent();
 
-            _ = DemoSampleControl.ReplaceSourceLink(ButtonAppearancesSourceLink, ButtonAppearancesXamlSource, ButtonAppearancesCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(ButtonIconsSourceLink, ButtonIconsXamlSource, ButtonIconsCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(HyperlinkButtonsSourceLink, HyperlinkButtonsXamlSource, HyperlinkButtonsCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(DropDownButtonsSourceLink, DropDownButtonsXamlSource, DropDownButtonsCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(SplitButtonsSourceLink, SplitButtonsXamlSource, SplitButtonsCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(ToggleAndRepeatButtonsSourceLink, ToggleAndRepeatButtonsXamlSource, ToggleAndRepeatButtonsCSharpSource);
+            DemoSamplePageWiring.Apply(
+                (DependencyObject)Content,
+                new DemoSampleSource(1, ButtonAppearancesXamlSource, ButtonAppearancesCSharpSource),
+                new DemoSampleSource(2, ButtonIconsXamlSource, ButtonIconsCSharpSource),
+                new DemoSampleSource(3, HyperlinkButtonsXamlSource, HyperlinkButtonsCSharpSource),
+                new DemoSampleSource(4, DropDownButtonsXamlSource, DropDownButtonsCSharpSource),
+                new DemoSampleSource(5, SplitButtonsXamlSource, SplitButtonsCSharpSource),
+                new DemoSampleSource(6, ToggleAndRepeatButtonsXamlSource, ToggleAndRepeatButtonsCSharpSource));
+        }
+
+        private void RepeatCounterButton_Click(object sender, RoutedEventArgs e)
+        {
+            _repeatButtonClickCount++;
+            RepeatButtonCountText.Text = string.Format(
+                CultureInfo.CurrentCulture,
+                "Clicks: {0}",
+                _repeatButtonClickCount);
         }
     }
 }

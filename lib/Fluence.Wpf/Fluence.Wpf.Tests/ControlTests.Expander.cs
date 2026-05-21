@@ -26,11 +26,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Windows.Controls;
 
 namespace Fluence.Wpf.Tests
 {
@@ -56,7 +56,7 @@ namespace Fluence.Wpf.Tests
                 w.Show();
                 DrainDispatcher(w.Dispatcher);
 
-                // RootBorder is the template root — proves Fluence style applied.
+                // RootBorder is the template root - proves Fluence style applied.
                 Border? rootBorder = FindVisualChildByName<Border>(expander, "RootBorder");
                 Assert.IsNotNull(rootBorder, "RootBorder must exist in Expander template (Fluence style applied).");
                 w.Close();

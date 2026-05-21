@@ -19,7 +19,7 @@
     <!--  Windows 11 Fluent - Typography layer  -->
     <!--  Prefer Display typography for large/small optical sizes; fall back when not installed.  -->
 
-    <FontFamily x:Key="FluentFontFamily">Segoe UI Variable, Segoe UI</FontFamily>
+    <FontFamily x:Key="FluentFontFamily">Segoe UI Variable Display, Segoe UI Variable, Segoe UI</FontFamily>
 
     <!--
         Implicit default TextBlock style.
@@ -34,28 +34,28 @@
         <Setter Property="FontWeight" Value="Regular" />
     </Style>
 
-    <!--  Caption - 12 / Regular / 16  -->
+    <!--  Caption - 12 / Regular  -->
     <Style
         x:Key="CaptionTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
         TargetType="TextBlock">
         <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Regular" />
         <Setter Property="LineHeight" Value="16" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
-    <!--  Body - 14 / Regular / 20  -->
+    <!--  Body - 14 / Regular  -->
     <Style
         x:Key="BodyTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
         TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="Regular" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
-    <!--  Body Strong - 14 / SemiBold / 20  -->
+    <!--  Body Strong - 14 / SemiBold  -->
     <Style
         x:Key="BodyStrongTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
@@ -63,21 +63,20 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
-    <!--  Body Large - 18 / Regular / 24  -->
+    <!--  Body Large - 18 / Regular  -->
     <Style
         x:Key="BodyLargeTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
         TargetType="TextBlock">
         <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="Regular" />
         <Setter Property="LineHeight" Value="24" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
-    <!--  Subtitle - 20 / SemiBold / 28  -->
+    <!--  Subtitle - 20 / SemiBold  -->
     <Style
         x:Key="SubtitleTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
@@ -86,10 +85,9 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LineHeight" Value="28" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
-    <!--  Title - 28 / SemiBold / 36  -->
+    <!--  Title - 28 / SemiBold  -->
     <Style
         x:Key="TitleTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
@@ -98,10 +96,9 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LineHeight" Value="36" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
-    <!--  Title Large - 40 / SemiBold / 52  -->
+    <!--  Title Large - 40 / SemiBold  -->
     <Style
         x:Key="TitleLargeTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
@@ -110,10 +107,9 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LineHeight" Value="52" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
-    <!--  Display - 68 / SemiBold / 92  -->
+    <!--  Display - 68 / SemiBold  -->
     <Style
         x:Key="DisplayTextBlockStyle"
         BasedOn="{StaticResource {x:Type TextBlock}}"
@@ -122,7 +118,6 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LineHeight" Value="92" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
     </Style>
 
 </ResourceDictionary>

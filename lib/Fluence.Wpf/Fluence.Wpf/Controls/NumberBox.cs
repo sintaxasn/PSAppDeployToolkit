@@ -26,13 +26,13 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Automation;
 using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Fluence.Wpf.Automation;
 
 // IMPORTANT: every reference to RepeatButton / TextBox in this file MUST be
 // fully qualified (System.Windows.Controls.Primitives.RepeatButton,
@@ -42,7 +42,7 @@ using Fluence.Wpf.Automation;
 // Fluence subclass. The default NumberBox template instantiates the stock
 // WPF primitives, so `as RepeatButton` against the Fluence subclass silently
 // returns null and the spin-button Click handlers never get attached.
-// Using aliases do not work here either — C# enforces CS0576 when an alias
+// Using aliases do not work here either - C# enforces CS0576 when an alias
 // collides with a namespace member, so fully-qualified names are the only
 // option.
 namespace Fluence.Wpf.Controls

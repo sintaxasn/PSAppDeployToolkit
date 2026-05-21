@@ -26,6 +26,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Controls;
 using System;
 using System.Diagnostics;
 using System.Windows;
@@ -33,7 +34,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using Fluence.Wpf.Controls;
 
 namespace Fluence.Wpf.Demo.Pages
 {
@@ -85,7 +85,7 @@ namespace Fluence.Wpf.Demo.Pages
 
         private void UpdateBrandBanner(ApplicationTheme theme)
         {
-            Uri bannerUri = theme == ApplicationTheme.Light ? LightBannerUri : DarkBannerUri;
+            Uri bannerUri = theme is ApplicationTheme.Light or ApplicationTheme.HighContrast ? LightBannerUri : DarkBannerUri;
             if (Equals(_currentBannerUri, bannerUri))
             {
                 return;
@@ -99,10 +99,7 @@ namespace Fluence.Wpf.Demo.Pages
         private static bool IsCurrentBackgroundDark()
         {
             Application app = Application.Current;
-            SolidColorBrush? brush = app is not null
-                ? app.TryFindResource("SolidBackgroundFillColorBaseBrush") as SolidColorBrush
-                : null;
-            if (brush is null)
+            if (app?.TryFindResource("SolidBackgroundFillColorBaseBrush") is not SolidColorBrush brush)
             {
                 return ApplicationThemeManager.CurrentTheme != ApplicationTheme.Light;
             }

@@ -26,6 +26,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -34,11 +35,12 @@ using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Shell;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Fluent = Fluence.Wpf.Controls;
 using WpfButton = System.Windows.Controls.Button;
+using WpfTextBlock = System.Windows.Controls.TextBlock;
 
 namespace Fluence.Wpf.Tests
 {
@@ -83,6 +85,42 @@ namespace Fluence.Wpf.Tests
                         "PART_BackButton must opt into WindowChrome hit testing.");
                     Assert.IsTrue(WindowChrome.GetIsHitTestVisibleInChrome(paneToggleButton),
                         "PART_PaneToggleButton must opt into WindowChrome hit testing.");
+                });
+        }
+
+        [TestMethod]
+        public void TitleBar_BackButton_UsesCompactSlot()
+        {
+            RunWithTitleBar(
+                delegate
+                {
+                    return new Fluent.TitleBar
+                    {
+                        Title = "Fluence",
+                        IsBackButtonVisible = true,
+                        IsPaneToggleButtonVisible = true
+                    };
+                },
+                titleBar =>
+                {
+                    WpfButton backButton = GetTemplateButton(titleBar, "PART_BackButton");
+                    WpfButton paneToggleButton = GetTemplateButton(titleBar, "PART_PaneToggleButton");
+
+                    Assert.AreEqual(36.0, backButton.ActualWidth, 0.5,
+                        "The title-bar back button should use a smaller slot than the pane toggle.");
+                    Assert.AreEqual(32.0, backButton.ActualHeight, 0.5,
+                        "The title-bar back button should use a smaller height than the pane toggle.");
+                    Assert.AreEqual(42.0, paneToggleButton.ActualWidth, 0.5,
+                        "The title-bar pane toggle should keep the compact title-bar glyph slot.");
+                    Assert.AreEqual(36.0, paneToggleButton.ActualHeight, 0.5,
+                        "The title-bar pane toggle should keep the compact title-bar glyph height.");
+
+                    WpfTextBlock? backGlyph = FindVisualChild<WpfTextBlock>(backButton);
+                    Assert.IsNotNull(backGlyph, "Back button should render a glyph text block.");
+                    Assert.AreEqual(16.0, backGlyph.ActualWidth, 0.5,
+                        "Back glyph should occupy a 16px visual box.");
+                    Assert.AreEqual(16.0, backGlyph.ActualHeight, 0.5,
+                        "Back glyph should occupy a 16px visual box.");
                 });
         }
 
@@ -166,6 +204,40 @@ namespace Fluence.Wpf.Tests
                 });
         }
 
+        [TestMethod]
+        public void TitleBar_Unloaded_UnsubscribesCommandCanExecuteHandlers()
+        {
+            RecordingCommand backCommand = new(true);
+            RecordingCommand paneToggleCommand = new(true);
+
+            RunWithTitleBar(
+                delegate
+                {
+                    return new Fluent.TitleBar
+                    {
+                        IsBackButtonVisible = true,
+                        IsPaneToggleButtonVisible = true,
+                        BackCommand = backCommand,
+                        PaneToggleCommand = paneToggleCommand
+                    };
+                },
+                titleBar =>
+                {
+                    Assert.AreEqual(1, backCommand.CanExecuteSubscriptionCount,
+                        "TitleBar should subscribe to BackCommand.CanExecuteChanged once.");
+                    Assert.AreEqual(1, paneToggleCommand.CanExecuteSubscriptionCount,
+                        "TitleBar should subscribe to PaneToggleCommand.CanExecuteChanged once.");
+
+                    titleBar.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent, titleBar));
+                    DrainDispatcher(titleBar.Dispatcher);
+
+                    Assert.AreEqual(1, backCommand.CanExecuteUnsubscriptionCount,
+                        "TitleBar must unsubscribe from BackCommand.CanExecuteChanged when unloaded.");
+                    Assert.AreEqual(1, paneToggleCommand.CanExecuteUnsubscriptionCount,
+                        "TitleBar must unsubscribe from PaneToggleCommand.CanExecuteChanged when unloaded.");
+                });
+        }
+
         private static void RunWithTitleBar(Func<Fluent.TitleBar> titleBarFactory, Action<Fluent.TitleBar> testBody)
         {
             RunOnFreshStaThread(delegate
@@ -218,6 +290,28 @@ namespace Fluence.Wpf.Tests
             WpfButton? button = titleBar.Template.FindName(partName, titleBar) as WpfButton;
             Assert.IsNotNull(button, partName + " must exist in the TitleBar template.");
             return button;
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject parent)
+            where T : DependencyObject
+        {
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild)
+                {
+                    return typedChild;
+                }
+
+                T? descendant = FindVisualChild<T>(child);
+                if (descendant is not null)
+                {
+                    return descendant;
+                }
+            }
+
+            return null;
         }
 
         private static void InvokeButton(WpfButton button)
@@ -301,16 +395,19 @@ namespace Fluence.Wpf.Tests
                 _canExecute = canExecute;
             }
 
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S108:Nested blocks of code should not be left empty", Justification = "This is just test code.")]
             public event EventHandler? CanExecuteChanged
             {
-                add { }
-                remove { }
+                add => CanExecuteSubscriptionCount += value is null ? 0 : 1;
+                remove => CanExecuteUnsubscriptionCount += value is null ? 0 : 1;
             }
 
             internal int ExecuteCount { get; private set; }
 
             internal object? LastParameter { get; private set; }
+
+            internal int CanExecuteSubscriptionCount { get; private set; }
+
+            internal int CanExecuteUnsubscriptionCount { get; private set; }
 
             public bool CanExecute(object? parameter)
             {

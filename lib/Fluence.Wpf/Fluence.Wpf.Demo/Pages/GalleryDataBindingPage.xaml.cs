@@ -50,8 +50,6 @@ namespace Fluence.Wpf.Demo.Pages
             <RowDefinition Height=""Auto"" />
             <RowDefinition Height=""8"" />
             <RowDefinition Height=""220"" />
-            <RowDefinition Height=""8"" />
-            <RowDefinition Height=""Auto"" />
         </Grid.RowDefinitions>
 
         <Grid>
@@ -80,6 +78,8 @@ namespace Fluence.Wpf.Demo.Pages
         <ui:ListView
             x:Name=""BoundListView""
             Grid.Row=""2""
+            BorderBrush=""{DynamicResource CardStrokeColorDefaultBrush}""
+            BorderThickness=""1""
             SelectionMode=""Single"">
             <ui:ListView.ItemTemplate>
                 <DataTemplate>
@@ -103,9 +103,9 @@ namespace Fluence.Wpf.Demo.Pages
                                 Foreground=""{DynamicResource TextFillColorPrimaryBrush}""
                                 Text=""{Binding Name}"" />
                             <TextBlock
-                                Margin=""8,0,0,0""
+                                Margin=""{DynamicResource DemoDataBindingSecondaryTextMargin}""
                                 VerticalAlignment=""Center""
-                                FontSize=""12""
+                                Style=""{StaticResource CaptionTextBlockStyle}""
                                 Foreground=""{DynamicResource TextFillColorTertiaryBrush}""
                                 Text=""{Binding AddedAt}"" />
                         </StackPanel>
@@ -113,18 +113,13 @@ namespace Fluence.Wpf.Demo.Pages
                 </DataTemplate>
             </ui:ListView.ItemTemplate>
         </ui:ListView>
-
-        <TextBlock
-            x:Name=""ItemCountLabel""
-            Grid.Row=""4""
-            Foreground=""{DynamicResource TextFillColorSecondaryBrush}""
-            Text=""0 items"" />
     </Grid>
 </UserControl>
 ";
 
         private const string ObservableCollectionListViewCSharpSource = @"using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -143,7 +138,6 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
             AddDemoItem(""Fluence.Wpf"");
             AddDemoItem(""WinUI 3 parity controls"");
             AddDemoItem(""net472 + net10.0-windows"");
-            UpdateCount();
         }
 
         private void AddItem_Click(object sender, RoutedEventArgs e)
@@ -153,8 +147,8 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
                 return;
             }
 
-            var text = (NewItemBox.Text ?? string.Empty).Trim();
-            if (string.IsNullOrEmpty(text))
+            string text = (NewItemBox.Text ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(text))
             {
                 return;
             }
@@ -162,7 +156,6 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
             AddDemoItem(text);
             NewItemBox.Text = string.Empty;
             NewItemBox.Focus();
-            UpdateCount();
         }
 
         private void NewItemBox_KeyDown(object sender, KeyEventArgs e)
@@ -176,10 +169,9 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
 
         private void RemoveItem_Click(object sender, RoutedEventArgs e)
         {
-            var selected = BoundListView.SelectedItem as DataBindingSampleItem;
-            if (selected is not null)
+            if (BoundListView.SelectedItem is DataBindingSampleItem selected)
             {
-                BoundListView.AnimateRemove(selected, UpdateCount);
+                BoundListView.AnimateRemove(selected, null);
             }
         }
 
@@ -188,21 +180,17 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
             _items.Add(new DataBindingSampleItem
             {
                 Name = name,
-                AddedAt = DateTime.Now.ToString(""HH:mm:ss"")
+                AddedAt = DateTime.Now.ToString(""HH:mm:ss"", CultureInfo.CurrentCulture)
             });
         }
 
-        private void UpdateCount()
-        {
-            ItemCountLabel.Text = string.Format(""{0} item{1}"", _items.Count, _items.Count == 1 ? """" : ""s"");
-        }
     }
 
     public sealed class DataBindingSampleItem
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        public string AddedAt { get; set; }
+        public string AddedAt { get; set; } = string.Empty;
     }
 }
 ";
@@ -235,6 +223,8 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
         <ui:ListView
             x:Name=""SelectionModeListView""
             Height=""200""
+            BorderBrush=""{DynamicResource CardStrokeColorDefaultBrush}""
+            BorderThickness=""1""
             SelectionChanged=""SelectionModeListView_SelectionChanged""
             SelectionMode=""Single"">
             <ListViewItem Content=""Alpha"" />
@@ -304,7 +294,7 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
                 return;
             }
 
-            var count = SelectionModeListView.SelectedItems.Count;
+            int count = SelectionModeListView.SelectedItems.Count;
             if (count == 0)
             {
                 SelectionCountLabel.Text = ""Selected: none"";
@@ -327,6 +317,8 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
         <ui:ListView
             x:Name=""DataTemplateListView""
             Height=""180""
+            BorderBrush=""{DynamicResource CardStrokeColorDefaultBrush}""
+            BorderThickness=""1""
             SelectionMode=""Single"">
             <ui:ListView.ItemTemplate>
                 <DataTemplate>
@@ -391,9 +383,9 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
 
     public sealed class DataBindingTemplateItem
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        public string AddedAt { get; set; }
+        public string AddedAt { get; set; } = string.Empty;
     }
 }
 ";
@@ -408,9 +400,11 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
         {
             InitializeComponent();
 
-            _ = DemoSampleControl.ReplaceSourceLink(ObservableCollectionListViewSourceLink, ObservableCollectionListViewXamlSource, ObservableCollectionListViewCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(ListViewSelectionModeSourceLink, ListViewSelectionModeXamlSource, ListViewSelectionModeCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(DataTemplateRowSourceLink, DataTemplateRowXamlSource, DataTemplateRowCSharpSource);
+            DemoSamplePageWiring.Apply(
+                (DependencyObject)Content,
+                new DemoSampleSource(1, ObservableCollectionListViewXamlSource, ObservableCollectionListViewCSharpSource),
+                new DemoSampleSource(2, ListViewSelectionModeXamlSource, ListViewSelectionModeCSharpSource),
+                new DemoSampleSource(3, DataTemplateRowXamlSource, DataTemplateRowCSharpSource));
 
             Loaded += OnLoaded;
         }
@@ -428,7 +422,6 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
             AddDataTemplateItem("Release notes");
             AddDataTemplateItem("Design tokens");
             AddDataTemplateItem("Control states");
-            UpdateCount();
         }
 
         private void AddItem_Click(object sender, RoutedEventArgs e)
@@ -447,7 +440,6 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
             AddDemoItem(text);
             NewItemBox.Text = string.Empty;
             _ = NewItemBox.Focus();
-            UpdateCount();
         }
 
         private void NewItemBox_KeyDown(object sender, KeyEventArgs e)
@@ -468,7 +460,7 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
 
             if (BoundListView.SelectedItem is DemoItem selected)
             {
-                BoundListView.AnimateRemove(selected, UpdateCount);
+                BoundListView.AnimateRemove(selected, null);
             }
         }
 
@@ -488,11 +480,6 @@ namespace Fluence.Wpf.Demo.Pages.DataBinding
                 Name = name,
                 AddedAt = DateTime.Now.ToString("HH:mm:ss", CultureInfo.CurrentCulture)
             });
-        }
-
-        private void UpdateCount()
-        {
-            _ = (ItemCountLabel?.Text = string.Format(CultureInfo.CurrentCulture, "{0} item{1}", _items.Count, _items.Count == 1 ? "" : "s"));
         }
 
         private void SelectionMode_Changed(object sender, RoutedEventArgs e)

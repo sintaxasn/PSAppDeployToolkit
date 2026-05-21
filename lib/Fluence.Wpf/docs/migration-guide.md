@@ -1,49 +1,53 @@
-﻿# Migration guide
+---
+title: Migration guide
+linkTitle: Migration guide
+description: Move an existing WPF application from standard WPF controls or another Fluent-style library to Fluence.Wpf.
+weight: 40
+---
 
-This guide is **generic**: it describes moving from any older Fluent-style WPF theming stack to Fluence.Wpf **without** naming specific third-party libraries.
+Use this guide when moving an existing WPF app from stock controls or another Fluent-style library to `Fluence.Wpf`.
 
-## 1. Resource keys
+## Scope
 
-- Map consumer `ResourceDictionary` keys to **WinUI 3 canonical** names used by this library (for example `TextFillColorPrimaryBrush`, `AccentFillColorDefaultBrush`, `CardStrokeColorDefaultBrush`, `ControlStrongStrokeColorDefaultBrush`).
-- Prefer removing duplicate brush definitions and binding to Fluence keys via `DynamicResource`.
-- When a brush was previously the subtle `ControlStrokeColorDefaultBrush` on ring-style controls (radio / check box), switch to `ControlStrongStrokeColorDefaultBrush` to match the 0x72 alpha visibility used by WinUI 3.
+`Fluence.Wpf` supports WPF applications on .NET Framework 4.7.2 and .NET 10 for Windows. It mirrors the Windows 11 Fluent / WinUI 3 visual language while staying in WPF primitives. It does not require the Windows App SDK.
 
-## 2. Static vs dynamic
+## Basic Steps
 
-- **Problem**: `StaticResource` to a brush that lives in the theme slot (or any accent / high-contrast-tracking brush) will **not** update when the theme changes.
-- **Fix**: use `DynamicResource` for any brush, color, or margin that must track theme, accent, or high contrast. Reserve `StaticResource` for immutable assets (icon glyphs, fixed margins, static paths).
+1. Reference `Fluence.Wpf/Fluence.Wpf.csproj` or a local `Fluence.Wpf` package.
+2. Add the XML namespace:
 
-## 3. Merge order
+    ```xml
+    xmlns:fluence="http://schemas.fluencewpf.com"
+    ```
 
-- Fluence expects a **single** swappable theme dictionary at slot `[0]`; do not stack multiple full theme dictionaries.
-- After calling `ApplicationThemeManager.Apply`, avoid manually clearing `MergedDictionaries` unless you re-run the documented initialization sequence (see [theming.md](theming.md)).
-- If you previously held brushes in `App.xaml`, move them into your application resources under a dedicated merged dictionary *after* the Fluence slots so they can reference Fluence color keys with `DynamicResource`.
+3. Initialize resources before showing the first window:
 
-## 4. Window and backdrop
+    ```csharp
+    Fluence.Wpf.ApplicationThemeManager.Apply(
+        Fluence.Wpf.ApplicationTheme.Auto,
+        Fluence.Wpf.BackdropType.Mica,
+        updateAccent: true);
+    Fluence.Wpf.ApplicationAccentColorManager.ApplySystemAccent();
+    ```
 
-- If you used custom chrome or unofficial backdrop wrappers, compare behavior with `FluenceWindow` (`Backdrop`, caption visibility, rounded corners, `ExtendsContentIntoTitleBar`).
-- `FluenceWindow` exposes a `TitleBar` content slot - migrate any search boxes, breadcrumbs, or workspace pickers you previously crammed into a custom header into this slot.
-- Test **High Contrast** and **accent** changes with `SystemThemeWatcher` enabled; if your old shell relied on `SystemParameters` poll-based hooks, retire them and subscribe to `ApplicationThemeManager.Changed` instead.
+4. Replace shell windows with `fluence:FluenceWindow` where you need Fluent caption buttons, DWM backdrop, rounded corners, or title-bar content.
+5. Replace controls incrementally. Start with leaf controls such as `Button`, `TextBox`, `ComboBox`, `ListView`, `InfoBar`, and `ProgressBar`, then move larger shell surfaces such as `NavigationView` and `TabView`.
 
-## 5. NavigationView layout
+## Resource Rules
 
-- The default `PaneDisplayMode` is **`Left`**. If you previously pinned `LeftCompact` to work around indicator gaps, you can drop that override - both templates now share a single animated `PART_SelectionIndicator` and the same content-region border.
-- The content region draws a 1 px top/left `CardStrokeColorDefault` border with `CornerRadius="8,0,0,0"`. If your consumer styles painted their own outer frame, remove that frame so the Fluence border is visible.
-- Back button and pane toggle live in a 48 px rail on the left; custom pane headers / footers go through `PaneHeader`, `PaneFooter`, and `Header` as before.
+- Use `DynamicResource` for Fluence brushes, colors, typography, corner radii, and theme-bound values.
+- Do not manually merge `Themes/Generic.xaml` when using `ApplicationThemeManager.Apply`; the manager owns the fixed resource dictionary slots.
+- Consume brush resources such as `TextFillColorPrimaryBrush` and `ControlFillColorDefaultBrush`, not raw color resources, from control templates and application XAML.
 
-## 6. Clickable cards
+## Title bar and window controls
 
-- `Card.IsClickable` / `Card.Click` replaces pattern-driven "wrap card in a transparent button" workarounds. Migrate those to `<fluence:Card IsClickable="True" Click="..." />` to get `IsPressed` styling and keyboard accessibility semantics that match WinUI.
+`FluenceWindow` owns DWM and caption-button behavior. Use its public properties such as `SystemBackdropType`, `CornerStyle`, `ExtendsContentIntoTitleBar`, `TitleBar`, and caption button visibility properties. Internal helpers such as `CaptionButtonChrome` and `WindowPolicy` are implementation details and should not be referenced by applications.
 
-## 7. Control mapping
+## Verification
 
-- Many controls subclass standard WPF types with a new `DefaultStyleKey`; swap XML prefixes from your old assembly to `Fluence.Wpf.Controls` (or use the `http://schemas.fluencewpf.com` URI).
-- Where APIs differ (attached properties, corner radius, flyouts), align to Fluence's surface as shown in **Fluence.Wpf.Demo**.
+After migrating a page or shell surface, run the gallery and exercise Light, Dark, High Contrast, accent changes, and the target backdrop mode. For source builds, run:
 
-## 8. Validation checklist
-
-- [ ] No `StaticResource` on keys that must track theme, accent, or high contrast.
-- [ ] `ApplicationThemeManager.Apply` runs at startup; accent manager initialized.
-- [ ] `SystemThemeWatcher.Watch(MainWindow)` registered if you want live OS-theme reactions.
-- [ ] Visual pass: Light, Dark, High Contrast, accent change, Mica / Acrylic / Tabbed backdrops.
-- [ ] `dotnet test` on `net472` and `net10.0-windows` if you mirror the repo matrix.
+```powershell
+dotnet build Fluence.Wpf.sln -c Debug
+dotnet test Fluence.Wpf.Tests/Fluence.Wpf.Tests.csproj -c Debug
+```

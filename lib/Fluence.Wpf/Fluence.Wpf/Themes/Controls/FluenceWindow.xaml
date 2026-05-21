@@ -59,7 +59,7 @@
         </Setter>
     </Style>
 
-    <!--  Close button style — hover/pressed colors driven by caption-specific tokens.  -->
+    <!--  Close button style - hover/pressed colors driven by caption-specific tokens.  -->
     <Style x:Key="WindowCloseButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="Focusable" Value="False" />
@@ -179,7 +179,7 @@
                                     Grid.Column="1"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Center"
-                                    controls:TextBlockExtensions.Typography="Caption"
+                                    Style="{DynamicResource CaptionTextBlockStyle}"
                                     Foreground="{TemplateBinding Foreground}"
                                     Text="{TemplateBinding Title}"
                                     />
@@ -307,6 +307,13 @@
                             <Setter TargetName="TitleText" Property="Visibility" Value="Hidden" />
                         </Trigger>
 
+                        <DataTrigger Binding="{Binding TitleBar, RelativeSource={RelativeSource Self}, Converter={x:Static controls:FluenceWindow.IsNotNullConverter}}" Value="True">
+                            <Setter TargetName="WindowIcon" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="TitleText" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="TitleBarContent" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="TitleBarContent" Property="Grid.ColumnSpan" Value="4" />
+                        </DataTrigger>
+
                         <!--  Inactive window: dim title text  -->
                         <Trigger Property="IsActive" Value="False">
                             <Setter TargetName="TitleText" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
@@ -314,7 +321,7 @@
 
                         <!--
                             ExtendsContentIntoTitleBar: content fills entire window, title bar overlays.
-                            Hide WindowIcon and TitleText — the app is responsible for branding in its own TitleBar content.
+                            Hide WindowIcon and TitleText - the app is responsible for branding in its own TitleBar content.
                         -->
                         <Trigger Property="ExtendsContentIntoTitleBar" Value="True">
                             <Setter TargetName="ContentArea" Property="Grid.Row" Value="0" />

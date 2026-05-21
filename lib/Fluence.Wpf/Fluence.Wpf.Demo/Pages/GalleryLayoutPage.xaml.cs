@@ -32,7 +32,8 @@ namespace Fluence.Wpf.Demo.Pages
 {
     public partial class GalleryLayoutPage : UserControl
     {
-        private const string LayoutXamlSource = @"<ui:Border
+        private const string BorderStackPanelXamlSource = @"<!-- Intentionally partial layout snippet for a page that already declares the Fluence xmlns. -->
+<ui:Border
     Padding=""14""
     Background=""{DynamicResource CardBackgroundFillColorSecondaryBrush}""
     BorderBrush=""{DynamicResource CardStrokeColorDefaultBrush}""
@@ -41,26 +42,60 @@ namespace Fluence.Wpf.Demo.Pages
     <ui:StackPanel Spacing=""10"">
         <TextBlock Style=""{StaticResource BodyStrongTextBlockStyle}""
                    Text=""Settings group"" />
+        <TextBlock Text=""StackPanel spacing keeps rows readable while Border frames the group.""
+                   TextWrapping=""Wrap"" />
         <ui:Separator />
+        <TextBlock Text=""Separator divides related rows."" />
+    </ui:StackPanel>
+</ui:Border>";
+
+        private const string DockPanelXamlSource = @"<!-- Intentionally partial layout snippet for a page that already declares the Fluence xmlns. -->
+<DockPanel LastChildFill=""True"">
+    <ui:Button DockPanel.Dock=""Right""
+               Appearance=""Accent""
+               Content=""Apply"" />
+    <TextBlock VerticalAlignment=""Center""
+               Text=""DockPanel keeps the command aligned to the edge."" />
+</DockPanel>";
+
+        private const string ExpanderXamlSource = @"<!-- Intentionally partial layout snippet for a page that already declares the Fluence xmlns. -->
+<ui:Expander
+    x:Name=""AdvancedOptionsExpander""
+    Header=""Advanced options"">
+    <TextBlock Text=""Expander shows secondary settings only when useful.""
+               Margin=""{DynamicResource DemoLargeTopGapMargin}""
+               TextWrapping=""Wrap"" />
+</ui:Expander>";
+
+        private const string DockPanelExpanderXamlSource = @"<!-- Intentionally partial layout snippet for a page that already declares the Fluence xmlns. -->
+<ui:Expander x:Name=""DockPanelOptionsExpander"">
+    <ui:Expander.Header>
         <DockPanel LastChildFill=""True"">
             <ui:Button DockPanel.Dock=""Right""
-                       Appearance=""Accent""
-                       Content=""Apply"" />
+                       Content=""Edit"" />
             <TextBlock VerticalAlignment=""Center""
-                       Text=""DockPanel keeps the command aligned."" />
+                       Text=""Delivery options"" />
         </DockPanel>
-    </ui:StackPanel>
-</ui:Border>
-
-<ui:Expander Header=""Advanced options"" IsExpanded=""True"">
-    <TextBlock Text=""Expander shows secondary settings only when useful.""
-               TextWrapping=""Wrap"" />
+    </ui:Expander.Header>
+    <DockPanel LastChildFill=""True"">
+        <ui:ToggleSwitch DockPanel.Dock=""Right""
+                         OffContent=""Off""
+                         OnContent=""On"" />
+        <TextBlock VerticalAlignment=""Center""
+                   Text=""Notify me when the package ships.""
+                   TextWrapping=""Wrap"" />
+    </DockPanel>
 </ui:Expander>";
 
         public GalleryLayoutPage()
         {
             InitializeComponent();
-            _ = DemoSampleControl.ReplaceSourceLink(LayoutSourceLink, LayoutXamlSource, string.Empty);
+            DemoSamplePageWiring.Apply(
+                (System.Windows.DependencyObject)Content,
+                new DemoSampleSource(1, BorderStackPanelXamlSource, string.Empty),
+                new DemoSampleSource(2, DockPanelXamlSource, string.Empty),
+                new DemoSampleSource(3, ExpanderXamlSource, string.Empty),
+                new DemoSampleSource(4, DockPanelExpanderXamlSource, string.Empty));
         }
     }
 }

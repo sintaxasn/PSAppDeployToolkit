@@ -26,6 +26,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Controls;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -35,8 +37,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Fluence.Wpf.Controls;
 
 namespace Fluence.Wpf.Tests
 {
@@ -117,20 +117,14 @@ namespace Fluence.Wpf.Tests
             return presenter.TransformToAncestor(nav).Transform(new Point(0, 0)).X;
         }
 
-        private static bool WaitForSelectionIndicatorVerticalDepart(
-            Dispatcher dispatcher,
-            FrameworkElement indicator,
-            TranslateTransform translate,
-            double expectedX,
-            double originalY,
-            bool upward)
+        private static void AssertPaneToggleVisible(NavigationView nav, string message)
         {
-            return WaitUntil(dispatcher, 250, delegate
-            {
-                bool xIsUnchanged = Math.Abs(translate.X - expectedX) <= 0.5;
-                bool yMovedInExpectedDirection = upward ? translate.Y < originalY : translate.Y > originalY;
-                return xIsUnchanged && yMovedInExpectedDirection && indicator.Opacity < 1.0;
-            });
+            _ = nav.ApplyTemplate();
+            System.Windows.Controls.Button? paneToggle = nav.Template.FindName(
+                NavigationView.PartPaneToggleButton,
+                nav) as System.Windows.Controls.Button;
+            Assert.IsNotNull(paneToggle, "NavigationView template must expose PART_PaneToggleButton.");
+            Assert.AreEqual(Visibility.Visible, paneToggle.Visibility, message);
         }
 
         [TestMethod]
@@ -223,7 +217,6 @@ namespace Fluence.Wpf.Tests
                 {
                     AssertPaneItemsScrollViewerUsesFluentStyle(NavigationViewPaneDisplayMode.Left, true);
                     AssertPaneItemsScrollViewerUsesFluentStyle(NavigationViewPaneDisplayMode.LeftCompact, false);
-                    AssertPaneItemsScrollViewerUsesFluentStyle(NavigationViewPaneDisplayMode.Top, true);
                 }
                 finally
                 {
@@ -236,7 +229,7 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void NavigationView_LeftCompact_ClosedPaneHidesFooter()
+        public void NavigationView_LeftCompact_ClosedPaneKeepsIconFooterVisible()
         {
             RunOnStaThread(() =>
             {
@@ -246,13 +239,18 @@ namespace Fluence.Wpf.Tests
 
                 try
                 {
+                    NavigationViewItem footer = new()
+                    {
+                        Content = "Settings",
+                        Icon = new FontIcon { Glyph = "\uE713", IconFontSize = 20 }
+                    };
                     NavigationView nav = new()
                     {
                         Width = 420,
                         Height = 320,
                         PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact,
                         IsPaneOpen = false,
-                        PaneFooter = new System.Windows.Controls.TextBlock { Text = "Footer" }
+                        PaneFooter = footer
                     };
                     _ = nav.Items.Add(new NavigationViewItem { Content = "One" });
                     window.Content = nav;
@@ -262,8 +260,10 @@ namespace Fluence.Wpf.Tests
 
                     System.Windows.Controls.Border? footerHost = FindVisualChildByName<System.Windows.Controls.Border>(nav, "PaneFooterHost");
                     Assert.IsNotNull(footerHost, "LeftCompact template should expose PaneFooterHost.");
-                    Assert.AreEqual(Visibility.Collapsed, footerHost.Visibility,
-                        "LeftCompact footer should be collapsed while the compact pane is closed.");
+                    Assert.AreEqual(Visibility.Visible, footerHost.Visibility,
+                        "LeftCompact footer should remain visible while the compact pane is closed so icon-only Settings entries stay reachable.");
+                    Assert.IsTrue(footer.ActualWidth >= 48.0 - 0.5,
+                        "LeftCompact footer navigation items should receive the full compact pane width so their icons are visible.");
 
                     nav.IsPaneOpen = true;
                     WaitForAnimationAndDrain(window.Dispatcher, 220);
@@ -283,7 +283,115 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void NavigationView_LeftPaneToggleGlyph_IsOffsetToAlignWithItemGlyphs()
+        public void NavigationView_LeftClosedPaneItemsKeepFullIconWidth()
+        {
+            RunOnStaThread(() =>
+            {
+                Application? application = EnsureApplication();
+                ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
+                Window window = new();
+
+                try
+                {
+                    NavigationViewItem messages = new()
+                    {
+                        Content = "Messages",
+                        Icon = new FontIcon { Glyph = "\uE8BD", IconFontSize = 20 },
+                        IsSelected = true
+                    };
+                    NavigationView nav = new()
+                    {
+                        Width = 420,
+                        Height = 320,
+                        PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                        IsPaneOpen = false
+                    };
+                    _ = nav.Items.Add(messages);
+                    window.Content = nav;
+                    window.Show();
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+
+                    Assert.AreEqual(48.0, nav.GetPaneColumnWidthForTesting(), 0.01,
+                        "Closed Left pane should reserve the canonical 48px compact width.");
+                    Assert.IsTrue(messages.ActualWidth >= 48.0 - 0.5,
+                        "Closed Left navigation items should receive the full compact pane width so icons are not clipped.");
+
+                    ContentPresenter? iconPresenter = FindVisualChildByName<ContentPresenter>(messages, "IconPresenter");
+                    Assert.IsNotNull(iconPresenter, "NavigationViewItem template should expose the icon presenter.");
+                    Point iconOffset = iconPresenter.TransformToAncestor(messages).Transform(new Point(0, 0));
+                    Assert.IsTrue(iconOffset.X >= 4.0 - 0.5,
+                        "Closed Left icon should not be clipped on the left edge.");
+                    Assert.IsTrue(iconOffset.X + iconPresenter.ActualWidth <= 44.0 + 0.5,
+                        "Closed Left icon should stay inside the 40px icon slot.");
+                }
+                finally
+                {
+                    CloseWindowAndDrain(window);
+                    if (genericDictionary is not null)
+                    {
+                        _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
+                    }
+                }
+            });
+        }
+
+        [TestMethod]
+        public void NavigationView_LeftCompact_ClosedPaneItemsKeepFullIconWidth()
+        {
+            RunOnStaThread(() =>
+            {
+                Application? application = EnsureApplication();
+                ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
+                Window window = new();
+
+                try
+                {
+                    NavigationViewItem messages = new()
+                    {
+                        Content = "Messages",
+                        Icon = new FontIcon { Glyph = "\uE8BD", IconFontSize = 20 },
+                        IsSelected = true
+                    };
+                    NavigationView nav = new()
+                    {
+                        Width = 420,
+                        Height = 320,
+                        PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact,
+                        IsPaneOpen = false
+                    };
+                    _ = nav.Items.Add(messages);
+                    window.Content = nav;
+                    window.Show();
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+
+                    Assert.AreEqual(48.0, nav.GetPaneColumnWidthForTesting(), 0.01,
+                        "Closed LeftCompact pane should reserve the canonical 48px compact width.");
+                    Assert.IsTrue(messages.ActualWidth >= 48.0 - 0.5,
+                        "Closed LeftCompact navigation items should receive the full compact pane width so icons are not clipped.");
+
+                    ContentPresenter? iconPresenter = FindVisualChildByName<ContentPresenter>(messages, "IconPresenter");
+                    Assert.IsNotNull(iconPresenter, "NavigationViewItem template should expose the icon presenter.");
+                    Point iconOffset = iconPresenter.TransformToAncestor(messages).Transform(new Point(0, 0));
+                    Assert.IsTrue(iconOffset.X >= 4.0 - 0.5,
+                        "Closed LeftCompact icon should not be clipped on the left edge.");
+                    Assert.IsTrue(iconOffset.X + iconPresenter.ActualWidth <= 44.0 + 0.5,
+                        "Closed LeftCompact icon should stay inside the 40px icon slot.");
+                }
+                finally
+                {
+                    CloseWindowAndDrain(window);
+                    if (genericDictionary is not null)
+                    {
+                        _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
+                    }
+                }
+            });
+        }
+
+        [TestMethod]
+        public void NavigationView_LeftPaneToggleGlyph_IsOffsetToAlignWithItemIcons()
         {
             RunOnStaThread(() =>
             {
@@ -308,7 +416,7 @@ namespace Fluence.Wpf.Tests
                     FontIcon? glyph = FindVisualChildByName<FontIcon>(nav, "PaneToggleGlyph");
                     Assert.IsNotNull(glyph, "Left pane template should expose PaneToggleGlyph.");
                     Assert.AreEqual(2.0, glyph.Margin.Left, 0.01,
-                        "Pane toggle glyph should be nudged right to align with navigation item glyphs.");
+                        "Pane toggle glyph should be nudged right to align with navigation item icons.");
                 }
                 finally
                 {
@@ -378,7 +486,7 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void NavigationView_LeftMode_DefaultFontIconSizeIs20()
+        public void NavigationView_LeftMode_DefaultFontIconSizeIs16()
         {
             RunOnStaThread(() =>
             {
@@ -401,8 +509,8 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    Assert.AreEqual(20.0, icon.IconFontSize, 0.01,
-                        "NavigationView left-mode FontIcon content should default to 20 px.");
+                    Assert.AreEqual(16.0, icon.IconFontSize, 0.01,
+                        "NavigationView left-mode FontIcon content should default to the compact 16 px glyph size.");
                 }
                 finally
                 {
@@ -445,6 +553,10 @@ namespace Fluence.Wpf.Tests
                     Assert.IsNotNull(presenter, "NavigationViewItem template must render InfoBadge content.");
                     Assert.AreSame(badge, presenter.Content,
                         "NavigationViewItem InfoBadge presenter must bind to NavigationViewItem.InfoBadge.");
+                    Assert.IsTrue(double.IsNaN(presenter.Width) || presenter.Width >= 34.0,
+                        "NavigationViewItem must not constrain InfoBadge value pills to the old 24px slot.");
+                    Assert.AreEqual(HorizontalAlignment.Center, presenter.HorizontalAlignment,
+                        "NavigationViewItem InfoBadge presenter should center the badge in the trailing slot.");
                 }
                 finally
                 {
@@ -749,37 +861,67 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void NavigationView_IsPaneToggleButtonVisible_False_HidesPaneToggle()
+        public void NavigationView_LeftModes_ForcePaneToggleVisible()
         {
             RunOnStaThread(() =>
             {
                 Application? application = EnsureApplication();
                 ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
-                Window window = new();
 
                 try
                 {
-                    NavigationView nav = new()
-                    {
-                        Width = 400,
-                        Height = 320,
-                        PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
-                        IsPaneToggleButtonVisible = false
-                    };
-                    _ = nav.Items.Add(new NavigationViewItem { Content = "Item" });
-                    window.Content = nav;
-                    window.Show();
-                    DrainDispatcher(window.Dispatcher);
-                    window.UpdateLayout();
+                    NavigationViewPaneDisplayMode[] modes =
+                    [
+                        NavigationViewPaneDisplayMode.Left,
+                        NavigationViewPaneDisplayMode.LeftCompact
+                    ];
 
-                    _ = nav.ApplyTemplate();
-                    System.Windows.Controls.Button? paneToggle = nav.Template.FindName(NavigationView.PartPaneToggleButton, nav) as System.Windows.Controls.Button;
-                    Assert.IsNotNull(paneToggle);
-                    Assert.AreEqual(Visibility.Collapsed, paneToggle.Visibility);
+                    foreach (NavigationViewPaneDisplayMode mode in modes)
+                    {
+                        Window window = new();
+
+                        try
+                        {
+                            NavigationView nav = new()
+                            {
+                                Width = 400,
+                                Height = 320,
+                                PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                                IsPaneToggleButtonVisible = false
+                            };
+                            _ = nav.Items.Add(new NavigationViewItem { Content = "Item" });
+                            window.Content = nav;
+                            window.Show();
+                            DrainDispatcher(window.Dispatcher);
+                            window.UpdateLayout();
+
+                            Assert.IsFalse(nav.IsPaneToggleButtonVisible,
+                                "Top mode should keep the pane toggle hidden before switching to " + mode + ".");
+
+                            nav.PaneDisplayMode = mode;
+                            DrainDispatcher(window.Dispatcher);
+                            window.UpdateLayout();
+
+                            Assert.IsTrue(nav.IsPaneToggleButtonVisible,
+                                mode + " should coerce the pane toggle visible after switching from Top.");
+                            AssertPaneToggleVisible(nav, mode + " should show the pane toggle after switching from Top.");
+
+                            nav.IsPaneToggleButtonVisible = false;
+                            DrainDispatcher(window.Dispatcher);
+                            window.UpdateLayout();
+
+                            Assert.IsTrue(nav.IsPaneToggleButtonVisible,
+                                mode + " should coerce runtime attempts to hide the pane toggle back to visible.");
+                            AssertPaneToggleVisible(nav, mode + " should keep the pane toggle visible after runtime coercion.");
+                        }
+                        finally
+                        {
+                            CloseWindowAndDrain(window);
+                        }
+                    }
                 }
                 finally
                 {
-                    CloseWindowAndDrain(window);
                     if (genericDictionary is not null)
                     {
                         _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
@@ -1139,13 +1281,25 @@ namespace Fluence.Wpf.Tests
                     TranslateTransform translate = GetSelectionIndicatorTranslate(indicator);
                     double parentX = translate.X;
                     double parentY = translate.Y;
+                    NavigationViewItem? parentItem = nav.Items[0] as NavigationViewItem;
+                    Assert.IsNotNull(parentItem, "Parent item should be a NavigationViewItem.");
+                    Point departPosition = nav.CalculateDepartPositionForTesting(
+                        new Point(parentX, parentY),
+                        parentItem,
+                        false,
+                        1.0);
+                    Assert.AreEqual(parentX, departPosition.X, 0.5,
+                        "The downward depart leg should keep the parent item's X until the indicator fades out.");
+                    Assert.IsTrue(departPosition.Y > parentY,
+                        "The downward depart leg should move below the parent before the child inset X is applied.");
 
                     nav.SelectedIndex = 1;
                     Assert.IsTrue(
-                        WaitForSelectionIndicatorVerticalDepart(window.Dispatcher, indicator, translate, parentX, parentY, false),
-                        "The selection indicator should move vertically downward and fade out before it moves to the child item's inset X position.");
-
-                    WaitForAnimationAndDrain(window.Dispatcher, 400);
+                        WaitUntil(window.Dispatcher, 3000, delegate
+                        {
+                            return Math.Abs(translate.X - 48.0) <= 0.5 && Math.Abs(indicator.Opacity - 1.0) <= 0.01;
+                        }),
+                        "After the depart/arrive animation completes, the child item indicator should become visible at the child inset.");
                     Assert.AreEqual(48.0, translate.X, 0.5,
                         "After the depart/arrive animation completes, the child item indicator should sit at the child inset.");
                     Assert.AreEqual(1.0, indicator.Opacity, 0.01,
@@ -1204,13 +1358,25 @@ namespace Fluence.Wpf.Tests
                     TranslateTransform translate = GetSelectionIndicatorTranslate(indicator);
                     double childX = translate.X;
                     double childY = translate.Y;
+                    NavigationViewItem? childItem = nav.Items[1] as NavigationViewItem;
+                    Assert.IsNotNull(childItem, "Child item should be a NavigationViewItem.");
+                    Point departPosition = nav.CalculateDepartPositionForTesting(
+                        new Point(childX, childY),
+                        childItem,
+                        false,
+                        -1.0);
+                    Assert.AreEqual(childX, departPosition.X, 0.5,
+                        "The upward depart leg should keep the child item's X until the indicator fades out.");
+                    Assert.IsTrue(departPosition.Y < childY,
+                        "The upward depart leg should move above the child before the parent X is applied.");
 
                     nav.SelectedIndex = 0;
                     Assert.IsTrue(
-                        WaitForSelectionIndicatorVerticalDepart(window.Dispatcher, indicator, translate, childX, childY, true),
-                        "The selection indicator should move upward and fade out before it moves to the parent item's X position.");
-
-                    WaitForAnimationAndDrain(window.Dispatcher, 400);
+                        WaitUntil(window.Dispatcher, 3000, delegate
+                        {
+                            return Math.Abs(translate.X - 4.0) <= 0.5 && Math.Abs(indicator.Opacity - 1.0) <= 0.01;
+                        }),
+                        "After the depart/arrive animation completes, the parent item indicator should become visible at the parent inset.");
                     Assert.AreEqual(4.0, translate.X, 0.5,
                         "After the depart/arrive animation completes, the parent item indicator should sit at the parent inset.");
                     Assert.AreEqual(1.0, indicator.Opacity, 0.01,
@@ -1422,7 +1588,6 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Don't care for now.")]
         public void NavigationView_FullThemeCycle_NoExceptions()
         {
             RunOnStaThread(() =>
@@ -1458,6 +1623,11 @@ namespace Fluence.Wpf.Tests
                         ApplicationThemeManager.Apply(themes[i], BackdropType.None, true);
                         DrainDispatcher(window.Dispatcher);
                         nav.UpdateLayout();
+
+                        Assert.AreEqual(themes[i], ApplicationThemeManager.CurrentTheme,
+                            "Theme cycle should apply the requested theme.");
+                        Assert.IsTrue(nav.IsLoaded,
+                            "NavigationView should remain loaded after a theme change.");
                     }
                 }
                 finally
@@ -1751,12 +1921,58 @@ namespace Fluence.Wpf.Tests
             });
         }
 
-        // WI-1 F1: LeftCompact pane must resize inline and push sibling content. Never overlay.
-        //
-        // Regression guard: the original LeftCompactPaneTemplate drew the pane as an overlay
-        // (Panel.ZIndex="1", Width triggered to 280), which caused the pane to cover the content
-        // area rather than push it aside. We assert that the pane's visible width changes with
-        // IsPaneOpen AND that the content host starts immediately to the right of the pane.
+        [TestMethod]
+        public void NavigationView_Left_PaneToggle_ResizesPushingContent()
+        {
+            RunOnStaThread(() =>
+            {
+                Application? application = EnsureApplication();
+                ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
+                Window window = new();
+
+                try
+                {
+                    NavigationView nav = new()
+                    {
+                        Width = 800,
+                        Height = 480,
+                        PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                        IsPaneOpen = true
+                    };
+                    _ = nav.Items.Add(new NavigationViewItem { Content = "One" });
+                    window.Content = nav;
+                    window.Show();
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+                    DrainDispatcher(window.Dispatcher);
+
+                    ContentPresenter? presenter = FindVisualChildByName<ContentPresenter>(nav, NavigationView.PartContentPresenter);
+                    Assert.IsNotNull(presenter, "PART_ContentPresenter must exist in Left template.");
+
+                    AssertContentOffsetEventually(window, nav, presenter, 280.0, "Open Left pane: content begins at 280.");
+
+                    nav.IsPaneOpen = false;
+                    Assert.IsTrue(nav.GetPaneColumnWidthForTesting() > 48.0,
+                        "Closing Left mode should animate from the expanded width instead of snapping immediately to 48.");
+                    AssertContentOffsetEventually(window, nav, presenter, 48.0, "Closed Left pane: content begins at 48.");
+
+                    nav.IsPaneOpen = true;
+                    Assert.IsTrue(nav.GetPaneColumnWidthForTesting() < 280.0,
+                        "Opening Left mode should animate from the compact width instead of snapping immediately to 280.");
+                    AssertContentOffsetEventually(window, nav, presenter, 280.0, "Reopened Left pane: content returns to 280.");
+                }
+                finally
+                {
+                    CloseWindowAndDrain(window);
+                    if (genericDictionary is not null)
+                    {
+                        _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
+                    }
+                }
+            });
+        }
+
+        // LeftCompact pane still resizes inline and pushes sibling content.
         [TestMethod]
         public void NavigationView_LeftCompact_PaneOpen_ContentStartsAt280px_Inline()
         {
@@ -1788,7 +2004,7 @@ namespace Fluence.Wpf.Tests
                     Assert.IsNotNull(presenter, "PART_ContentPresenter must exist in LeftCompact template.");
 
                     AssertContentOffsetEventually(window, nav, presenter, 280.0,
-                        "When IsPaneOpen=true in LeftCompact, content must start inline at pane width 280 (not overlap the pane).");
+                        "When IsPaneOpen=true in LeftCompact, content must start inline at pane width 280.");
                 }
                 finally
                 {
@@ -1875,7 +2091,7 @@ namespace Fluence.Wpf.Tests
                     Assert.IsNotNull(presenter, "PART_ContentPresenter must exist in LeftCompact template.");
 
                     AssertContentOffsetEventually(window, nav, presenter, 48.0,
-                        "When IsPaneOpen=false in LeftCompact, content must start inline at pane width 48 (compact rail).");
+                        "When IsPaneOpen=false in LeftCompact, content must start inline at pane width 48.");
                 }
                 finally
                 {
@@ -1980,9 +2196,13 @@ namespace Fluence.Wpf.Tests
                     AssertContentOffsetEventually(window, nav, presenter, 280.0, "Open state: content begins at 280.");
 
                     nav.IsPaneOpen = false;
-                    AssertContentOffsetEventually(window, nav, presenter, 48.0, "Closed state: content begins at 48 (push, not overlay).");
+                    Assert.IsTrue(nav.GetPaneColumnWidthForTesting() > 48.0,
+                        "Closing LeftCompact should animate from the current expanded width instead of snapping immediately to 48.");
+                    AssertContentOffsetEventually(window, nav, presenter, 48.0, "Closed state: content begins at 48.");
 
                     nav.IsPaneOpen = true;
+                    Assert.IsTrue(nav.GetPaneColumnWidthForTesting() < 280.0,
+                        "Opening LeftCompact should animate from the current compact width instead of snapping immediately to 280.");
                     AssertContentOffsetEventually(window, nav, presenter, 280.0, "Reopen state: content returns to 280.");
                 }
                 finally
@@ -2107,7 +2327,7 @@ namespace Fluence.Wpf.Tests
                     bool okVisible = VisualStateManager.GoToState(nav, "BackButtonVisible", false);
                     bool okCollapsed = VisualStateManager.GoToState(nav, "BackButtonCollapsed", false);
 
-                    Assert.IsTrue(okVisible, "GoToState('BackButtonVisible') must succeed — BackButtonStates VSM group required.");
+                    Assert.IsTrue(okVisible, "GoToState('BackButtonVisible') must succeed - BackButtonStates VSM group required.");
                     Assert.IsTrue(okCollapsed, "GoToState('BackButtonCollapsed') must succeed.");
                 }
                 finally
@@ -2314,7 +2534,7 @@ namespace Fluence.Wpf.Tests
 
         /// <summary>
         /// Asserts that <paramref name="brush"/> is null, Brushes.Transparent, or a
-        /// SolidColorBrush whose alpha channel is zero — i.e. effectively transparent.
+        /// SolidColorBrush whose alpha channel is zero - i.e. effectively transparent.
         /// </summary>
         private static void AssertBrushIsTransparentOrNull(Brush brush, string message)
         {

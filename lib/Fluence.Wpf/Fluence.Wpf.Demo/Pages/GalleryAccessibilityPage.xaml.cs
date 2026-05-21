@@ -127,13 +127,17 @@ namespace Fluence.Wpf.Demo.Pages
             Margin=""0,12,0,8""
             Foreground=""{DynamicResource TextFillColorSecondaryBrush}""
             Text=""The buttons below have an explicit reverse tab order: 3, 2, 1."" />
-        <Grid x:Name=""KeyboardSupportExplicitOrderControls"" Margin=""0,0,0,8"">
+        <Grid
+            x:Name=""KeyboardSupportExplicitOrderControls""
+            Margin=""0,0,0,8""
+            KeyboardNavigation.TabNavigation=""Local"">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width=""*"" />
                 <ColumnDefinition Width=""*"" />
                 <ColumnDefinition Width=""*"" />
             </Grid.ColumnDefinitions>
             <ui:Button
+                x:Name=""ExplicitTabOrderThirdButton""
                 Grid.Column=""0""
                 Margin=""0,0,12,0""
                 HorizontalAlignment=""Stretch""
@@ -141,6 +145,7 @@ namespace Fluence.Wpf.Demo.Pages
                 Content=""Tab order: 3""
                 TabIndex=""3"" />
             <ui:Button
+                x:Name=""ExplicitTabOrderSecondButton""
                 Grid.Column=""1""
                 Margin=""0,0,12,0""
                 HorizontalAlignment=""Stretch""
@@ -148,6 +153,7 @@ namespace Fluence.Wpf.Demo.Pages
                 Content=""Tab order: 2""
                 TabIndex=""2"" />
             <ui:Button
+                x:Name=""ExplicitTabOrderFirstButton""
                 Grid.Column=""2""
                 HorizontalAlignment=""Stretch""
                 VerticalAlignment=""Center""
@@ -192,17 +198,17 @@ namespace Fluence.Wpf.Demo.Pages.Accessibility
                     <ColumnDefinition Width=""*"" />
                 </Grid.ColumnDefinitions>
                 <TextBlock
-                    ui:TextBlockExtensions.Typography=""BodyStrong""
+                    Style=""{StaticResource BodyStrongTextBlockStyle}""
                     Foreground=""{DynamicResource TextFillColorPrimaryBrush}""
                     Text=""Fluence key"" />
                 <TextBlock
                     Grid.Column=""1""
-                    ui:TextBlockExtensions.Typography=""BodyStrong""
+                    Style=""{StaticResource BodyStrongTextBlockStyle}""
                     Foreground=""{DynamicResource TextFillColorPrimaryBrush}""
                     Text=""HC system color"" />
                 <TextBlock
                     Grid.Column=""2""
-                    ui:TextBlockExtensions.Typography=""BodyStrong""
+                    Style=""{StaticResource BodyStrongTextBlockStyle}""
                     Foreground=""{DynamicResource TextFillColorPrimaryBrush}""
                     Text=""Live swatch"" />
             </Grid>
@@ -221,12 +227,12 @@ namespace Fluence.Wpf.Demo.Pages.Accessibility
                                 <ColumnDefinition Width=""*"" />
                             </Grid.ColumnDefinitions>
                             <TextBlock
-                                ui:TextBlockExtensions.Typography=""Caption""
+                                Style=""{StaticResource CaptionTextBlockStyle}""
                                 Foreground=""{DynamicResource TextFillColorPrimaryBrush}""
                                 Text=""{Binding Key}"" />
                             <TextBlock
                                 Grid.Column=""1""
-                                ui:TextBlockExtensions.Typography=""Caption""
+                                Style=""{StaticResource CaptionBlockStyle}""
                                 Foreground=""{DynamicResource TextFillColorSecondaryBrush}""
                                 Text=""{Binding HcMapping}"" />
                             <Border
@@ -279,10 +285,10 @@ namespace Fluence.Wpf.Demo.Pages.Accessibility
 
         private void PopulateHcTable()
         {
-            var rows = new List<HcBrushEntry>();
-            foreach (var pair in HcPairs)
+            List<HcBrushEntry> rows = new List<HcBrushEntry>();
+            foreach (string[] pair in HcPairs)
             {
-                var brush = TryFindResource(pair[0]) as Brush ?? Brushes.Transparent;
+                Brush brush = TryFindResource(pair[0]) as Brush ?? Brushes.Transparent;
                 rows.Add(new HcBrushEntry
                 {
                     Key = pair[0],
@@ -297,11 +303,11 @@ namespace Fluence.Wpf.Demo.Pages.Accessibility
 
     public sealed class HcBrushEntry
     {
-        public string Key { get; set; }
+        public string Key { get; set; } = string.Empty;
 
-        public string HcMapping { get; set; }
+        public string HcMapping { get; set; } = string.Empty;
 
-        public Brush Brush { get; set; }
+        public Brush Brush { get; set; } = Brushes.Transparent;
     }
 }
 ";
@@ -318,30 +324,52 @@ namespace Fluence.Wpf.Demo.Pages.Accessibility
             TextWrapping=""Wrap"" />
         <StackPanel Orientation=""Horizontal"">
             <ui:Button
+                x:Name=""AutomationNewDocumentButton""
+                Width=""36""
+                Height=""36""
+                MinWidth=""36""
                 Margin=""0,0,8,0""
-                Padding=""8""
+                Padding=""0""
                 AutomationProperties.Name=""New document"">
                 <ui:FontIcon Glyph=""&#xE8A5;"" IconFontSize=""18"" />
             </ui:Button>
             <ui:Button
+                x:Name=""AutomationOpenFileButton""
+                Width=""36""
+                Height=""36""
+                MinWidth=""36""
                 Margin=""0,0,8,0""
-                Padding=""8""
+                Padding=""0""
                 AutomationProperties.Name=""Open file"">
                 <ui:FontIcon Glyph=""&#xE8E5;"" IconFontSize=""18"" />
             </ui:Button>
             <ui:Button
+                x:Name=""AutomationSaveButton""
+                Width=""36""
+                Height=""36""
+                MinWidth=""36""
                 Margin=""0,0,8,0""
-                Padding=""8""
+                Padding=""0""
                 AutomationProperties.Name=""Save"">
                 <ui:FontIcon Glyph=""&#xE74E;"" IconFontSize=""18"" />
             </ui:Button>
             <ui:Button
+                x:Name=""AutomationDeleteButton""
+                Width=""36""
+                Height=""36""
+                MinWidth=""36""
                 Margin=""0,0,8,0""
-                Padding=""8""
+                Padding=""0""
                 AutomationProperties.Name=""Delete"">
                 <ui:FontIcon Glyph=""&#xE74D;"" IconFontSize=""18"" />
             </ui:Button>
-            <ui:Button Padding=""8"" AutomationProperties.Name=""Share"">
+            <ui:Button
+                x:Name=""AutomationShareButton""
+                Width=""36""
+                Height=""36""
+                MinWidth=""36""
+                Padding=""0""
+                AutomationProperties.Name=""Share"">
                 <ui:FontIcon Glyph=""&#xE72D;"" IconFontSize=""18"" />
             </ui:Button>
         </StackPanel>
@@ -374,15 +402,17 @@ namespace Fluence.Wpf.Demo.Pages.Accessibility
             Margin=""0,0,0,12""
             Checked=""RtlToggle_Changed""
             Content=""Enable RTL on demo card""
+            IsChecked=""True""
             Unchecked=""RtlToggle_Changed"" />
         <ui:Card
             x:Name=""RtlDemoCard""
             Padding=""16""
+            FlowDirection=""RightToLeft""
             Variant=""{x:Static uicore:CardVariant.Outlined}"">
             <StackPanel>
                 <TextBlock
                     Margin=""0,0,0,8""
-                    ui:TextBlockExtensions.Typography=""BodyStrong""
+                    Style=""{StaticResource BodyStrongTextBlockStyle}""
                     Foreground=""{DynamicResource TextFillColorPrimaryBrush}""
                     Text=""نموذج عنصر تحكم"" />
                 <StackPanel Orientation=""Horizontal"">
@@ -444,10 +474,12 @@ namespace Fluence.Wpf.Demo.Pages.Accessibility
         {
             InitializeComponent();
 
-            _ = DemoSampleControl.ReplaceSourceLink(FocusAndTabOrderSourceLink, FocusAndTabOrderXamlSource, FocusAndTabOrderCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(HighContrastMappingSourceLink, HighContrastMappingXamlSource, HighContrastMappingCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(AutomationPropertiesSourceLink, AutomationPropertiesXamlSource, AutomationPropertiesCSharpSource);
-            _ = DemoSampleControl.ReplaceSourceLink(RtlLayoutSourceLink, RtlLayoutXamlSource, RtlLayoutCSharpSource);
+            DemoSamplePageWiring.Apply(
+                (DependencyObject)Content,
+                new DemoSampleSource(1, FocusAndTabOrderXamlSource, FocusAndTabOrderCSharpSource),
+                new DemoSampleSource(2, HighContrastMappingXamlSource, HighContrastMappingCSharpSource),
+                new DemoSampleSource(3, AutomationPropertiesXamlSource, AutomationPropertiesCSharpSource),
+                new DemoSampleSource(4, RtlLayoutXamlSource, RtlLayoutCSharpSource));
 
             Loaded += OnLoaded;
         }

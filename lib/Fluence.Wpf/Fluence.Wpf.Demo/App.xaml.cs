@@ -36,7 +36,7 @@ namespace Fluence.Wpf.Demo
 {
     public partial class App : Application
     {
-        private const string IconographyPageTitle = "Iconography";
+        private const string IconsPageTitle = "Icons";
         private const string SmokeTestArgument = "--smoke-test";
         private static readonly Uri DemoSharedStylesUri = new(
             "/Fluence.Wpf.Demo;component/Resources/DemoSharedStyles.xaml",
@@ -46,7 +46,7 @@ namespace Fluence.Wpf.Demo
         {
             base.OnStartup(e);
 
-            ApplicationThemeManager.Apply(ApplicationTheme.Auto);
+            ApplicationThemeManager.Apply(ApplicationTheme.Auto, BackdropType.Mica);
             ApplicationAccentColorManager.ApplySystemAccent();
             LoadDemoSharedStyles();
 
@@ -67,18 +67,57 @@ namespace Fluence.Wpf.Demo
                 mainWindow.NavigateTo(item.Title);
                 mainWindow.UpdateLayout();
                 DrainDispatcher(mainWindow.Dispatcher);
-                if (string.Equals(item.Title, IconographyPageTitle, StringComparison.Ordinal))
+                if (string.Equals(item.Title, IconsPageTitle, StringComparison.Ordinal))
                 {
-                    RealizeIconographyList(mainWindow);
+                    RealizeIconsList(mainWindow);
                 }
+
+                ExerciseSmokePageThemes(mainWindow);
             }
 
-            ApplicationThemeManager.Apply(ApplicationTheme.Light);
-            ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+            mainWindow.NavigateTo("settings");
+            mainWindow.UpdateLayout();
+            DrainDispatcher(mainWindow.Dispatcher);
+            ExerciseSmokePageThemes(mainWindow);
+            ExerciseSmokeChrome(mainWindow);
+
             ApplicationThemeManager.Apply(ApplicationTheme.HighContrast);
             ApplicationThemeManager.Apply(ApplicationTheme.Light);
 
             mainWindow.Close();
+        }
+
+        private static void ExerciseSmokePageThemes(MainWindow mainWindow)
+        {
+            ApplicationThemeManager.Apply(ApplicationTheme.Light);
+            mainWindow.UpdateLayout();
+            DrainDispatcher(mainWindow.Dispatcher);
+
+            ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+            mainWindow.UpdateLayout();
+            DrainDispatcher(mainWindow.Dispatcher);
+        }
+
+        private static void ExerciseSmokeChrome(MainWindow mainWindow)
+        {
+            ApplicationAccentColorManager.ApplyCustomAccent(Color.FromRgb(0xC3, 0x00, 0x52));
+            mainWindow.UpdateLayout();
+            DrainDispatcher(mainWindow.Dispatcher);
+
+            ApplySmokeBackdrop(mainWindow, BackdropType.Mica);
+            ApplySmokeBackdrop(mainWindow, BackdropType.Acrylic);
+            ApplySmokeBackdrop(mainWindow, BackdropType.Tabbed);
+            ApplySmokeBackdrop(mainWindow, BackdropType.None);
+
+            ApplicationAccentColorManager.ApplySystemAccent();
+        }
+
+        private static void ApplySmokeBackdrop(MainWindow mainWindow, BackdropType backdrop)
+        {
+            mainWindow.SystemBackdropType = backdrop;
+            ApplicationThemeManager.Apply(ApplicationTheme.Light, backdrop);
+            mainWindow.UpdateLayout();
+            DrainDispatcher(mainWindow.Dispatcher);
         }
 
         private static void LoadDemoSharedStyles()
@@ -86,14 +125,14 @@ namespace Fluence.Wpf.Demo
             Current.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = DemoSharedStylesUri });
         }
 
-        private static void RealizeIconographyList(DependencyObject root)
+        private static void RealizeIconsList(DependencyObject root)
         {
-            ListView list = FindVisualChildByName<ListView>(root, "IconCatalogList") ?? throw new InvalidOperationException("The Iconography page did not create IconCatalogList.");
+            ListView list = FindVisualChildByName<ListView>(root, "IconCatalogList") ?? throw new InvalidOperationException("The Icons page did not create IconCatalogList.");
             _ = list.ApplyTemplate();
             list.UpdateLayout();
             if (list.Items.Count == 0)
             {
-                throw new InvalidOperationException("The Iconography page did not load any icon rows.");
+                throw new InvalidOperationException("The Icons page did not load any icon rows.");
             }
 
             list.ScrollIntoView(list.Items[0]);
@@ -101,7 +140,7 @@ namespace Fluence.Wpf.Demo
 
             if (list.ItemContainerGenerator.ContainerFromIndex(0) is not FrameworkElement firstContainer)
             {
-                throw new InvalidOperationException("The Iconography page did not realize the first icon row.");
+                throw new InvalidOperationException("The Icons page did not realize the first icon row.");
             }
 
             _ = firstContainer.ApplyTemplate();
@@ -114,7 +153,7 @@ namespace Fluence.Wpf.Demo
 
             if (list.ItemContainerGenerator.ContainerFromIndex(lastIndex) is not FrameworkElement lastContainer)
             {
-                throw new InvalidOperationException("The Iconography page did not realize the final icon row after scrolling.");
+                throw new InvalidOperationException("The Icons page did not realize the final icon row after scrolling.");
             }
 
             _ = lastContainer.ApplyTemplate();

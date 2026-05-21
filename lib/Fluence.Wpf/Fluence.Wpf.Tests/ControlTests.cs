@@ -26,8 +26,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Demo;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Windows;
@@ -35,13 +38,10 @@ using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Media;
 using System.Windows.Input;
-using System.Windows.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Fluence.Wpf.Demo;
+using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Collections.ObjectModel;
+using System.Windows.Threading;
 
 namespace Fluence.Wpf.Tests
 {
@@ -986,7 +986,9 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    SelectMainWindowNavPage(window, window.Dispatcher, "Windowing");
+                    window.NavigateTo("settings");
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
 
                     List<Controls.Button> accentSwatchButtons = [.. FindVisualChildren<Controls.Button>(window).Where(b => b.Tag is string hex && hex.Length > 0 && hex[0] == '#')];
 
@@ -1002,7 +1004,7 @@ namespace Fluence.Wpf.Tests
                     ];
 
                     CollectionAssert.AreEqual(expectedSwatches, accentSwatchButtons.Select(b => (string)b.Tag).ToList(),
-                        "Window page should expose the seven logo accent swatches.");
+                        "Settings page should expose the seven logo accent swatches.");
                     foreach (Controls.Button swatch in accentSwatchButtons)
                     {
                         Assert.IsInstanceOfType(swatch, typeof(Controls.Button));
@@ -1018,7 +1020,7 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void MainWindow_TitleSelectors_UseExpectedControls()
+        public void MainWindow_SettingsSelectors_UseExpectedControls()
         {
             RunOnStaThread(() =>
             {
@@ -1033,13 +1035,14 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    SelectMainWindowNavPage(window, window.Dispatcher, "Windowing");
+                    window.NavigateTo("settings");
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
 
-                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.RadioButton>(window, "ThemeLight"), typeof(Controls.RadioButton));
-                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.RadioButton>(window, "ThemeDark"), typeof(Controls.RadioButton));
-                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.RadioButton>(window, "ThemeHighContrast"), typeof(Controls.RadioButton));
-                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.RadioButton>(window, "ThemeAuto"), typeof(Controls.RadioButton));
-                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.ComboBox>(window, "BackdropCombo"), typeof(Controls.ComboBox));
+                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.ComboBox>(window, "AppThemeComboBox"), typeof(Controls.ComboBox));
+                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.ComboBox>(window, "NavigationStyleComboBox"), typeof(Controls.ComboBox));
+                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.ComboBox>(window, "BackdropComboBox"), typeof(Controls.ComboBox));
+                    Assert.IsInstanceOfType(FindVisualChildByName<Controls.ToggleSwitch>(window, "ThemeWatcherToggle"), typeof(Controls.ToggleSwitch));
                 }
                 finally
                 {
@@ -1051,7 +1054,7 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void MainWindow_ThemeRadioButton_UpdatesStateLabel()
+        public void MainWindow_AppThemeComboBox_UpdatesStateLabel()
         {
             RunOnStaThread(() =>
             {
@@ -1067,19 +1070,21 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    SelectMainWindowNavPage(window, window.Dispatcher, "Windowing");
-
-                    Controls.RadioButton? themeDark = FindVisualChildByName<Controls.RadioButton>(window, "ThemeDark");
-                    TextBlock? themeStateLabel = FindVisualChildByName<TextBlock>(window, "ThemeStateLabel");
-
-                    Assert.IsNotNull(themeDark);
-                    Assert.IsNotNull(themeStateLabel);
-
-                    themeDark.IsChecked = true;
+                    window.NavigateTo("settings");
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    Assert.AreEqual("Current: Dark", themeStateLabel.Text, "Theme radio button should update the state label when checked.");
+                    Controls.ComboBox? themeComboBox = FindVisualChildByName<Controls.ComboBox>(window, "AppThemeComboBox");
+                    TextBlock? themeStateLabel = FindVisualChildByName<TextBlock>(window, "ThemeStateLabel");
+
+                    Assert.IsNotNull(themeComboBox);
+                    Assert.IsNotNull(themeStateLabel);
+
+                    themeComboBox.SelectedIndex = 2;
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+
+                    Assert.AreEqual("Current: Dark", themeStateLabel.Text, "App theme combo box should update the state label when changed.");
                 }
                 finally
                 {
@@ -1227,6 +1232,66 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
+        public void FluentTabControl_SelectedHeaderUsesSequentialPanelAndCenteredIndicator()
+        {
+            RunOnStaThread(() =>
+            {
+                Application? application = EnsureApplication();
+                ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
+                Window window = new();
+
+                try
+                {
+                    TabControl tabControl = new();
+                    _ = tabControl.Items.Add(new TabItem { Header = "Overview", Content = new TextBlock { Text = "A" } });
+                    _ = tabControl.Items.Add(new TabItem { Header = "Activity", Content = new TextBlock { Text = "B" } });
+                    _ = tabControl.Items.Add(new TabItem { Header = "Settings", Content = new TextBlock { Text = "C" } });
+                    window.Content = tabControl;
+                    window.Width = 640;
+                    window.Height = 480;
+                    window.Show();
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+
+                    tabControl.SelectedIndex = 1;
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+                    WaitForAnimationAndDrain(window.Dispatcher, 250);
+
+                    FrameworkElement? headerPanel = tabControl.Template.FindName("HeaderPanel", tabControl) as FrameworkElement;
+                    TabItem? selectedTab = tabControl.ItemContainerGenerator.ContainerFromIndex(1) as TabItem;
+                    Assert.IsNotNull(headerPanel, "TabControl template should expose the header host.");
+                    Assert.IsNotNull(selectedTab, "The selected TabItem should be generated.");
+                    Assert.IsInstanceOfType(headerPanel, typeof(StackPanel),
+                        "TabControl should use a sequential StackPanel header host; WPF TabPanel can clip the selected tab's right edge.");
+                    Assert.IsNotInstanceOfType(headerPanel, typeof(TabPanel),
+                        "TabControl should not use TabPanel for Fluent headers because its selection overlap can clip rounded corners.");
+                    Assert.AreEqual(Orientation.Horizontal, ((StackPanel)headerPanel).Orientation,
+                        "Top TabControl headers should arrange horizontally.");
+
+                    Border? selectedBackground = FindVisualChildByName<Border>(selectedTab, "SelectedBackground");
+                    Border? selectionIndicator = FindVisualChildByName<Border>(selectedTab, "SelectionIndicator");
+                    Assert.IsNotNull(selectedBackground, "Selected TabItem should expose the selected background border.");
+                    Assert.IsNotNull(selectionIndicator, "Selected TabItem should expose the accent selection indicator.");
+
+                    double backgroundX = selectedBackground.TransformToAncestor(selectedTab).Transform(new Point(0, 0)).X;
+                    double indicatorX = selectionIndicator.TransformToAncestor(selectedTab).Transform(new Point(0, 0)).X;
+                    double backgroundCenter = backgroundX + (selectedBackground.ActualWidth / 2.0);
+                    double indicatorCenter = indicatorX + (selectionIndicator.ActualWidth / 2.0);
+                    Assert.AreEqual(backgroundCenter, indicatorCenter, 0.5,
+                        "The selection indicator should remain centered in the selected tab background.");
+                    Assert.AreEqual(selectedTab.ActualWidth, selectedBackground.ActualWidth, 0.5,
+                        "The selected background should occupy the full arranged tab width so the right rounded corner is not cut off.");
+                }
+                finally
+                {
+                    window.Close();
+                    _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
+                }
+            });
+        }
+
+        [TestMethod]
         public void FluentTabControl_LeftPlacement_SeparatesHeadersAndContent()
         {
             RunOnStaThread(() =>
@@ -1259,8 +1324,64 @@ namespace Fluence.Wpf.Tests
                         "Left TabStripPlacement should place tab headers in the left column.");
                     Assert.AreEqual(1, Grid.GetColumn(contentPanel),
                         "Left TabStripPlacement should keep content in the right column.");
-                    Assert.AreEqual(new Thickness(0, 0, 8, 0), headerPanel.Margin,
-                        "Left TabStripPlacement should keep the same 8px Fluent gap used by the default top layout.");
+                    Assert.AreEqual(new Thickness(0, 0, 9, 0), headerPanel.Margin,
+                        "Left TabStripPlacement should keep the 8px Fluent gap plus 1px border breathing room.");
+                    Assert.IsInstanceOfType(headerPanel, typeof(StackPanel),
+                        "Left TabStripPlacement should use the same sequential header host as top placement.");
+                    Assert.AreEqual(Orientation.Vertical, ((StackPanel)headerPanel).Orientation,
+                        "Left TabStripPlacement should stack tab headers vertically.");
+
+                    TabItem? firstItem = tabControl.Items[0] as TabItem;
+                    Assert.IsNotNull(firstItem);
+                    Assert.AreEqual(new Thickness(0, 0, 8, 2), firstItem.Margin,
+                        "TabItem should reserve right and bottom space so selected borders are not clipped.");
+                }
+                finally
+                {
+                    window.Close();
+                    _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void FluentTabControl_BottomPlacement_LeavesBorderBreathingRoom()
+        {
+            RunOnStaThread(() =>
+            {
+                Application? application = EnsureApplication();
+                ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
+                Window window = new();
+
+                try
+                {
+                    TabControl tabControl = new()
+                    {
+                        TabStripPlacement = Dock.Bottom
+                    };
+                    _ = tabControl.Items.Add(new TabItem { Header = "First", Content = new TextBlock { Text = "A" } });
+                    _ = tabControl.Items.Add(new TabItem { Header = "Second", Content = new TextBlock { Text = "B" } });
+                    window.Content = tabControl;
+                    window.Width = 640;
+                    window.Height = 480;
+                    window.Show();
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+
+                    FrameworkElement? headerPanel = tabControl.Template.FindName("HeaderPanel", tabControl) as FrameworkElement;
+
+                    Assert.IsNotNull(headerPanel);
+                    Assert.AreEqual(new Thickness(0, 8, 1, 0), headerPanel.Margin,
+                        "Bottom TabStripPlacement should keep the top gap plus 1px right-side border breathing room.");
+                    Assert.IsInstanceOfType(headerPanel, typeof(StackPanel),
+                        "Bottom TabStripPlacement should use the same sequential header host as top placement.");
+                    Assert.AreEqual(Orientation.Horizontal, ((StackPanel)headerPanel).Orientation,
+                        "Bottom TabStripPlacement should keep tab headers horizontal.");
+
+                    TabItem? firstItem = tabControl.Items[0] as TabItem;
+                    Assert.IsNotNull(firstItem);
+                    Assert.AreEqual(new Thickness(0, 0, 8, 2), firstItem.Margin,
+                        "TabItem should reserve right and bottom space so selected borders are not clipped.");
                 }
                 finally
                 {
@@ -1293,7 +1414,7 @@ namespace Fluence.Wpf.Tests
                     Assert.IsNotNull(FindVisualChildByName<Controls.TextBox>(window, "CharCountTextBox"));
 
                     SelectMainWindowNavPage(window, window.Dispatcher, "Selection");
-                    Assert.IsNotNull(FindVisualChildByName<Controls.ToggleSwitch>(window, "DefaultToggle"));
+                    Assert.IsNotNull(FindVisualChildByName<Controls.ToggleSwitch>(window, "WorkToggleSwitch"));
 
                     SelectMainWindowNavPage(window, window.Dispatcher, "Selection");
                     Assert.IsNotNull(FindVisualChildByName<Controls.ComboBox>(window, "SelectionDemoCombo"));
@@ -1348,8 +1469,8 @@ namespace Fluence.Wpf.Tests
                     CollectionAssert.Contains(pages, "Selection");
                     CollectionAssert.Contains(pages, "Inputs");
                     CollectionAssert.Contains(pages, "Typography");
-                    CollectionAssert.Contains(pages, "Iconography");
-                    CollectionAssert.Contains(pages, "Windowing");
+                    CollectionAssert.Contains(pages, "Icons");
+                    Assert.IsFalse(pages.Contains("Windowing"), "Windowing controls should move to Settings rather than the main navigation list.");
                     Assert.IsFalse(pages.Contains("Button"), "Demo navigation should use grouped pages, not generated per-control pages.");
                     Assert.IsFalse(pages.Contains("Fundamentals"), "Demo navigation should not expose the old Fundamentals section.");
                 }
@@ -1411,7 +1532,9 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    SelectMainWindowNavPage(window, window.Dispatcher, "Windowing");
+                    window.NavigateTo("settings");
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
 
                     Controls.ToggleSwitch? toggle = FindVisualChildByName<Controls.ToggleSwitch>(window, "ThemeWatcherToggle");
                     TextBlock? label = FindVisualChildByName<TextBlock>(window, "SystemThemeLabel");
@@ -2051,7 +2174,7 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        public void MainWindow_ProgressSlider_UsesFluentSliderAndUpdatesLabel()
+        public void MainWindow_ProgressNumberBox_UpdatesFirstProgressBar()
         {
             RunOnStaThread(() =>
             {
@@ -2068,16 +2191,16 @@ namespace Fluence.Wpf.Tests
 
                     SelectMainWindowNavPage(window, window.Dispatcher, "Status");
 
-                    Controls.Slider? slider = FindVisualChildByName<Controls.Slider>(window, "ProgressSlider");
-                    TextBlock? label = FindVisualChildByName<TextBlock>(window, "SliderValueLabel");
-                    Assert.IsNotNull(slider, "ProgressSlider should be a Controls.Slider control.");
-                    Assert.IsNotNull(label, "Slider value label should exist in progress tab.");
+                    Controls.NumberBox? numberBox = FindVisualChildByName<Controls.NumberBox>(window, "ProgressValueNumberBox");
+                    Controls.ProgressBar? progressBar = FindVisualChildByName<Controls.ProgressBar>(window, "StandardProgressBar");
+                    Assert.IsNotNull(numberBox, "ProgressValueNumberBox should be a Controls.NumberBox control.");
+                    Assert.IsNotNull(progressBar, "StandardProgressBar should exist in the status page.");
 
-                    slider.Value = 73;
+                    numberBox.Value = 73;
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    Assert.AreEqual("Value: 73", label.Text);
+                    Assert.AreEqual(73d, progressBar.Value, 0.1);
                 }
                 finally
                 {
@@ -2203,7 +2326,6 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "Suppress this for now.")]
         public void HyperlinkButton_Click_WithNavigateUri_DoesNotThrow()
         {
             RunOnStaThread(() =>
@@ -2226,6 +2348,11 @@ namespace Fluence.Wpf.Tests
 
                     button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
                     DrainDispatcher(window.Dispatcher);
+
+                    Assert.IsTrue(button.IsLoaded,
+                        "HyperlinkButton should remain loaded after click dispatch.");
+                    Assert.IsNull(button.NavigateUri,
+                        "This regression test exercises the no-uri click path.");
                 }
                 finally
                 {
@@ -2406,6 +2533,53 @@ namespace Fluence.Wpf.Tests
         }
 
         [TestMethod]
+        public void RadioButton_ContentAlignment_CentersTextWithIndicator()
+        {
+            RunOnStaThread(() =>
+            {
+                Application? application = EnsureApplication();
+                ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
+                Window window = new();
+                Controls.RadioButton radio = new()
+                {
+                    Content = "Standard",
+                    Width = 240,
+                    Height = 40
+                };
+
+                try
+                {
+                    window.Content = radio;
+                    window.Show();
+                    DrainDispatcher(window.Dispatcher);
+                    window.UpdateLayout();
+
+                    _ = radio.ApplyTemplate();
+                    Grid? indicatorHost = FindVisualChildByName<Grid>(radio, "IndicatorHost");
+                    ContentPresenter? contentPresenter = FindVisualChildByName<ContentPresenter>(radio, "ContentPresenter");
+
+                    Assert.IsNotNull(indicatorHost, "RadioButton template must include IndicatorHost.");
+                    Assert.IsNotNull(contentPresenter, "RadioButton template must include ContentPresenter.");
+                    Assert.AreEqual(VerticalAlignment.Center, radio.VerticalContentAlignment,
+                        "RadioButton text should default to center alignment with the indicator.");
+                    Assert.AreEqual(VerticalAlignment.Center, indicatorHost.VerticalAlignment,
+                        "RadioButton indicator should be centered within the root row.");
+                    Assert.AreEqual(new Thickness(0), indicatorHost.Margin,
+                        "RadioButton indicator should not carry an extra top offset.");
+                    Assert.AreEqual(VerticalAlignment.Center, contentPresenter.VerticalAlignment,
+                        "RadioButton content should align vertically with the indicator center.");
+                    Assert.AreEqual(new Thickness(8, 0, 0, 0), contentPresenter.Margin,
+                        "RadioButton content presenter should keep the horizontal WinUI text inset without a top offset.");
+                }
+                finally
+                {
+                    window.Close();
+                    _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
+                }
+            });
+        }
+
+        [TestMethod]
         public void RadioButton_GroupExclusivity_UnchecksOthers()
         {
             RunOnStaThread(() =>
@@ -2433,9 +2607,9 @@ namespace Fluence.Wpf.Tests
                     radio2.IsChecked = true;
                     DrainDispatcher(window.Dispatcher);
 
-                    Assert.IsFalse(radio1.IsChecked == true, "Radio1 should be unchecked after Radio2 is checked.");
-                    Assert.IsTrue(radio2.IsChecked == true);
-                    Assert.IsFalse(radio3.IsChecked == true);
+                    Assert.AreEqual(false, radio1.IsChecked, "Radio1 should be unchecked after Radio2 is checked.");
+                    Assert.AreEqual(true, radio2.IsChecked, "Radio2 should be checked after being set.");
+                    Assert.AreEqual(false, radio3.IsChecked, "Radio3 should be unchecked.");
                 }
                 finally
                 {
@@ -2507,14 +2681,14 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
 
-                    Assert.IsFalse(toggle.IsChecked == true, "ToggleSwitch should start unchecked.");
+                    Assert.AreEqual(false, toggle.IsChecked, "ToggleSwitch should start unchecked.");
 
                     ToggleButtonAutomationPeer peer = new(toggle);
                     IToggleProvider toggleProvider = peer;
                     toggleProvider.Toggle();
                     DrainDispatcher(window.Dispatcher);
 
-                    Assert.IsTrue(toggle.IsChecked == true, "ToggleSwitch should be checked after toggle.");
+                    Assert.AreEqual(true, toggle.IsChecked, "ToggleSwitch should be checked after toggle.");
                 }
                 finally
                 {
