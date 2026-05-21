@@ -1,0 +1,24 @@
+﻿{
+  "permissions": {
+    "allow": [
+      "Agent(winui-parity-reviewer)",
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& { $project = $env:CLAUDE_PROJECT_DIR; if (-not $project) { $project = (Get-Location).Path }; & (Join-Path $project '.claude/hooks/post-tool-util.ps1') }\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "microsoft-docs@claude-plugins-official": true
+  }
+}
