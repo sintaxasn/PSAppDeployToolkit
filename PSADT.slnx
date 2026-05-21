@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="lib/Fluence.Wpf/Fluence.Wpf/Fluence.Wpf.csproj" />
   <Project Path="src/PSADT/PSADT.ClientServer.Client.Compatible/PSADT.ClientServer.Client.Compatible.csproj" />
   <Project Path="src/PSADT/PSADT.ClientServer.Client.Launcher.Compatible/PSADT.ClientServer.Client.Launcher.Compatible.csproj" />
   <Project Path="src/PSADT/PSADT.ClientServer.Client.Launcher/PSADT.ClientServer.Client.Launcher.csproj" />
