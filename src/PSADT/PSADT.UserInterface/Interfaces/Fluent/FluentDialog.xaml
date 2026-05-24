@@ -8,6 +8,7 @@
     xmlns:psconv="clr-namespace:PSADT.UserInterface.Utilities"
     xmlns:ui="clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"
     xmlns:uicore="clr-namespace:Fluence.Wpf;assembly=Fluence.Wpf"
+    Background="{DynamicResource ApplicationBackgroundBrush}"
     MinHeight="0"
     MaxWidth="580"
     MaxHeight="1050"
@@ -15,8 +16,6 @@
     AutomationProperties.AutomationId="PSAppDeployToolkitDialog"
     AutomationProperties.Name="PSAppDeployToolkit Dialog"
     ExtendsContentIntoTitleBar="True"
-    FontSize="14"
-    FontWeight="Regular"
     IsCloseButtonVisible="Collapsed"
     IsMaximizeButtonVisible="Collapsed"
     IsMinimizeButtonVisible="Collapsed"
@@ -25,12 +24,7 @@
     ShowIcon="False"
     ShowTitle="False"
     SizeToContent="Height"
-    SnapsToDevicePixels="True"
-    TitleBarHeight="40"
-    TextOptions.TextFormattingMode="Ideal"
-    TextOptions.TextRenderingMode="ClearType"
     Topmost="True"
-    UseLayoutRounding="True"
     mc:Ignorable="d"
     >
 
@@ -41,7 +35,7 @@
             <psconv:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
 
             <!-- Title - 28 / SemiBold / 36 -->
-            <Style x:Key="adtTitleTextBlockStyle" TargetType="TextBlock">
+            <Style x:Key="AdtTitleTextBlockStyle" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="{DynamicResource FluentFontFamily}" />
                 <Setter Property="FontSize" Value="24" />
                 <Setter Property="FontWeight" Value="Bold" />
@@ -49,7 +43,7 @@
             </Style>
 
             <!-- Caption - 12 / Regular / 16 -->
-            <Style x:Key="adtSubTitleTextBlockStyle" TargetType="TextBlock">
+            <Style x:Key="AdtSubTitleTextBlockStyle" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="{DynamicResource FluentFontFamily}" />
                 <Setter Property="FontSize" Value="12" />
                 <Setter Property="FontWeight" Value="Regular" />
@@ -75,7 +69,7 @@
         <Grid
             x:Name="SidebarPanel"
             Grid.Row="0"
-            Grid.RowSpan="4"
+            Grid.RowSpan="3"
             Grid.Column="0"
             AutomationProperties.Name="Sidebar Panel"
             >
@@ -158,7 +152,7 @@
                     x:Name="AppTitleTextBlock"
                     Width="426"
                     AutomationProperties.Name="Application Title"
-                    Style="{DynamicResource adtTitleTextBlockStyle}"
+                    Style="{DynamicResource AdtTitleTextBlockStyle}"
                     Text="Excessively Long Application Title 1.1 x64 EN"
                     TextAlignment="Left"
                     TextTrimming="CharacterEllipsis"
@@ -169,7 +163,7 @@
                     x:Name="SubtitleTextBlock"
                     Width="426"
                     AutomationProperties.Name="Application Subtitle"
-                    Style="{DynamicResource adtSubTitleTextBlockStyle}"
+                    Style="{DynamicResource AdtSubTitleTextBlockStyle}"
                     Text="PSAppDeployToolkit - Installation Type"
                     TextAlignment="Left"
                     TextTrimming="CharacterEllipsis"
@@ -187,7 +181,7 @@
             Margin="24,0,24,16"
             VerticalAlignment="Center"
             AutomationProperties.Name="Main Content Card"
-            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            Background="{DynamicResource LayerFillColorAltBrush}"
             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="4"
@@ -240,8 +234,8 @@
                         Margin="16,0,16,16"
                         d:ItemsSource="{d:SampleData ItemCount=3}"
                         AutomationProperties.Name="Close Applications ListView"
-                        Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
-                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                        Background="{DynamicResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         IsItemSelectable="False"
