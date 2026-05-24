@@ -136,9 +136,6 @@
     <!--  These are the canonical Fluent close-button reds (#C42B1C / #B4271C).  -->
     <!--  Unlike SystemFillColorCritical they are identical in Light and Dark;  -->
     <!--  using tokens here lets High Contrast override via the resource system.  -->
-    <Color x:Key="WindowCloseButtonBackgroundPointerOver">#FFC42B1C</Color>
-    <Color x:Key="WindowCloseButtonBackgroundPressed">#FFB4271C</Color>
-    <Color x:Key="WindowCloseButtonForegroundPointerOver">#FFFFFFFF</Color>
     <Color x:Key="WindowCloseFillColorHover">#FFC42B1C</Color>
     <Color x:Key="WindowCloseFillColorPressed">#FFB4271C</Color>
     <Color x:Key="WindowCloseForegroundHover">#FFFFFFFF</Color>
@@ -147,8 +144,14 @@
 
     <!--  Accent fill brushes  -->
     <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{DynamicResource SystemAccentColorDark1}" />
-    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="{DynamicResource SystemAccentColorDark1}" Opacity=".9" />
-    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="{DynamicResource SystemAccentColorDark1}" Opacity=".8" />
+    <SolidColorBrush
+        x:Key="AccentFillColorSecondaryBrush"
+        Opacity=".9"
+        Color="{DynamicResource SystemAccentColorDark1}" />
+    <SolidColorBrush
+        x:Key="AccentFillColorTertiaryBrush"
+        Opacity=".8"
+        Color="{DynamicResource SystemAccentColorDark1}" />
     <SolidColorBrush x:Key="AccentFillColorDisabledBrush" Color="{DynamicResource AccentFillColorDisabled}" />
 
     <!--  Accent Text Fill Colors  -->
@@ -173,7 +176,24 @@
     <Color x:Key="TextOnAccentFillColorSecondary">#B3FFFFFF</Color>
     <Color x:Key="TextOnAccentFillColorDisabled">#FFFFFFFF</Color>
 
-    <!--  NavigationView content area tint (semi-transparent, shows Mica/Acrylic beneath)  -->
-    <Color x:Key="NavigationViewContentBackground">#A6FEFEFE</Color>
+    <!--
+        WinUI 3 canonical: NavigationViewContentBackground = LayerFillColorDefault
+        (#80FFFFFF in light = 50%-opaque white). This is a translucent "layer" brush,
+        NOT fully transparent. Layered over the Mica/Acrylic backdrop it gives the
+        content area a calm, slightly tinted surface while still letting some Mica
+        through so card lifts and brand colors stay visible.
+    -->
+    <Color x:Key="NavigationViewContentBackground">#80FFFFFF</Color>
+
+    <!--
+        AccentFillBackdrop: opaque sub-layer sitting BEHIND the accent track inside the
+        ToggleSwitch template. The accent track uses AccentFillColor*Brush (Default at full
+        opacity, Secondary at 0.9, Tertiary at 0.8); composing those against the visible card
+        surface yields wallpaper-tinted hover/pressed shades on Mica that drift from
+        Notepad/WinUI 3 references by 2-3 RGB units per channel. Layering them over an
+        opaque white internal base in Light mode pins the composited result to the canonical
+        Windows accent palette regardless of how translucent the surrounding card is.
+    -->
+    <Color x:Key="AccentFillBackdrop">#FFFFFFFF</Color>
 
 </ResourceDictionary>

@@ -141,9 +141,6 @@
     <Color x:Key="SystemFillColorSolidNeutralBackground">#FF000000</Color>
 
     <!--  Window Chrome - Close Button (HC static fallbacks)  -->
-    <Color x:Key="WindowCloseButtonBackgroundPointerOver">#FFC42B1C</Color>
-    <Color x:Key="WindowCloseButtonBackgroundPressed">#FFB4271C</Color>
-    <Color x:Key="WindowCloseButtonForegroundPointerOver">#FFFFFFFF</Color>
     <Color x:Key="WindowCloseFillColorHover">#FF1AEBFF</Color>
     <Color x:Key="WindowCloseFillColorPressed">#FF1AEBFF</Color>
     <Color x:Key="WindowCloseForegroundHover">#FF000000</Color>
@@ -362,5 +359,11 @@
     <SolidColorBrush x:Key="AccentControlElevationBorderBrush" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}" />
     <SolidColorBrush x:Key="TextControlElevationBorderBrush" Color="{DynamicResource {x:Static SystemColors.ControlDarkColorKey}}" />
 
+    <!--
+        ToggleSwitchTrackBase in HC binds to SystemColorWindowColor so the internal sub-layer
+        respects the user's chosen HC theme. The accent on top binds to SystemColorHighlightColor,
+        also via the SystemColors keys. See Theme.Light.xaml for the rationale.
+    -->
+    <SolidColorBrush x:Key="AccentFillBackdropBrush" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}" />
 
 </ResourceDictionary>

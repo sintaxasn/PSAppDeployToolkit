@@ -56,6 +56,8 @@ namespace Fluence.Wpf.Helpers
 
         internal static bool IsWindows11 => OsBuild >= 22000;
 
+        internal static bool IsWindows11_22523_OrGreater => OsBuild >= 22523;
+
         internal static bool IsWindows11_22H2 => OsBuild >= 22621;
 
         internal static bool IsWindows11_23H2 => OsBuild >= 22631;

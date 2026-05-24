@@ -124,18 +124,15 @@
     <Color x:Key="SystemFillColorCritical">#FFFF99A4</Color>
     <Color x:Key="SystemFillColorNeutral">#8BFFFFFF</Color>
     <Color x:Key="SystemFillColorSolidNeutral">#FF9D9D9D</Color>
-    <Color x:Key="SystemFillColorAttentionBackground">#15FFFFFF</Color>
+    <Color x:Key="SystemFillColorAttentionBackground">#08FFFFFF</Color>
     <Color x:Key="SystemFillColorSuccessBackground">#FF393D1B</Color>
     <Color x:Key="SystemFillColorCautionBackground">#FF433519</Color>
     <Color x:Key="SystemFillColorCriticalBackground">#FF442726</Color>
-    <Color x:Key="SystemFillColorNeutralBackground">#15FFFFFF</Color>
+    <Color x:Key="SystemFillColorNeutralBackground">#08FFFFFF</Color>
     <Color x:Key="SystemFillColorSolidAttentionBackground">#FF2E2E2E</Color>
     <Color x:Key="SystemFillColorSolidNeutralBackground">#FF2E2E2E</Color>
 
     <!--  Window Chrome - Close Button  -->
-    <Color x:Key="WindowCloseButtonBackgroundPointerOver">#FFC42B1C</Color>
-    <Color x:Key="WindowCloseButtonBackgroundPressed">#FFB4271C</Color>
-    <Color x:Key="WindowCloseButtonForegroundPointerOver">#FFFFFFFF</Color>
     <Color x:Key="WindowCloseFillColorHover">#FFC42B1C</Color>
     <Color x:Key="WindowCloseFillColorPressed">#FFB4271C</Color>
     <Color x:Key="WindowCloseForegroundHover">#FFFFFFFF</Color>
@@ -143,14 +140,20 @@
 
     <!--  Accent fill brushes  -->
     <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{DynamicResource SystemAccentColorLight2}" />
-    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="{DynamicResource SystemAccentColorLight2}" Opacity=".9" />
-    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="{DynamicResource SystemAccentColorLight2}" Opacity=".8" />
+    <SolidColorBrush
+        x:Key="AccentFillColorSecondaryBrush"
+        Opacity=".9"
+        Color="{DynamicResource SystemAccentColorLight2}" />
+    <SolidColorBrush
+        x:Key="AccentFillColorTertiaryBrush"
+        Opacity=".8"
+        Color="{DynamicResource SystemAccentColorLight2}" />
     <SolidColorBrush x:Key="AccentFillColorDisabledBrush" Color="{DynamicResource AccentFillColorDisabled}" />
 
     <!--  Accent Text Fill Colors  -->
     <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{DynamicResource SystemAccentColorLight3}" />
     <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{DynamicResource SystemAccentColorLight3}" />
-    <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{DynamicResource AccentFillColorLight2}" />
+    <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{DynamicResource SystemAccentColorLight2}" />
 
     <SolidColorBrush x:Key="SystemFillColorAttentionBrush" Color="{DynamicResource SystemAccentColorLight2}" />
     <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="{StaticResource SystemFillColorSuccess}" />
@@ -169,7 +172,23 @@
     <Color x:Key="TextOnAccentFillColorSecondary">#80000000</Color>
     <Color x:Key="TextOnAccentFillColorDisabled">#87FFFFFF</Color>
 
-    <!--  NavigationView content area tint (semi-transparent, shows Mica/Acrylic beneath)  -->
-    <Color x:Key="NavigationViewContentBackground">#AF2A2A2A</Color>
+    <!--
+        WinUI 3 canonical: NavigationViewContentBackground = LayerFillColorDefault
+        (#4C3A3A3A in dark = 30%-opaque grey #3A3A3A). This is a translucent "layer"
+        brush, NOT fully transparent. Layered over the Mica/Acrylic backdrop it gives
+        the content area a calm, slightly tinted surface while still letting some Mica
+        through so card lifts and brand colors stay visible. Fully transparent
+        (the previous overcorrection) lets raw Mica noise dominate the content area
+        and washes out card differentiation.
+    -->
+    <Color x:Key="NavigationViewContentBackground">#4C3A3A3A</Color>
+
+    <!--
+        AccentFillBackdrop: opaque sub-layer behind the accent track inside the ToggleSwitch
+        template. See Theme.Light.xaml for the rationale. Dark value matches
+        SolidBackgroundFillColorBase so accent composited at 0.9 opacity yields the canonical
+        Windows accent palette hover shade (e.g. #4CC2FF x 0.9 over #202020 = #48B2E9).
+    -->
+    <Color x:Key="AccentFillBackdrop">#FF202020</Color>
 
 </ResourceDictionary>
