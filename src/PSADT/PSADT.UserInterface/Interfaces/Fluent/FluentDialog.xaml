@@ -8,7 +8,7 @@
     xmlns:psconv="clr-namespace:PSADT.UserInterface.Utilities"
     xmlns:ui="clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"
     xmlns:uicore="clr-namespace:Fluence.Wpf;assembly=Fluence.Wpf"
-    Background="{DynamicResource ApplicationBackgroundBrush}"
+    Background="Transparent"
     MinHeight="0"
     MaxWidth="580"
     MaxHeight="1050"

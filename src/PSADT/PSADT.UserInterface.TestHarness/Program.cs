@@ -314,7 +314,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             if (closeAppsResult.Equals(CloseAppsDialogResult.Defer))
             {
-                Environment.Exit(0);
+                return;
             }
 
             // #################################################################################
@@ -344,7 +344,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             if (customResult == customDialogButtonRightText)
             {
-                Environment.Exit(0);
+                return;
             }
 
             // #################################################################################
@@ -355,7 +355,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             if (customResult == customDialogButtonRightText)
             {
-                Environment.Exit(0);
+                return;
             }
 
             // #################################################################################
@@ -374,7 +374,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             if (listSelectionResult.Result == listDialogButtonRightText)
             {
-                Environment.Exit(0);
+                return;
             }
 
             Console.WriteLine(listSelectionResult.SelectedItem);
@@ -387,7 +387,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
 
             if (inputResult.Result == inputDialogButtonRightText)
             {
-                Environment.Exit(0);
+                return;
             }
 
             Console.WriteLine(inputResult.Text);
