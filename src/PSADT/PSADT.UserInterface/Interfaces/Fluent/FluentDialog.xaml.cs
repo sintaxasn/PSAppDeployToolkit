@@ -294,16 +294,21 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the Loaded event for the dialog, performing initialization and layout updates required for correct
         /// display and interaction.
         /// </summary>
-        /// <remarks>This method ensures the dialog uses software rendering, updates its layout and button
-        /// arrangement, initializes any countdown display, and positions the window appropriately. It also starts any
-        /// configured timers and signals operation success for client-server scenarios. Override this method to
-        /// customize dialog initialization behavior when the dialog is loaded.</remarks>
+        /// <remarks>This method updates the dialog's layout and button arrangement, initializes any countdown
+        /// display, and positions the window appropriately. It also starts any configured timers and signals operation
+        /// success for client-server scenarios. Override this method to customize dialog initialization behavior when
+        /// the dialog is loaded.</remarks>
         /// <param name="sender">The source of the event, typically the dialog instance that is being loaded.</param>
         /// <param name="e">A RoutedEventArgs object that contains the event data.</param>
         private protected virtual void FluentDialog_Loaded(object? sender, RoutedEventArgs e)
         {
-            // Force software rendering.
-            ((HwndSource)PresentationSource.FromVisual(this)).CompositionTarget.RenderMode = RenderMode.SoftwareOnly;
+            // Note: software rendering is already forced process-wide via RenderOptions.ProcessRenderMode in
+            // DialogManager's static constructor (set at Application.Startup, before any window exists). Do NOT
+            // re-assign CompositionTarget.RenderMode here: mutating the composition target during the Loaded event
+            // tears down and recreates the window's render target while FluenceWindow.BeginCloakForFirstPaint is
+            // holding the window cloaked until its first composed frame. That race intermittently uncloaks the
+            // window around a black/native-chrome frame, producing the "first-launch corruption" flash on the
+            // CloseApps and Restart dialogs.
 
             // Finish registration that must occur after construction has completed.
             AutomationProperties.SetName(this, Title);
