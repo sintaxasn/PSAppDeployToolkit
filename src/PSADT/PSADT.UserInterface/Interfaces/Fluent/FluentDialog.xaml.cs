@@ -68,19 +68,16 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
 
             // Initialize the theme and accent color for the dialog based on the provided options, defaulting to automatic theming and accent if not specified.
-            ApplicationThemeManager.Apply(ApplicationTheme.Auto, BackdropType.Acrylic);
-
-            // Initialize the window
-            InitializeComponent();
-
-            // Apply ADT Specific Brush colors depending on the current theme
-            bool isDark = ApplicationThemeManager.IsSystemInDarkMode;
+            ApplicationThemeManager.Apply(ApplicationTheme.Auto);
 
             // If the accent color is passed through, update via ThemeManager
             if (options.FluentAccentColor is not null)
             {
                 ApplicationAccentColorManager.ApplyCustomAccent(IntToColor(options.FluentAccentColor.Value));
             }
+
+            // Initialize the window
+            InitializeComponent();
 
             // Set the language and flow direction for the dialog.
             Language = System.Windows.Markup.XmlLanguage.GetLanguage(options.Language.IetfLanguageTag);
@@ -105,17 +102,11 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 _dialogAllowMove = options.DialogAllowMove.Value;
             }
             IsMoveable = _dialogAllowMove;
-
-            // Minimize caption-button support is off by default to preserve existing dialog behavior
-            // callers (and PSAppDeployToolkit's -AllowMinimize) must explicitly opt in by setting
-            // DialogAllowMinimize=true in BaseDialogOptions. Because the base XAML for all fluent
-            // dialogs uses ResizeMode="NoResize" (which normally collapses the minimize button), we
-            // rely on FluenceWindow's explicit-DP override behavior: assigning IsMinimizeButtonVisible
-            // here takes precedence over the ResizeMode-derived defaults.
-            if (options.DialogAllowMinimize == true)
+            if (options.DialogAllowMinimize is not null)
             {
-                IsMinimizeButtonVisible = Visibility.Visible;
+                _dialogMinimizeVisible = options.DialogAllowMinimize.Value;
             }
+            IsMinimizeButtonVisible = _dialogMinimizeVisible ? Visibility.Visible : Visibility.Collapsed;
 
             WindowStartupLocation = WindowStartupLocation.Manual;
             Topmost = options.DialogTopMost;
@@ -1011,6 +1002,11 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Whether the dialog is allowed to be moved.
         /// </summary>
         private protected readonly bool _dialogAllowMove;
+
+        /// <summary>
+        /// Whether the dialog's minimize control is visible.
+        /// </summary>
+        private protected readonly bool _dialogMinimizeVisible;
 
         /// <summary>
         /// The countdown duration for the dialog.
