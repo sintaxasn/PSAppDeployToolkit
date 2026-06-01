@@ -13,7 +13,9 @@
 
 # Local agent/tooling state
 .skills/
-.slopwatch/
+# Slopwatch: track the committed config; ignore local baseline/cache output.
+.slopwatch/*
+!.slopwatch/slopwatch.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -431,3 +433,6 @@ data/theme-golden/
 .env
 .env.local
 .env.*.local
+
+# Internal Docs
+/docs/_internal/

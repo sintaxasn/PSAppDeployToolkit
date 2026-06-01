@@ -120,6 +120,33 @@ namespace Fluence.Wpf.Controls
                 typeof(NavigationView),
                 new PropertyMetadata(false));
 
+        /// <summary>
+        /// Internal inheritable attached flag marking the footer items region. The Top pane template
+        /// sets it on <c>PART_FooterItemsHost</c>, so it inherits onto the footer
+        /// <see cref="NavigationViewItem"/>s; the item template reads it to render those items
+        /// icon-only in Top mode. The Left/LeftCompact templates do not set it, scoping the gear-only
+        /// rule to Top mode. Inheritance (rather than a code marker) keeps the rule confined to Top
+        /// without a per-item pane-mode binding. Not public API.
+        /// </summary>
+        internal static readonly DependencyProperty IsFooterItemProperty =
+            DependencyProperty.RegisterAttached(
+                "IsFooterItem",
+                typeof(bool),
+                typeof(NavigationView),
+                new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+
+        /// <summary>Sets the <see cref="IsFooterItemProperty"/> flag on <paramref name="element"/>.</summary>
+        internal static void SetIsFooterItem(DependencyObject element, bool value)
+        {
+            element?.SetValue(IsFooterItemProperty, value);
+        }
+
+        /// <summary>Gets the <see cref="IsFooterItemProperty"/> flag from <paramref name="element"/>.</summary>
+        internal static bool GetIsFooterItem(DependencyObject element)
+        {
+            return element is not null && (bool)element.GetValue(IsFooterItemProperty);
+        }
+
         // Margins and offsets used in indicator and top overflow positioning calculations.
         // The indicator sits just inside the selected item's rounded OuterBorder (Margin 4 + 2px
         // stroke), flush against the inner edge with no padding gap, rather than floating in the
@@ -450,7 +477,17 @@ namespace Fluence.Wpf.Controls
             _selectionIndicator = GetTemplateChild(PartSelectionIndicator) as FrameworkElement;
             _indicatorHost = _selectionIndicator is not null ? VisualTreeHelper.GetParent(_selectionIndicator) as FrameworkElement : null;
             _footerSelectionIndicator = GetTemplateChild(PartFooterSelectionIndicator) as FrameworkElement;
-            _footerIndicatorHost = _footerSelectionIndicator is not null ? VisualTreeHelper.GetParent(_footerSelectionIndicator) as FrameworkElement : null;
+
+            // The footer indicator host must be an ancestor of the footer items so that
+            // CalculateIndicatorPosition's TransformToAncestor succeeds. In Left/LeftCompact the
+            // indicator is a direct child of the Grid that also hosts PART_FooterItemsHost; in Top it
+            // sits in a zero-size Canvas inside that same Grid (the Canvas fills the cell at its
+            // origin, so its coordinate space matches the Grid's). Resolving the host from the items
+            // host's parent therefore works for every pane mode, where using the indicator's immediate
+            // parent (the Canvas in Top mode) is not an ancestor of the items and the transform fails.
+            FrameworkElement? footerItemsHost = GetTemplateChild(PartFooterItemsHost) as FrameworkElement;
+            _footerIndicatorHost = (footerItemsHost is not null ? VisualTreeHelper.GetParent(footerItemsHost) as FrameworkElement : null)
+                ?? (_footerSelectionIndicator is not null ? VisualTreeHelper.GetParent(_footerSelectionIndicator) as FrameworkElement : null);
             foreach (object entry in FooterMenuItems)
             {
                 if (entry is NavigationViewItem footerItem)
@@ -463,7 +500,7 @@ namespace Fluence.Wpf.Controls
             CoerceTopPaneProperties();
             UpdateTitleBarExtensionForPaneMode();
             UpdateBackButtonState(false);
-            UpdatePaneColumnWidth(false);
+            ApplyPaneColumnWidthOnTemplateApplied();
             ScheduleTopOverflowUpdate();
             ScheduleIndicatorPosition(false);
         }
@@ -854,7 +891,17 @@ namespace Fluence.Wpf.Controls
         private static void OnPaneDisplayModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             NavigationView nav = (NavigationView)d;
+            NavigationViewPaneDisplayMode oldMode = (NavigationViewPaneDisplayMode)e.OldValue;
             NavigationViewPaneDisplayMode newMode = (NavigationViewPaneDisplayMode)e.NewValue;
+
+            // Left and LeftCompact use different pane templates, so the switch swaps the template and
+            // its PaneColumn; the width cannot animate on the old column (it is about to be discarded).
+            // Capture the current width now and hand it to the new template's OnApplyTemplate, which
+            // animates its fresh column from it - the same GridLength flight as the collapse/expand
+            // toggle. Transitions to/from Top have no pane-column animation, so they snap.
+            bool animatePaneWidth = IsLeftFamilyMode(oldMode) && IsLeftFamilyMode(newMode);
+            double fromWidth = nav.GetCurrentPaneColumnWidth();
+
             if (newMode == NavigationViewPaneDisplayMode.LeftCompact)
             {
                 nav.SetCurrentValue(IsPaneOpenProperty, false);
@@ -862,9 +909,24 @@ namespace Fluence.Wpf.Controls
             nav.CoerceTopPaneProperties();
             nav.UpdateTitleBarExtensionForPaneMode();
             nav._indicatorPositioned = false;
-            nav.UpdatePaneColumnWidth(false);
+
+            if (animatePaneWidth)
+            {
+                nav._pendingPaneWidthAnimationFrom = fromWidth;
+            }
+            else
+            {
+                nav._pendingPaneWidthAnimationFrom = null;
+                nav.UpdatePaneColumnWidth(false);
+            }
+
             nav.ScheduleTopOverflowUpdate();
             nav.ScheduleIndicatorPosition(false);
+        }
+
+        private static bool IsLeftFamilyMode(NavigationViewPaneDisplayMode mode)
+        {
+            return mode is NavigationViewPaneDisplayMode.Left or NavigationViewPaneDisplayMode.LeftCompact;
         }
 
         private static object CoerceIsPaneOpen(DependencyObject d, object baseValue)
@@ -951,6 +1013,28 @@ namespace Fluence.Wpf.Controls
         private void OnTitleBarExtensionChanged(object? sender, EventArgs e)
         {
             UpdateTitleBarExtensionForPaneMode();
+        }
+
+        /// <summary>
+        /// Sets the freshly templated pane column width during <see cref="OnApplyTemplate"/>. When a
+        /// Left &lt;-&gt; LeftCompact switch is in flight (<see cref="_pendingPaneWidthAnimationFrom"/> is
+        /// set), the new column animates from the captured pre-swap width to its target, continuing
+        /// the collapse/expand-style flight across the template swap; otherwise the width snaps.
+        /// </summary>
+        private void ApplyPaneColumnWidthOnTemplateApplied()
+        {
+            if (_pendingPaneWidthAnimationFrom is double fromWidth
+                && _paneColumn is not null
+                && PaneDisplayMode is NavigationViewPaneDisplayMode.Left or NavigationViewPaneDisplayMode.LeftCompact)
+            {
+                _pendingPaneWidthAnimationFrom = null;
+                _paneColumn.Width = new GridLength(fromWidth);
+                UpdatePaneColumnWidth(true);
+                return;
+            }
+
+            _pendingPaneWidthAnimationFrom = null;
+            UpdatePaneColumnWidth(false);
         }
 
         private void UpdatePaneColumnWidth(bool useAnimation)
@@ -1042,30 +1126,159 @@ namespace Fluence.Wpf.Controls
 
         /// <summary>
         /// Snaps the footer selection indicator onto the selected footer item, or hides it when no
-        /// footer item is selected. The footer region typically holds a single item, so a snap
-        /// (rather than the main region's depart/arrive flight) is used; cross-region transitions
-        /// fade the inactive indicator out, matching WinUI's region-to-region behavior.
+        /// footer item is selected. The footer region typically holds a single item, so the indicator
+        /// does not fly laterally; instead it fades and scales in when a footer item becomes selected
+        /// and out when it is deselected, matching the feel of the main region's arrive/depart.
         /// </summary>
         private void PositionFooterIndicator(bool animate)
         {
-            _ = animate;
             if (_footerSelectionIndicator is null || _footerIndicatorHost is null)
             {
                 return;
             }
-            if (!IsLoaded
-                || SelectedFooterItem is null
-                || !SelectedFooterItem.IsVisible
-                || SelectedFooterItem.ActualHeight is 0)
+
+            bool topMode = PaneDisplayMode == NavigationViewPaneDisplayMode.Top;
+            bool shouldShow = IsLoaded
+                && SelectedFooterItem is not null
+                && SelectedFooterItem.IsVisible
+                && SelectedFooterItem.ActualHeight > 0;
+
+            if (!shouldShow)
             {
-                _footerSelectionIndicator.BeginAnimation(OpacityProperty, null);
-                _footerSelectionIndicator.Opacity = 0.0;
+                if (topMode)
+                {
+                    // Animate the indicator out when leaving a selected footer item (e.g. navigating
+                    // away from Settings); snap to hidden when nothing was showing or animation is off.
+                    bool wasVisible = _footerSelectionIndicator.Opacity > 0.01;
+                    AnimateFooterIndicatorVisibility(false, true, animate && wasVisible);
+                }
+                else
+                {
+                    // Left / LeftCompact keep the historical instant hide.
+                    StopFooterAnimation();
+                    _footerSelectionIndicator.Opacity = 0.0;
+                }
                 return;
             }
 
-            bool topMode = PaneDisplayMode == NavigationViewPaneDisplayMode.Top;
-            Point targetPosition = CalculateIndicatorPosition(SelectedFooterItem, _footerSelectionIndicator, _footerIndicatorHost, topMode);
-            SnapIndicatorCore(_footerSelectionIndicator, targetPosition);
+            Point targetPosition = CalculateIndicatorPosition(SelectedFooterItem!, _footerSelectionIndicator, _footerIndicatorHost, topMode);
+
+            if (!topMode)
+            {
+                // Left / LeftCompact keep the historical snap (no fade/scale flight).
+                StopFooterAnimation();
+                SnapIndicatorCore(_footerSelectionIndicator, targetPosition);
+                return;
+            }
+
+            bool wasHidden = _footerSelectionIndicator.Opacity < 0.01;
+            StopFooterAnimation();
+            EnsureMutableTransform(_footerSelectionIndicator);
+            TransformGroup group = (TransformGroup)_footerSelectionIndicator.RenderTransform;
+            TranslateTransform translate = (TranslateTransform)group.Children[1];
+            translate.X = targetPosition.X;
+            translate.Y = targetPosition.Y;
+
+            // Fade + scale the indicator in when it first appears on a footer item; a reflow while it
+            // is already shown just repositions it at full opacity.
+            AnimateFooterIndicatorVisibility(true, true, animate && wasHidden);
+        }
+
+        /// <summary>
+        /// Fades and scales the footer selection indicator in (<paramref name="appearing"/> is
+        /// <see langword="true"/>) or out, mirroring the main indicator's arrive/depart easing. When
+        /// <paramref name="animate"/> is <see langword="false"/> the indicator snaps directly to the
+        /// target opacity and scale. The scaled axis follows the indicator orientation: horizontal in
+        /// Top mode, vertical otherwise.
+        /// </summary>
+        private void AnimateFooterIndicatorVisibility(bool appearing, bool topMode, bool animate)
+        {
+            if (_footerSelectionIndicator is null)
+            {
+                return;
+            }
+
+            StopFooterAnimation();
+            EnsureMutableTransform(_footerSelectionIndicator);
+            TransformGroup group = (TransformGroup)_footerSelectionIndicator.RenderTransform;
+            ScaleTransform scale = (ScaleTransform)group.Children[0];
+            DependencyProperty scaleProperty = topMode ? ScaleTransform.ScaleXProperty : ScaleTransform.ScaleYProperty;
+
+            double toOpacity = appearing ? 1.0 : 0.0;
+            if (!animate)
+            {
+                scale.ScaleX = 1.0;
+                scale.ScaleY = 1.0;
+                _footerSelectionIndicator.Opacity = toOpacity;
+                return;
+            }
+
+            int animationId = _footerAnimationGeneration;
+            double fromScale = appearing ? 0.72 : 1.0;
+            double toScale = appearing ? 1.0 : 0.72;
+            double fromOpacity = appearing ? 0.0 : 1.0;
+            Duration duration = new(TimeSpan.FromMilliseconds(appearing ? 140.0 : 90.0));
+            CubicEase ease = new() { EasingMode = appearing ? EasingMode.EaseOut : EasingMode.EaseIn };
+
+            // Seed the start state; the cross axis stays at 1.0 so only the indicator's length scales.
+            scale.ScaleX = topMode ? fromScale : 1.0;
+            scale.ScaleY = topMode ? 1.0 : fromScale;
+            _footerSelectionIndicator.Opacity = fromOpacity;
+
+            DoubleAnimation scaleAnimation = new(fromScale, toScale, duration)
+            {
+                EasingFunction = ease,
+                FillBehavior = FillBehavior.Stop
+            };
+            DoubleAnimation opacityAnimation = new(fromOpacity, toOpacity, duration)
+            {
+                EasingFunction = ease,
+                FillBehavior = FillBehavior.Stop
+            };
+
+            opacityAnimation.Completed += delegate
+            {
+                if (animationId != _footerAnimationGeneration)
+                {
+                    return;
+                }
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                _footerSelectionIndicator.BeginAnimation(OpacityProperty, null);
+                scale.ScaleX = 1.0;
+                scale.ScaleY = 1.0;
+                _footerSelectionIndicator.Opacity = toOpacity;
+            };
+
+            scale.BeginAnimation(scaleProperty, scaleAnimation, HandoffBehavior.SnapshotAndReplace);
+            _footerSelectionIndicator.BeginAnimation(OpacityProperty, opacityAnimation, HandoffBehavior.SnapshotAndReplace);
+        }
+
+        /// <summary>
+        /// Cancels any in-flight footer-indicator animations and bumps the generation guard so their
+        /// completion callbacks no-op.
+        /// </summary>
+        private void StopFooterAnimation()
+        {
+            _footerAnimationGeneration++;
+            if (_footerSelectionIndicator is null)
+            {
+                return;
+            }
+            _footerSelectionIndicator.BeginAnimation(OpacityProperty, null);
+            if (_footerSelectionIndicator.RenderTransform is TransformGroup group && group.Children.Count >= 2)
+            {
+                if (group.Children[0] is ScaleTransform scale && !scale.IsFrozen)
+                {
+                    scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                    scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                }
+                if (group.Children[1] is TranslateTransform translate && !translate.IsFrozen)
+                {
+                    translate.BeginAnimation(TranslateTransform.XProperty, null);
+                    translate.BeginAnimation(TranslateTransform.YProperty, null);
+                }
+            }
         }
 
         private void PositionIndicator(bool animate, NavigationViewItem? previousItem)
@@ -1792,7 +2005,20 @@ namespace Fluence.Wpf.Controls
         /// valid.</remarks>
         private int _indicatorAnimationGeneration;
 
+        /// <summary>
+        /// Generation counter guarding footer-indicator fade/scale animations, so a superseded
+        /// arrive/depart animation's completion callback does not stomp a newer one.
+        /// </summary>
+        private int _footerAnimationGeneration;
+
         private int _paneColumnAnimationGeneration;
+
+        /// <summary>
+        /// Pane width captured at a Left &lt;-&gt; LeftCompact display-mode switch, consumed by the next
+        /// <see cref="OnApplyTemplate"/> so the new template's pane column animates from it (the swap
+        /// discards the old column, so the flight cannot run on the original element).
+        /// </summary>
+        private double? _pendingPaneWidthAnimationFrom;
 
         private bool _topOverflowUpdateScheduled;
 

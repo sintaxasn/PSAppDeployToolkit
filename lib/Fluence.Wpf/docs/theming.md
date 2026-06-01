@@ -5,7 +5,7 @@ description: Dictionary slots, canonical token families, accent ramps, backdrops
 weight: 20
 ---
 
-Fluence.Wpf uses WinUI 3 naming and state behavior for theme resources and is implemented as plain WPF. If you already work with WinUI keys, most token names and control roles will look familiar.
+Fluence.Wpf uses WinUI 3 naming and state behavior for theme resources, implemented as plain WPF. If you already work with WinUI keys, most token names and control roles will look familiar.
 
 ## Merge order (application resources)
 
@@ -31,14 +31,14 @@ Repeated `Apply` calls must not accumulate extra theme dictionaries (`Dictionary
 
 ## Canonical token families
 
-Fluence.Wpf defines the full WinUI 3 token ramp. These are the keys most commonly referenced in custom templates:
+Fluence.Wpf defines the full WinUI 3 token ramp. These are the keys you will reference most often in custom templates:
 
 - **Text**: `TextFillColorPrimary`, `TextFillColorSecondary`, `TextFillColorTertiary`, `TextFillColorDisabled`, `TextOnAccentFillColorPrimary` / `Secondary` / `Disabled`.
 - **Fill**: `ControlFillColorDefault`, `ControlFillColorSecondary`, `ControlFillColorTertiary`, `ControlFillColorInputActive`, `ControlFillColorDisabled`, `AccentFillColorDefault` / `Secondary` / `Tertiary` / `Disabled`, `SubtleFillColorSecondary` / `Tertiary`, `LayerFillColorDefault`, `CardBackgroundFillColorDefault`.
 - **Stroke**: `ControlStrokeColorDefault` / `Secondary`, **`ControlStrongStrokeColorDefault`** (radio / check-box rings), **`ControlStrongStrokeColorDisabled`**, `CardStrokeColorDefault`, `DividerStrokeColorDefault`, `FocusStrokeColorOuter` / `Inner`.
 - **Background**: `SolidBackgroundFillColorBase`, `ApplicationBackgroundColor`.
 - **Window controls**: `WindowCloseButtonBackgroundPointerOver`, `WindowCloseButtonBackgroundPressed`, `WindowCloseButtonForegroundPointerOver`.
-- **High contrast aliases**: `SystemColorWindowTextColorBrush`, `SystemColorWindowColorBrush`, `SystemColorButtonFaceColorBrush`, `SystemColorButtonTextColorBrush`, `SystemColorHighlightColorBrush`, `SystemColorHighlightTextColorBrush`, `SystemColorHotlightColorBrush`, `SystemColorGrayTextColorBrush`. These brush-only aliases map directly to WPF `SystemColors` so consumers can preview or bind Windows high contrast roles without hard-coding platform resources.
+- **High contrast aliases**: `SystemColorWindowTextColorBrush`, `SystemColorWindowColorBrush`, `SystemColorButtonFaceColorBrush`, `SystemColorButtonTextColorBrush`, `SystemColorHighlightColorBrush`, `SystemColorHighlightTextColorBrush`, `SystemColorHotlightColorBrush`, `SystemColorGrayTextColorBrush`. These brush-only aliases map directly to WPF `SystemColors`, so you can preview or bind Windows high contrast roles without hard-coding platform resources.
 
 Each color token has a matching `*Brush` frozen `SolidColorBrush` - for example `ControlStrongStrokeColorDefaultBrush` - produced by `BrushFactory`. Reference the brush keys from XAML, not the raw color keys.
 
@@ -61,7 +61,16 @@ Which backdrops work depends on OS support. Mica and Tabbed require Windows 11; 
 
 ## Design-time
 
-`DesignTime.xaml` ships with Fluence and is merged under `d:DataContext` scenarios so the designer can resolve resource keys. It assumes Light theme with `#0078D4` accent. The XAML designer and runtime merge stacks are not identical - always check the result in the demo app.
+`FluenceThemeEngine` computes the full Fluence color and brush set in C# at runtime and publishes it at `MergedDictionaries[0]`. None of those brushes exist as authored XAML, so the XAML designer and Blend cannot resolve `*Brush` keys on their own. To fix the preview, Fluence ships two generated, design-time-only dictionaries that hold the computed palette for the default `#0078D4` accent:
+
+- `Properties/DesignTime.Light.xaml`
+- `Properties/DesignTime.Dark.xaml`
+
+The project-wide preview file `Properties/DesignTimeResources.xaml` merges the Light one (plus Typography and Generic), mirroring the runtime 3-slot model so the whole library previews correctly in Light. These files are compiled into the assembly (`Page` build action) and are referenceable at design time by pack URI, for example `pack://application:,,,/Fluence.Wpf;component/Properties/DesignTime.Dark.xaml`. Nothing merges them at runtime.
+
+To preview **Dark**, add a design-time-only merge of `DesignTime.Dark.xaml` (under `mc:Ignorable="d"` / the `d:` namespace) to the specific window or page you are previewing.
+
+These files are a serialized snapshot of the engine output, kept honest by a unit test: `DesignTimeResources_AreCurrent` regenerates each file in memory and fails CI if the committed file drifts. After an intentional engine change that affects colors or brushes, run the (normally `[Ignore]`d) `RegenerateDesignTimeResources` test to rewrite both files, then re-commit. The snapshot is deterministic and machine-independent: it forces the default accent through the HSV ramp generator (no registry / DWM read), uses the default theme title-bar colors for the window-chrome tokens, and omits the live-`SystemColors` `SystemColor*` aliases, the runtime-only `AcrylicNoiseBrush`, the flyout shadow effect, and the focus-visual styles. High contrast is out of scope for design-time previews. The XAML designer and runtime merge stacks are not identical - always check the result in the demo app.
 
 ## Testing
 

@@ -152,7 +152,9 @@ namespace Fluence.Wpf.Tests
                 {
                     mw.Show();
                     DrainDispatcher(mw.Dispatcher);
-                    WaitForAnimationAndDrain(mw.Dispatcher, 300);
+                    // Settle until the shell's NavigationView is realized rather than padding a
+                    // fixed delay; returns as soon as the visual tree is up.
+                    _ = WaitUntil(mw.Dispatcher, 2000, () => FindVisualChildByName<NavigationView>(mw, "DemoNav") is not null);
                     mw.UpdateLayout();
 
                     NavigationView? nav = FindVisualChildByName<NavigationView>(mw, "DemoNav");
@@ -329,7 +331,8 @@ namespace Fluence.Wpf.Tests
                         "LeftCompact footer navigation items should receive the full compact pane width so their icons are visible.");
 
                     nav.IsPaneOpen = true;
-                    WaitForAnimationAndDrain(window.Dispatcher, 220);
+                    // Settle until the footer host reaches the asserted Visible state.
+                    _ = WaitUntil(window.Dispatcher, 2000, () => footerHost.Visibility == Visibility.Visible);
 
                     Assert.AreEqual(Visibility.Visible, footerHost.Visibility,
                         "LeftCompact footer should be visible when the pane opens.");
@@ -1220,7 +1223,8 @@ namespace Fluence.Wpf.Tests
                         "Icon item indicator should sit inside the selected item background.");
 
                     nav.SelectedIndex = 1;
-                    WaitForAnimationAndDrain(window.Dispatcher, 600);
+                    // Settle until the indicator slide reaches the asserted child-item offset.
+                    _ = WaitUntil(window.Dispatcher, 2000, () => Math.Abs(GetSelectionIndicatorTranslate(indicator).X - 53.0) <= 0.5);
                     window.UpdateLayout();
                     DrainDispatcher(window.Dispatcher);
 
@@ -1494,7 +1498,8 @@ namespace Fluence.Wpf.Tests
                     double iconItemX = GetSelectionIndicatorTranslate(indicator).X;
 
                     nav.SelectedIndex = 1;
-                    WaitForAnimationAndDrain(window.Dispatcher, 600);
+                    // Settle until the indicator returns to the icon-item offset (the asserted value).
+                    _ = WaitUntil(window.Dispatcher, 2000, () => Math.Abs(GetSelectionIndicatorTranslate(indicator).X - iconItemX) <= 0.5);
                     window.UpdateLayout();
                     DrainDispatcher(window.Dispatcher);
 
@@ -2035,6 +2040,68 @@ namespace Fluence.Wpf.Tests
             });
         }
 
+        // Switching pane display mode between Left and LeftCompact animates the pane width with the
+        // same GridLength flight as the collapse/expand toggle, instead of snapping.
+        [TestMethod]
+        public void NavigationView_PaneDisplayModeChange_AnimatesPaneWidth_LeftAndLeftCompact()
+        {
+            RunOnStaThread(() =>
+            {
+                Application? application = EnsureApplication();
+                ResourceDictionary? genericDictionary = MergeGenericDictionary(application);
+                Window window = new();
+
+                try
+                {
+                    NavigationView nav = new()
+                    {
+                        Width = 800,
+                        Height = 480,
+                        PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                        IsPaneOpen = true
+                    };
+                    _ = nav.Items.Add(new NavigationViewItem { Content = "One" });
+                    window.Content = nav;
+                    window.Show();
+                    DrainDispatcher(window.Dispatcher);
+                    // Settle until the open pane reaches the asserted 320px expanded width.
+                    _ = WaitUntil(window.Dispatcher, 2000, () => Math.Abs(nav.GetPaneColumnWidthForTesting() - 320.0) <= 0.5);
+                    window.UpdateLayout();
+                    Assert.AreEqual(320.0, nav.GetPaneColumnWidthForTesting(), 0.5,
+                        "An open Left pane should start at the 320px expanded width.");
+
+                    // Left -> LeftCompact: the control coerces IsPaneOpen=false; the pane width must
+                    // animate down rather than snap straight to 48 (the bug the mode-change handler had).
+                    nav.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftCompact;
+                    DrainDispatcher(window.Dispatcher);
+                    Assert.IsGreaterThan(48.0, nav.GetPaneColumnWidthForTesting(),
+                        "Switching Left -> LeftCompact should animate the pane width, not snap immediately to 48.");
+                    _ = WaitUntil(window.Dispatcher, 600, () => nav.GetPaneColumnWidthForTesting() <= 48.5);
+                    Assert.AreEqual(48.0, nav.GetPaneColumnWidthForTesting(), 0.5,
+                        "Left -> LeftCompact should settle at the 48px compact width.");
+
+                    // LeftCompact -> Left, reopened the way an app does it (open the pane, then switch
+                    // mode): the pane width must animate back up rather than snap to 320.
+                    nav.IsPaneOpen = true;
+                    nav.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+                    DrainDispatcher(window.Dispatcher);
+                    Assert.IsLessThan(320.0, nav.GetPaneColumnWidthForTesting(),
+                        "Switching LeftCompact -> Left (reopened) should animate the pane width, not snap immediately to 320.");
+                    _ = WaitUntil(window.Dispatcher, 600, () => nav.GetPaneColumnWidthForTesting() >= 319.5);
+                    Assert.AreEqual(320.0, nav.GetPaneColumnWidthForTesting(), 0.5,
+                        "LeftCompact -> Left (reopened) should settle at the 320px expanded width.");
+                }
+                finally
+                {
+                    CloseWindowAndDrain(window);
+                    if (genericDictionary is not null)
+                    {
+                        _ = application?.Resources.MergedDictionaries.Remove(genericDictionary);
+                    }
+                }
+            });
+        }
+
         // LeftCompact pane still resizes inline and pushes sibling content.
         [TestMethod]
         public void NavigationView_LeftCompact_PaneOpen_ContentStartsAt320px_Inline()
@@ -2059,8 +2126,9 @@ namespace Fluence.Wpf.Tests
                     window.Show();
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
-                    // Pane-open enter animation is 167 ms (CubicEase EaseOut). Wait past HoldEnd.
-                    WaitForAnimationAndDrain(window.Dispatcher, 300);
+                    // Pane-open enter animation is 167 ms (CubicEase EaseOut). Settle until the pane
+                    // reaches its 320px open width rather than padding past HoldEnd.
+                    _ = WaitUntil(window.Dispatcher, 2000, () => Math.Abs(nav.GetPaneColumnWidthForTesting() - 320.0) <= 0.5);
                     window.UpdateLayout();
 
                     ContentPresenter? presenter = FindVisualChildByName<ContentPresenter>(nav, NavigationView.PartContentPresenter);
@@ -2249,8 +2317,9 @@ namespace Fluence.Wpf.Tests
                     window.Show();
                     DrainDispatcher(window.Dispatcher);
                     window.UpdateLayout();
-                    // Pane enter animation is 167 ms (CubicEase). Wait past HoldEnd before sampling layout.
-                    WaitForAnimationAndDrain(window.Dispatcher, 300);
+                    // Pane enter animation is 167 ms (CubicEase). Settle until the pane reaches its
+                    // 320px open width before sampling layout, rather than padding past HoldEnd.
+                    _ = WaitUntil(window.Dispatcher, 2000, () => Math.Abs(nav.GetPaneColumnWidthForTesting() - 320.0) <= 0.5);
                     window.UpdateLayout();
 
                     ContentPresenter? presenter = FindVisualChildByName<ContentPresenter>(nav, NavigationView.PartContentPresenter);

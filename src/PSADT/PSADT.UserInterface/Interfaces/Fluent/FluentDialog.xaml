@@ -10,7 +10,7 @@
     xmlns:uicore="clr-namespace:Fluence.Wpf;assembly=Fluence.Wpf"
     Background="Transparent"
     MinHeight="0"
-    MaxWidth="580"
+    MaxWidth="540"
     MaxHeight="1050"
     x:ClassModifier="internal"
     AutomationProperties.AutomationId="PSAppDeployToolkitDialog"
@@ -137,8 +137,8 @@
             >
             <Image
                 x:Name="AppIconImage"
-                Width="64"
-                Height="64"
+                Width="60"
+                Height="60"
                 AutomationProperties.Name="Application Icon"
                 />
             <StackPanel
@@ -182,7 +182,6 @@
             VerticalAlignment="Center"
             AutomationProperties.Name="Main Content Card"
             Background="{DynamicResource LayerFillColorAltBrush}"
-            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="4"
             >
@@ -322,7 +321,6 @@
 
                     <ui:Separator
                         x:Name="ProgressPanelSeparator"
-                        Background="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
                         />
 
                     <TextBlock
@@ -360,7 +358,7 @@
                     x:Name="InputBoxStackPanel"
                     Orientation="Vertical"
                     >
-                    <Separator Background="{DynamicResource SurfaceStrokeColorFlyoutBrush}" />
+                    <ui:Separator />
 
                     <ui:TextBox
                         x:Name="InputBoxText"
@@ -386,7 +384,7 @@
                     x:Name="ListSelectionStackPanel"
                     Orientation="Vertical"
                     >
-                    <Separator Background="{DynamicResource SurfaceStrokeColorFlyoutBrush}" />
+                    <ui:Separator />
 
                     <ui:DockPanel
                         x:Name="ListSelectionDockPanel"
@@ -420,9 +418,8 @@
                     </ui:DockPanel>
                 </StackPanel>
 
-                <Separator
+                <ui:Separator 
                     x:Name="CountdownDeferPanelSeparator"
-                    Background="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
                     />
 
                 <StackPanel

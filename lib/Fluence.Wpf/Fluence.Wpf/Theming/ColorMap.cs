@@ -27,7 +27,6 @@
  */
 
 using Fluence.Wpf.Helpers;
-using System;
 using System.Collections.Generic;
 using System.Windows.Media;
 
@@ -46,7 +45,17 @@ namespace Fluence.Wpf.Theming
         /// to its resolved <see cref="Color"/> for the given <paramref name="theme"/> and
         /// <paramref name="p">accent palette</paramref>.
         /// </summary>
-        internal static Dictionary<string, Color> Build(ApplicationTheme theme, AccentPalette p)
+        /// <param name="theme">The resolved concrete theme.</param>
+        /// <param name="p">The resolved accent ramp.</param>
+        /// <param name="deterministicChrome">
+        /// When <see langword="true"/>, the title-bar/window-border tokens are set to their
+        /// machine-independent theme defaults (the no-color-prevalence values) and no registry,
+        /// DWM, or OS-version probe is performed. Used by
+        /// <see cref="FluenceThemeEngine.BuildStandalone"/> so the design-time snapshot is byte
+        /// stable across machines. The live pipeline calls with the default (<see langword="false"/>),
+        /// preserving the registry-driven chrome behavior.
+        /// </param>
+        internal static Dictionary<string, Color> Build(ApplicationTheme theme, AccentPalette p, bool deterministicChrome = false)
         {
             Dictionary<string, Color> m = BaseColorTables.Load(theme);
             bool dark = theme == ApplicationTheme.Dark;
@@ -99,6 +108,17 @@ namespace Fluence.Wpf.Theming
             // Title-bar colors (from UpdateTitleBarColors)
             Color titleBarActive;
             Color titleBarInactive;
+            if (deterministicChrome)
+            {
+                // Machine-independent defaults (the no-color-prevalence, Windows-11 branch values):
+                // no registry, DWM, or OS-version probe. Keeps the design-time snapshot byte stable.
+                titleBarActive = dark ? Color.FromRgb(0x2B, 0x2B, 0x2B) : Color.FromRgb(0xFF, 0xFF, 0xFF);
+                m["TitleBarActiveColor"] = titleBarActive;
+                m["TitleBarInactiveColor"] = titleBarActive;
+                m["WindowBorderColor"] = titleBarActive;
+                return m;
+            }
+
             if (RegistryHelper.GetColorPrevalence())
             {
                 titleBarActive = !RegistryHelper.TryGetDwmAccentColor(out Color dwmAccent)
@@ -114,7 +134,10 @@ namespace Fluence.Wpf.Theming
                 titleBarInactive = dark ? Color.FromRgb(0x2B, 0x2B, 0x2B) : Color.FromRgb(0xFF, 0xFF, 0xFF);
             }
 
-            Color windowBorder = Environment.OSVersion.Version.Build < 22000
+            // Use the RtlGetVersion-based OsVersionHelper (not Environment.OSVersion, which is
+            // shimmed/version-capped for apps without a supportedOS manifest entry and would
+            // mis-detect Windows 11 as pre-22000) to match the rest of the library.
+            Color windowBorder = !OsVersionHelper.IsWindows11
                 && RegistryHelper.TryGetColorizationBalance(out Color colorizationColor, out int balance)
                 ? HsvColorHelper.BlendColors(colorizationColor, Color.FromRgb(0xD9, 0xD9, 0xD9), balance)
                 : titleBarActive;
