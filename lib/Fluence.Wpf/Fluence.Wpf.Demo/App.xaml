@@ -1,19 +1,4 @@
 ﻿<Application
     x:Class="Fluence.Wpf.Demo.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:fluence="clr-namespace:Fluence.Wpf;assembly=Fluence.Wpf">
-    <!--
-        FluenceResources seeds all theme colors, brushes, typography, and control templates
-        declaratively before any window is shown. The OnStartup code-behind also calls
-        Apply(Auto, Mica) to pin the backdrop and system accent; that call is idempotent
-        and coexists with this declarative entry point.
-    -->
-    <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <fluence:FluenceResources />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Application.Resources>
-</Application>
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" />

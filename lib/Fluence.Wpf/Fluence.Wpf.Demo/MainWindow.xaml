@@ -8,6 +8,7 @@
     Height="1000"
     MinWidth="698"
     MinHeight="520"
+    Background="{DynamicResource ApplicationBackgroundBrush}"
     CornerStyle="Round"
     ExtendsContentIntoTitleBar="False"
     Icon="Resources/fluence-wpf-appicon-256.ico"

@@ -5,8 +5,6 @@ description: Move an existing WPF application from standard WPF controls or anot
 weight: 40
 ---
 
-Move an existing WPF app from stock controls or another Fluent-style library to `Fluence.Wpf`.
-
 ## Scope
 
 `Fluence.Wpf` targets WPF applications on .NET Framework 4.7.2 and .NET 10 for Windows. It mirrors the Windows 11 Fluent / WinUI 3 visual language using WPF primitives, with no dependency on the Windows App SDK.
@@ -42,6 +40,19 @@ Move an existing WPF app from stock controls or another Fluent-style library to 
 ## Title bar and window controls
 
 `FluenceWindow` owns DWM and caption-button behavior. Use its public properties: `SystemBackdropType`, `CornerStyle`, `ExtendsContentIntoTitleBar`, `TitleBar`, and the caption-button visibility properties. `CaptionButtonChrome` and `WindowPolicy` are internal helpers; do not reference them from application code.
+
+## WinUI-canonical title-bar and caption metrics (visual-only change, no API impact)
+
+The `FluenceWindow` and `TitleBar` controls were re-authored to WinUI-canonical metrics. **There are no public API, dependency property, event, or template-part changes** -- this is a drop-in update; existing XAML and code-behind compile and run unchanged.
+
+Visual changes to be aware of:
+
+- `FluenceWindow.TitleBarHeight` default changed from 68 to 48 px (the WinUI 3 canonical expanded title-bar height). Any explicit `TitleBarHeight="42"` (or other explicit value) in your XAML is unaffected.
+- Minimize, maximize, and restore caption buttons are now 46 px wide (was approximately 64 px) and stretch to the full title-bar height instead of a fixed 32 px with top alignment. The close button is unchanged.
+- Caption-button hover and press fills changed from a strong inverted fill (`ControlStrongFillColorDefaultBrush` background, `TextFillColorInverseBrush` glyph) to WinUI-canonical subtle fills (`SubtleFillColorSecondaryBrush` hover, `SubtleFillColorTertiaryBrush` press; glyph keeps its normal `TextFillColorPrimaryBrush` color). The close button hover/press colors are unchanged.
+- `TitleBar` back and pane-toggle button slot width changed from 42 to 40 px, matching the WinUI 3 canonical hit-area width.
+
+If your application relied on the exact 68 px default title-bar height or the previous caption-button sizing, set `TitleBarHeight` and caption-button widths explicitly in your `FluenceWindow` XAML.
 
 ## Verification
 

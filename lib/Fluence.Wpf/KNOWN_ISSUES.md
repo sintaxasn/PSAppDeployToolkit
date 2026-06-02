@@ -55,26 +55,6 @@ maintainers.
 
 ## Resolved (Unreleased)
 
-- **`FluenceWindow` flicker / see-through when the backdrop will not
-  composite** - The backdrop was chosen from OS *version* only
-  (`OsVersionHelper`), so on any Windows 11 build the window went
-  transparent and requested Mica even when DWM would not paint it: under
-  forced software rendering (PSADT forces
-  `RenderOptions.ProcessRenderMode = SoftwareOnly` for every dialog), with
-  DWM composition disabled, or with the user's "Transparency effects"
-  turned off. The transparent client then had nothing composited behind
-  it and flashed the uncomposited surface as the window appeared (worst on
-  first paint, where the WPF-side reveal races the DWM composite), and on a
-  transparency-disabled machine it stayed wrong. Fix:
-  `WindowCapabilities.BackdropCompositionAvailable` is a runtime gate
-  (`ProcessRenderMode != SoftwareOnly` AND `DwmIsCompositionEnabled` AND
-  the `EnableTransparency` registry setting), and
-  `WindowPolicy.ResolveEffectiveBackdrop` downgrades to `None` with an
-  opaque theme background whenever it is false. An opaque base cannot
-  flash, matching the reference Fluent window libraries (WPF-UI, iNKORE,
-  MicaWPF) which paint solid when the backdrop is unavailable.
-  Hardware-composited sessions with transparency on are unchanged.
-  Covered by `WindowPolicyTests`.
 - **`FluenceWindow` black-flash on first paint** - WPF presented the HWND
   before its first composed frame; with the extended glass frame, a DWM
   system backdrop, and suppressed native caption painting, the empty client
@@ -83,12 +63,7 @@ maintainers.
   WPF defaults to opaque black) to the same color as the content background
   in `ApplyBackdrop` - transparent for an active backdrop, the opaque theme
   fallback for `None` - so the DWM backdrop shows through from the first
-  composed frame. This is the no-cloak mechanism the reference Fluent window
-  libraries (WPF-UI, iNKORE, MicaWPF) use. An earlier `DWMWA_CLOAK`
-  first-paint guard was tried and removed: under forced software rendering
-  (PSADT remoting) its WPF-side uncloak (`ContentRendered` /
-  `DispatcherPriority.ContextIdle`) raced the DWM backdrop composite and
-  exposed the same black frame it was meant to hide.
+  composed frame.
 - **`NavigationView` pane-footer icon slide** - The Settings (pane-footer)
   item slid horizontally while the left pane animated between open and
   compact. The footer is hosted in a `ContentPresenter`, which arranges its
