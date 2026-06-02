@@ -29,7 +29,9 @@
 using Fluence.Wpf.Helpers;
 using Fluence.Wpf.Native;
 using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -405,17 +407,67 @@ namespace Fluence.Wpf.Controls
 
         #endregion
 
+        // First-paint diagnostic tracing -- complete no-op unless FLUENCE_FP_TRACE=1.
+        private static readonly bool _fpTrace =
+            string.Equals(Environment.GetEnvironmentVariable("FLUENCE_FP_TRACE"), "1", StringComparison.Ordinal);
+        private static readonly Stopwatch _fpStopwatch = Stopwatch.StartNew();
+        private static readonly object _fpLock = new();
+
+        // First-paint reveal strategy fields, parsed once from FLUENCE_FP_REVEAL at class load.
+        // Format: unset/"" -> DefaultFirstPaintRevealTicks ticks, flush=true (validated fix)
+        //         "flush"  -> tick 1, flush before reveal
+        //         "ticks<N>" (e.g. "ticks6") -> tick N, no flush
+        //         "ticks<N>flush" (e.g. "ticks6flush") -> tick N, flush before reveal
+        // Invalid N in a "ticks*" value falls back to tick 1.
+        private static readonly int _fpRevealTargetTick;
+        private static readonly bool _fpRevealFlush;
+
+        // Under forced software rendering the visual tree rasterizes progressively over several composition
+        // frames after OnContentRendered fires (which only reflects a partial first pass). Revealing the
+        // cloaked window immediately shows partial content (empty Mica + a sliver of text). We wait this many
+        // CompositionTarget.Rendering ticks (plus a DwmFlush) so the software render settles before uncloaking.
+        // Animated dialogs (countdown/progress) keep ticking past their content render; static dialogs stop
+        // ticking exactly when their render completes, so the 1000ms safety timer reveals them already-complete.
+        private const int DefaultFirstPaintRevealTicks = 14;
+
         /// <summary>
-        /// Initializes static members of the FluenceWindow class and overrides the default style metadata.
+        /// Initializes static members of the <see cref="FluenceWindow"/> class: overrides the default
+        /// style metadata and parses the <c>FLUENCE_FP_REVEAL</c> environment variable once into
+        /// <see cref="_fpRevealTargetTick"/> and <see cref="_fpRevealFlush"/>.
         /// </summary>
-        /// <remarks>This static constructor ensures that the FluenceWindow control uses its custom style
-        /// by default. It is called automatically before any static members are accessed or any instances are
-        /// created.</remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "Multi-step env-var parsing requires a static constructor body.")]
         static FluenceWindow()
         {
             DefaultStyleKeyProperty.OverrideMetadata(
                 typeof(FluenceWindow),
                 new FrameworkPropertyMetadata(typeof(FluenceWindow)));
+
+            // Parse FLUENCE_FP_REVEAL into _fpRevealTargetTick and _fpRevealFlush.
+            // Default (unset or empty): targetTick=1, flush=false -- identical to current behavior.
+            // Unrecognised value also falls back to default behavior.
+            string strategy = Environment.GetEnvironmentVariable("FLUENCE_FP_REVEAL") ?? string.Empty;
+            if (string.Equals(strategy, "flush", StringComparison.OrdinalIgnoreCase))
+            {
+                _fpRevealTargetTick = 1;
+                _fpRevealFlush = true;
+            }
+            else if (strategy.StartsWith("ticks", StringComparison.OrdinalIgnoreCase))
+            {
+                // Strip leading "ticks" prefix; remainder is either "<N>" or "<N>flush".
+                string remainder = strategy.Substring("ticks".Length);
+                bool hasSuffix = remainder.EndsWith("flush", StringComparison.OrdinalIgnoreCase);
+                string digits = hasSuffix
+                    ? remainder.Substring(0, remainder.Length - "flush".Length)
+                    : remainder;
+                _fpRevealFlush = hasSuffix;
+                _fpRevealTargetTick = int.TryParse(digits, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int n) && n >= 1 ? n : 1;
+            }
+            else
+            {
+                // Unset, empty, or unrecognised: validated fix (DefaultFirstPaintRevealTicks ticks + flush).
+                _fpRevealTargetTick = DefaultFirstPaintRevealTicks;
+                _fpRevealFlush = true;
+            }
         }
 
         /// <summary>
@@ -437,6 +489,7 @@ namespace Fluence.Wpf.Controls
             SetValue(WindowChrome.WindowChromeProperty, _windowChrome);
             UpdateWindowChrome();
             UpdateShellMetrics();
+            FpTrace("ctor");
         }
 
         /// <summary>
@@ -465,6 +518,7 @@ namespace Fluence.Wpf.Controls
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+            FpTrace("OSI enter");
             _handle = new WindowInteropHelper(this).EnsureHandle();
             _hwndSource = HwndSource.FromHwnd(_handle);
             _hwndSource?.AddHook(WndProc);
@@ -480,6 +534,7 @@ namespace Fluence.Wpf.Controls
             SystemThemeWatcher.Watch(this);
             ApplicationThemeManager.Changed += OnThemeChanged;
             ApplicationAccentColorManager.AccentColorChanged += OnAccentColorChanged;
+            FpTrace("OSI exit");
         }
 
         /// <inheritdoc />
@@ -566,6 +621,7 @@ namespace Fluence.Wpf.Controls
         protected override void OnContentRendered(EventArgs e)
         {
             base.OnContentRendered(e);
+            FpTrace("OnContentRendered");
             // Defer the uncloak by one CompositionTarget.Rendering tick so DWM has one full frame
             // to composite the on-screen window at its final position before the cloak is lifted.
             // Revealing synchronously inside OnContentRendered put the uncloak in the same display
@@ -576,6 +632,7 @@ namespace Fluence.Wpf.Controls
             {
                 _firstPaintRenderingHandler = OnFirstPaintRenderingTick;
                 CompositionTarget.Rendering += _firstPaintRenderingHandler;
+                FpTrace("armed renderTick handler");
             }
         }
 
@@ -596,6 +653,7 @@ namespace Fluence.Wpf.Controls
             ApplicationAccentColorManager.AccentColorChanged -= OnAccentColorChanged;
             _hwndSource?.RemoveHook(WndProc);
             _hwndSource = null;
+            FpTrace("OnClosed");
             base.OnClosed(e);
         }
 
@@ -629,8 +687,7 @@ namespace Fluence.Wpf.Controls
         {
             if (d is FluenceWindow window)
             {
-                // GlassFrameThickness follows the effective (gated) backdrop, so a backdrop change
-                // must refresh the chrome before ApplyBackdrop re-issues the DWM attributes.
+                // GlassFrameThickness depends on the backdrop too (dual-path); refresh chrome.
                 window.UpdateWindowChrome();
                 window.ApplyBackdrop();
             }
@@ -670,18 +727,11 @@ namespace Fluence.Wpf.Controls
         {
             _windowChrome.CaptionHeight = 0;
             _windowChrome.UseAeroCaptionButtons = false;
-            // GlassFrameThickness must follow the EFFECTIVE (gated) backdrop and the real DWM
-            // composition state, never the requested SystemBackdropType DP. When the backdrop is
-            // downgraded to an opaque None (forced software rendering, composition disabled, or
-            // transparency off) the frame must stay thin (0.00001): asking DWM to extend glass on a
-            // composition-capable desktop composites a not-yet-painted glass region as black before
-            // the software-rendered first frame lands, producing a first-paint black flash. When DWM
-            // genuinely composites a backdrop (or a shadow is requested) the frame is -1 so the glass
-            // extends and the backdrop or shadow shows through. See WindowPolicy.GetGlassFrameThickness.
-            _windowChrome.GlassFrameThickness = WindowPolicy.GetGlassFrameThickness(
-                GetEffectiveBackdrop(),
-                HasShadow,
-                WindowCapabilities.Current.BackdropCompositionAvailable);
+            // GlassFrameThickness must reflect both the requested backdrop and shadow policy.
+            // When SystemBackdropType is None and HasShadow is false, an unconditional -1
+            // glass frame paints a visible artifact on Windows 11; using 0.00001 keeps the
+            // resize border alive without that artifact. See WindowPolicy.GetGlassFrameThickness.
+            _windowChrome.GlassFrameThickness = WindowPolicy.GetGlassFrameThickness(SystemBackdropType, HasShadow, WindowCapabilities.Current.BackdropCompositionAvailable);
         }
 
         private void UpdateShellMetrics()
@@ -698,6 +748,14 @@ namespace Fluence.Wpf.Controls
                 ApplicationThemeManager.GetResolvedTheme(),
                 capabilities,
                 GetFallbackBackgroundColor());
+
+            FpTrace(string.Format(
+                CultureInfo.InvariantCulture,
+                "ApplyBackdrop effective={0} bg={1} useTransparent={2} ctNull={3}",
+                plan.EffectiveBackdrop,
+                plan.BackgroundColor,
+                plan.UseTransparentBackground,
+                _hwndSource?.CompositionTarget is null));
 
             SolidColorBrush backgroundBrush = new(plan.BackgroundColor);
             backgroundBrush.Freeze();
@@ -1189,19 +1247,6 @@ namespace Fluence.Wpf.Controls
         #endregion
 
         /// <summary>
-        /// Resolves the effective (gated) backdrop for chrome decisions: the requested
-        /// <see cref="SystemBackdropType"/> mapped through <see cref="WindowPolicy.ResolveEffectiveBackdrop"/>
-        /// against the current capabilities, which downgrades to an opaque <see cref="BackdropType.None"/>
-        /// whenever DWM will not composite a backdrop in this session. Chrome (the glass frame in
-        /// particular) must key off this, not the requested DP, so it never asks DWM to extend glass
-        /// when there is no composited backdrop behind it.
-        /// </summary>
-        private BackdropType GetEffectiveBackdrop()
-        {
-            return WindowPolicy.ResolveEffectiveBackdrop(SystemBackdropType, WindowCapabilities.Current);
-        }
-
-        /// <summary>
         /// Returns <see langword="true"/> when the first-paint hold should be applied. The hold is
         /// needed on the software-rendered path (WPF CPU rasterization is slow, leaving a multi-frame
         /// gap before the first opaque frame) and when DWM composition is disabled (no desktop
@@ -1235,6 +1280,7 @@ namespace Fluence.Wpf.Controls
             _ = _firstPaintUseCloak
                 ? NativeMethods.SetWindowCloak(_handle, cloak: true)
                 : NativeMethods.SetWindowLayeredAlpha(_handle, alpha: 0);
+            FpTrace(string.Format(CultureInfo.InvariantCulture, "HideForFirstPaint cloak={0}", _firstPaintUseCloak));
             // Safety fallback: reveal the window after ~1000 ms even if OnContentRendered never fires.
             _firstPaintTimer = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher)
             {
@@ -1265,6 +1311,7 @@ namespace Fluence.Wpf.Controls
             {
                 return;
             }
+            FpTrace(string.Format(CultureInfo.InvariantCulture, "REVEAL cloak={0}", _firstPaintUseCloak));
             if (_firstPaintUseCloak)
             {
                 _ = NativeMethods.SetWindowCloak(_handle, cloak: false);
@@ -1308,16 +1355,31 @@ namespace Fluence.Wpf.Controls
         }
 
         /// <summary>
-        /// One-shot <see cref="CompositionTarget.Rendering"/> handler. Fires on the first render
-        /// tick after <see cref="OnContentRendered"/>, unsubscribes itself immediately, then calls
-        /// <see cref="RevealAfterFirstPaint"/>. By this point DWM has composited the window at its
-        /// final on-screen position for one full frame, so uncloaking reveals a fully-settled image.
+        /// <see cref="CompositionTarget.Rendering"/> handler used to defer the first-paint reveal.
+        /// Fires on every render tick after <see cref="OnContentRendered"/> until
+        /// <c>_fpRevealTargetTick</c> ticks have accumulated, then unsubscribes itself,
+        /// optionally calls <c>NativeMethods.DwmFlush</c> (when <c>_fpRevealFlush</c>
+        /// is <see langword="true"/>), and calls <see cref="RevealAfterFirstPaint"/>.
+        /// When <c>FLUENCE_FP_REVEAL</c> is unset the target is <see cref="DefaultFirstPaintRevealTicks"/> ticks
+        /// with a flush, which is the validated fix for forced software rendering.
         /// </summary>
         private void OnFirstPaintRenderingTick(object? sender, EventArgs e)
         {
-            // Unsubscribe before revealing so that RevealAfterFirstPaint's StopFirstPaintTimer
-            // path and the idempotency guard both see a clean state.
+            _fpTickCount++;
+            FpTrace(string.Format(CultureInfo.InvariantCulture, "renderTick #{0} target={1} flush={2}", _fpTickCount, _fpRevealTargetTick, _fpRevealFlush));
+            if (_fpTickCount < _fpRevealTargetTick)
+            {
+                // Not enough ticks yet -- wait for the next frame.
+                return;
+            }
+            // Target tick reached. Unsubscribe before revealing so that RevealAfterFirstPaint's
+            // StopFirstPaintTimer path and the idempotency guard both see a clean state.
             StopFirstPaintRenderingHandler();
+            if (_fpRevealFlush)
+            {
+                FpTrace("DwmFlush before reveal");
+                NativeMethods.DwmFlush();
+            }
             RevealAfterFirstPaint();
         }
 
@@ -1437,6 +1499,8 @@ namespace Fluence.Wpf.Controls
         // render tick after OnContentRendered. Stored as a field so it can be unsubscribed from
         // RevealAfterFirstPaint, OnClosed, and the safety-timer tick without leaking.
         private EventHandler? _firstPaintRenderingHandler;
+        // Per-instance rendering-tick counter used by the FpTrace diagnostic only.
+        private int _fpTickCount;
 
         /// <summary>
         /// Represents the native handle associated with the underlying resource.
@@ -1475,6 +1539,38 @@ namespace Fluence.Wpf.Controls
         /// Represents the button control that is currently being hovered over for snap operations.
         /// </summary>
         private System.Windows.Controls.Button? _snapHoveredButton;
+
+        /// <summary>
+        /// Appends one diagnostic line to the first-paint trace log when <c>FLUENCE_FP_TRACE=1</c>.
+        /// Entirely skipped (zero overhead) when the gate is false.
+        /// </summary>
+        private void FpTrace(string evt)
+        {
+            if (!_fpTrace)
+            {
+                return;
+            }
+            try
+            {
+                string line = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0:F1}ms  tid={1}  hwnd={2:X}  '{3}'  {4}",
+                    _fpStopwatch.Elapsed.TotalMilliseconds,
+                    Environment.CurrentManagedThreadId,
+                    _handle,
+                    Title,
+                    evt);
+                string logPath = Path.Combine(Path.GetTempPath(), "fluence_fp_trace.log");
+                lock (_fpLock)
+                {
+                    File.AppendAllText(logPath, line + Environment.NewLine);
+                }
+            }
+            catch (Exception ex) when (ex.Message is not null)
+            {
+                // Tracing must never propagate into the window.
+            }
+        }
 
     }
 }

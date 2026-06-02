@@ -176,7 +176,7 @@ Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][
                 { "CountdownDuration", countdownDuration },
                 { "DeferralsRemaining", deferralsRemaining },
                 { "DeferralDeadline", deferralDeadline },
-                //{ "CustomMessageText", customMessageText },
+                { "CustomMessageText", customMessageText },
                 { "Language", CultureInfo.CurrentCulture },
                 { "Strings", (Hashtable)stringTable["CloseAppsPrompt"]! },
             };

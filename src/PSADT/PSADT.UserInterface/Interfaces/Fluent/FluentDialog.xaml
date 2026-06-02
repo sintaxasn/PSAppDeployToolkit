@@ -1,4 +1,4 @@
-<ui:FluenceWindow
+﻿<ui:FluenceWindow
     x:Class="PSADT.UserInterface.Interfaces.Fluent.FluentDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -9,7 +9,7 @@
     xmlns:ui="clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"
     xmlns:uicore="clr-namespace:Fluence.Wpf;assembly=Fluence.Wpf"
     MinHeight="0"
-    MaxWidth="540"
+    MaxWidth="580"
     MaxHeight="1050"
     x:ClassModifier="internal"
     AutomationProperties.AutomationId="PSAppDeployToolkitDialog"

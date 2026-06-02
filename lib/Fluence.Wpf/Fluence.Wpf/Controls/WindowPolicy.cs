@@ -50,28 +50,19 @@ namespace Fluence.Wpf.Controls
         }
 
         /// <summary>
-        /// Returns the glass-frame thickness appropriate for the given backdrop, shadow state, and
-        /// real DWM composition state. The thickness must follow the EFFECTIVE backdrop and whether
-        /// DWM will actually composite right now, never the requested backdrop alone.
-        /// <para>
-        /// When DWM will not composite a backdrop in this session (forced software rendering,
-        /// composition disabled, or the user's "Transparency effects" turned off) the thickness is
-        /// the very-thin-but-nonzero value (<c>0.00001</c>) regardless of <paramref name="hasShadow"/>:
-        /// the resize border still hit-tests, but WPF's <see cref="System.Windows.Shell.WindowChrome"/>
-        /// is never asked to extend glass into the client. Asking DWM to extend glass on a
-        /// composition-capable desktop maps the window with a not-yet-painted glass region that DWM
-        /// composites as black before the (slower) software-rendered first frame lands, producing a
-        /// first-paint black flash. Keeping the frame thin avoids that on the non-composited path.
-        /// </para>
-        /// <para>
-        /// When DWM will composite, behavior is unchanged: a DWM backdrop (Mica/Acrylic/Tabbed/Auto)
-        /// or a requested shadow yields <c>-1</c> so the glass extends into the client and the backdrop
-        /// or shadow shows through; otherwise the thin value is used so WindowChrome's renderer does
-        /// not paint a visible glass-frame artifact. Mirrors the convention in
+        /// Returns the glass-frame thickness appropriate for the given backdrop, shadow state,
+        /// and whether DWM will actually composite a backdrop in this session. When a DWM
+        /// backdrop (Mica/Acrylic/Tabbed/Auto) is active AND composition is available, the
+        /// thickness is <c>-1</c> so DWM extends the glass into the client area and the
+        /// backdrop shows through. When no backdrop is active and the user wants a shadow, the
+        /// thickness is still <c>-1</c> so WPF's <see cref="System.Windows.Shell.WindowChrome"/>
+        /// draws the resize border with a glass-frame fallback. When neither is active, or when
+        /// <paramref name="backdropCompositionAvailable"/> is false, we use a very-thin-but-nonzero
+        /// value (<c>0.00001</c>) so the resize border continues to hit-test while WindowChrome's
+        /// renderer does not paint a visible glass-frame artifact - matching the pattern in
         /// <c>wpfui-main\src\Wpf.Ui\Controls\FluentWindow\FluentWindow.cs</c>.
-        /// </para>
         /// </summary>
-        internal static Thickness GetGlassFrameThickness(BackdropType backdrop, bool hasShadow, bool backdropCompositionAvailable)
+        internal static Thickness GetGlassFrameThickness(BackdropType backdrop, bool hasShadow, bool backdropCompositionAvailable = true)
         {
             return backdropCompositionAvailable && (backdrop != BackdropType.None || hasShadow)
                 ? new Thickness(-1)
@@ -137,8 +128,13 @@ namespace Fluence.Wpf.Controls
         {
             BackdropType effectiveBackdrop = ResolveEffectiveBackdrop(requestedBackdrop, capabilities);
             bool isDark = resolvedTheme == ApplicationTheme.Dark;
+            // Pin the opaque-None caption to the solid window background rather than leaving it
+            // system-managed (DWMWA_COLOR_DEFAULT). With "accent color on title bars" on
+            // (ColorPrevalence=1) the system-default caption IS the accent color and DWM paints it
+            // for a frame or two before WPF paints its themed title bar (the blue-accent flash).
+            int opaqueCaptionColor = NativeMethods.ColorToColorRef(fallbackBackgroundColor);
             return effectiveBackdrop == BackdropType.None
-                ? new BackdropPlan(effectiveBackdrop, false, fallbackBackgroundColor, NativeConstants.DWMWA_COLOR_DEFAULT, capabilities.SupportsSystemBackdropType ? NativeConstants.DWMSBT_NONE : null, false, resolvedTheme == ApplicationTheme.Dark)
+                ? new BackdropPlan(effectiveBackdrop, false, fallbackBackgroundColor, opaqueCaptionColor, capabilities.SupportsSystemBackdropType ? NativeConstants.DWMSBT_NONE : null, false, resolvedTheme == ApplicationTheme.Dark)
                 : effectiveBackdrop != BackdropType.Mica || capabilities.SupportsSystemBackdropType || !capabilities.SupportsMicaEffect
                 ? new BackdropPlan(effectiveBackdrop, true, Colors.Transparent, NativeConstants.DWMWA_COLOR_NONE, MapSystemBackdropType(effectiveBackdrop), false, isDark)
                 : new BackdropPlan(effectiveBackdrop, true, Colors.Transparent, NativeConstants.DWMWA_COLOR_NONE, null, true, isDark);

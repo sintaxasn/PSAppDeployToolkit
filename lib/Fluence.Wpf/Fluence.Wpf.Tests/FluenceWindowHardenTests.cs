@@ -457,6 +457,8 @@ namespace Fluence.Wpf.Tests
                     nint handle = new System.Windows.Interop.WindowInteropHelper(w).Handle;
                     Assert.AreEqual(0, Fluence.Wpf.Native.NativeMethods.GetWindowCloakedState(handle),
                         "FluenceWindow must never DWM-cloak its window (DWMWA_CLOAKED == 0); the first-paint flash is solved by clearing the redirection surface, not by cloaking.");
+                    Assert.IsFalse(Fluence.Wpf.Native.NativeMethods.IsWindowLayered(handle),
+                        "FluenceWindow must never make its window layered (WS_EX_LAYERED == 0); the never-hide model leaves the window fully presented from the first frame rather than holding it invisible via layered alpha.");
                 }
                 finally
                 {
@@ -515,112 +517,6 @@ namespace Fluence.Wpf.Tests
                     DrainDispatcher();
                 }
             });
-        }
-
-        [TestMethod]
-        public void Window_AppliesEffectiveBackdropPolicy_ForCurrentCapabilities()
-        {
-            // Verifies that a shown FluenceWindow's visible state (Background color, HWND redirection
-            // surface, and WindowChrome glass frame) exactly matches what the production policy
-            // computes for the live capabilities of this host. The assertion is deterministic on any
-            // host regardless of OS version, composition state, or WPF render mode, because both sides
-            // of the comparison read the same WindowCapabilities.Current snapshot.
-            //
-            // WPF's ProcessRenderMode (software/hardware rasterization of WPF content) is NOT part of
-            // the backdrop gate. DWM desktop composition is independent: it composites Mica behind a
-            // transparent window regardless of how WPF rasterizes its content. Forcing SoftwareOnly
-            // here proves the render mode does not change the policy outcome: the window still applies
-            // whatever the current DWM composition + Transparency-effects state yields.
-            RunOnStaThread(() =>
-            {
-                Application? app = EnsureApp();
-                ResetAndApply(ApplicationTheme.Light, app);
-
-                System.Windows.Interop.RenderMode previous = System.Windows.Media.RenderOptions.ProcessRenderMode;
-                System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
-                FluenceWindow w = new()
-                {
-                    Width = 320,
-                    Height = 240,
-                    ShowInTaskbar = false,
-                    SystemBackdropType = BackdropType.Mica,
-                    WindowStartupLocation = WindowStartupLocation.Manual,
-                    Left = -10000,
-                    Top = -10000
-                };
-                try
-                {
-                    w.Show();
-                    DrainDispatcher();
-
-                    // Snapshot the capabilities that governed the window's own Apply calls.
-                    WindowCapabilities caps = WindowCapabilities.Current;
-
-                    // Expected background color: whatever the policy chose for these capabilities.
-                    // Mirror FluenceWindow.GetFallbackBackgroundColor() for Light theme.
-                    Color lightFallback = Color.FromRgb(0xFA, 0xFA, 0xFA);
-                    BackdropPlan plan = WindowPolicy.BuildBackdropPlan(
-                        BackdropType.Mica,
-                        ApplicationTheme.Light,
-                        caps,
-                        lightFallback);
-
-                    // Window.Background and redirection surface must both match the plan's color.
-                    SolidColorBrush brush = (SolidColorBrush)w.Background;
-                    Assert.AreEqual(plan.BackgroundColor, brush.Color,
-                        "Window.Background color must match the policy-computed backdrop plan for the current capabilities.");
-
-                    nint handle = new System.Windows.Interop.WindowInteropHelper(w).Handle;
-                    System.Windows.Interop.HwndSource? source = System.Windows.Interop.HwndSource.FromHwnd(handle);
-                    Assert.IsNotNull(source?.CompositionTarget, "Expected a realised CompositionTarget after Show().");
-                    Assert.AreEqual(plan.BackgroundColor, source!.CompositionTarget.BackgroundColor,
-                        "The HWND redirection surface must match the policy background so there is no opaque-black layer exposed before DWM composites.");
-
-                    // The glass frame must also follow the effective (gated) backdrop. On a host where
-                    // DWM composites (composition + transparency on), an effective Mica backdrop yields
-                    // -1. On a host where DWM will not composite, the effective backdrop is None and the
-                    // frame is the thin 0.00001 (this is the first-paint black-flash fix: never ask DWM
-                    // to extend glass when there is nothing composited behind it).
-                    BackdropType effectiveBackdrop = WindowPolicy.ResolveEffectiveBackdrop(BackdropType.Mica, caps);
-                    Thickness expectedGlass = WindowPolicy.GetGlassFrameThickness(
-                        effectiveBackdrop,
-                        w.HasShadow,
-                        caps.BackdropCompositionAvailable);
-                    System.Windows.Shell.WindowChrome chrome = System.Windows.Shell.WindowChrome.GetWindowChrome(w);
-                    Assert.IsNotNull(chrome, "FluenceWindow must attach a WindowChrome.");
-                    Assert.AreEqual(expectedGlass.Left, chrome.GlassFrameThickness.Left, 1e-9,
-                        "WindowChrome GlassFrameThickness must match the policy value for the current composition state.");
-                }
-                finally
-                {
-                    w.Close();
-                    DrainDispatcher();
-                    System.Windows.Media.RenderOptions.ProcessRenderMode = previous;
-                }
-            });
-        }
-
-        private static bool WaitUntilUncloaked(nint hwnd, Dispatcher dispatcher, int timeoutMs)
-        {
-            DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-            do
-            {
-                _ = dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(delegate { }));
-                if (Fluence.Wpf.Native.NativeMethods.GetWindowCloakedState(hwnd) == 0)
-                {
-                    return true;
-                }
-                DispatcherFrame frame = new();
-                DispatcherTimer timer = new(
-                    TimeSpan.FromMilliseconds(16),
-                    DispatcherPriority.Normal,
-                    delegate { frame.Continue = false; },
-                    dispatcher);
-                timer.Start();
-                Dispatcher.PushFrame(frame);
-            }
-            while (DateTime.UtcNow < deadline);
-            return Fluence.Wpf.Native.NativeMethods.GetWindowCloakedState(hwnd) == 0;
         }
 
         private static int GetWatchedWindowCount()
@@ -702,50 +598,34 @@ namespace Fluence.Wpf.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // 8. First-paint hold: under forced software rendering the window must be
-        //    hidden (via DWMWA_CLOAK or layered alpha) immediately after Show() and
-        //    fully revealed after OnContentRendered / dispatcher ApplicationIdle drain.
+        // 8. Never-hide first-paint invariant.
         //
-        // Why this matters: a software-rendered window is mapped (visible in the OS)
-        // several display frames before WPF produces its first CPU-rendered frame. The
-        // hold keeps the HWND invisible during that gap -- and during the subclass's
-        // OnSourceInitialized continuation that does UpdateLayout + PositionWindow --
-        // so the window is only revealed once it is fully-formed and correctly sized
-        // and positioned.
+        // FluenceWindow follows the WPF-UI "never hide the window" first-paint model: it never
+        // cloaks, layers, or defers showing the window to avoid the first-paint flash. The flash
+        // is solved entirely by clearing the HWND redirection surface (see test group 7), so the
+        // window is fully presented from its first composed frame. The earlier design held the
+        // window invisible via a layered-alpha guard and could in principle leave it stuck
+        // invisible; this test pins the replacement invariant: a shown-then-drained window is
+        // visible and is never hidden by any cloak or layered-alpha mechanism.
         // ---------------------------------------------------------------------------
 
         [TestMethod]
-        public void SoftwareRendering_FirstPaintHold_WindowIsHiddenAfterShowAndRevealedAfterDrain()
+        public void ShowThenDrain_LeavesWindowVisibleAndNeverHidden()
         {
-            // Under forced software rendering the HWND is mapped several frames before WPF produces
-            // its first (CPU-rendered) frame. FluenceWindow installs a first-paint hold in
-            // OnSourceInitialized so the window is kept invisible during that gap. It is revealed
-            // in OnContentRendered once WPF has finished painting (by which point SizeToContent and
-            // any PositionWindow in a subclass's OnSourceInitialized continuation have also settled).
-            //
-            // Test strategy: Show() triggers OnSourceInitialized synchronously so the hide is
-            // already applied before Show() returns. A dispatcher drain to ApplicationIdle flushes
-            // through the render pass and OnContentRendered, at which point the window must be
-            // revealed (cloaked state = 0).
-            //
-            // On hosts where DWM composition is available the cloak path is used and
-            // GetWindowCloakedState is the authoritative indicator. On hosts without composition
-            // the layered-alpha path is used; GetWindowCloakedState is always 0 on those hosts
-            // (DWM cannot report a cloak state it did not apply), so we only assert the post-drain
-            // revealed state (which is unconditional and always 0 on both paths).
+            // Core never-hide safety invariant: after Show() and a dispatcher drain the window is
+            // visible, is not DWM-cloaked, and does not carry WS_EX_LAYERED. There is no first-paint
+            // guard to disarm anymore - the window is simply never hidden in the first place, so it
+            // can never get stuck invisible.
             RunOnStaThread(() =>
             {
                 Application? app = EnsureApp();
                 ResetAndApply(ApplicationTheme.Light, app);
 
-                System.Windows.Interop.RenderMode previous = System.Windows.Media.RenderOptions.ProcessRenderMode;
-                System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
                 FluenceWindow w = new()
                 {
                     Width = 320,
                     Height = 240,
                     ShowInTaskbar = false,
-                    SystemBackdropType = BackdropType.None,
                     WindowStartupLocation = WindowStartupLocation.Manual,
                     Left = -10000,
                     Top = -10000
@@ -753,32 +633,21 @@ namespace Fluence.Wpf.Tests
                 try
                 {
                     w.Show();
+                    DrainDispatcher();
 
-                    // OnSourceInitialized fires synchronously during Show(); HideForFirstPaint
-                    // runs at the end of OnSourceInitialized, so the hold is applied before Show()
-                    // returns. On composition hosts the window is cloaked right now.
+                    Assert.IsTrue(w.IsVisible,
+                        "After Show() and draining the dispatcher, the window must be visible - the never-hide model never defers showing the window.");
+
                     nint handle = new System.Windows.Interop.WindowInteropHelper(w).Handle;
-                    bool compositionAvailable = Fluence.Wpf.Native.NativeMethods.IsCompositionEnabled();
-                    if (compositionAvailable)
-                    {
-                        int cloakedBeforeDrain = Fluence.Wpf.Native.NativeMethods.GetWindowCloakedState(handle);
-                        Assert.AreNotEqual(0, cloakedBeforeDrain,
-                            "Immediately after Show() (before any dispatcher drain) the window must be cloaked by the first-paint hold so it is invisible during the pre-paint gap.");
-                    }
-
-                    // Poll with frame-pumping until the window is uncloaked or a 3 s deadline
-                    // passes. OnContentRendered fires from the render pass; we yield control with
-                    // a 16 ms DispatcherTimer so the render pass and ContentRendered dispatch can
-                    // both complete before we sample the cloaked state again.
-                    bool revealed = WaitUntilUncloaked(handle, w.Dispatcher, timeoutMs: 3000);
-                    Assert.IsTrue(revealed,
-                        "After OnContentRendered fires (polled up to 3 s), the first-paint hold must be released -- the window must be visible (cloaked state = 0).");
+                    Assert.AreEqual(0, Fluence.Wpf.Native.NativeMethods.GetWindowCloakedState(handle),
+                        "A shown-then-drained FluenceWindow must never be DWM-cloaked (DWMWA_CLOAKED == 0).");
+                    Assert.IsFalse(Fluence.Wpf.Native.NativeMethods.IsWindowLayered(handle),
+                        "A shown-then-drained FluenceWindow must never carry WS_EX_LAYERED - the never-hide model does not hold the window invisible via layered alpha.");
                 }
                 finally
                 {
                     w.Close();
                     DrainDispatcher();
-                    System.Windows.Media.RenderOptions.ProcessRenderMode = previous;
                 }
             });
         }

@@ -55,11 +55,9 @@ namespace Fluence.Wpf.Helpers
 
         /// <summary>
         /// Reads <c>HKCU\...\Themes\Personalize\EnableTransparency</c>, the Windows "Transparency
-        /// effects" toggle. Returns <c>true</c> when transparency is enabled, which is also the
-        /// default when the value is missing. When this is <c>false</c> DWM does not composite Mica
-        /// or Acrylic system backdrops, so a transparent backdrop window has nothing painted behind
-        /// it; callers must fall back to an opaque window in that case (see
-        /// <c>WindowCapabilities.BackdropCompositionAvailable</c>).
+        /// effects" toggle. Returns <c>true</c> when transparency is enabled (also the default when
+        /// the value is missing). When false, DWM does not composite Mica/Acrylic, so callers must
+        /// fall back to an opaque window (see <c>WindowCapabilities.BackdropCompositionAvailable</c>).
         /// </summary>
         internal static bool IsTransparencyEnabled()
         {

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Dan Cunningham
  *
  * Redistribution and use in source and binary forms, with or without
@@ -138,9 +138,54 @@ namespace Fluence.Wpf.Native
         public static extern void DwmGetColorizationParameters(
             out DWMCOLORIZATIONPARAMS parameters);
 
+        /// <summary>
+        /// Blocks until the next DWM present completes. Used to ensure a cloaked window's
+        /// composited content is on the DWM surface before uncloaking, so the reveal shows a
+        /// fully-settled frame rather than a stale or partial one.
+        /// </summary>
+        [DllImport(Dwmapi, EntryPoint = "DwmFlush")]
+        private static extern int _DwmFlush();
+
+        /// <summary>
+        /// Calls <c>DwmFlush</c>, blocking until the next DWM present completes. Any COM/PInvoke
+        /// exception is silently swallowed so callers are never interrupted by a DWM error.
+        /// </summary>
+        public static void DwmFlush()
+        {
+            try
+            {
+                _ = _DwmFlush();
+            }
+            catch (Exception ex) when (ex.Message is not null)
+            {
+                // DwmFlush failure must never propagate into the window.
+            }
+        }
+
         #endregion
 
         #region User32 APIs
+
+        private const int DISPLAY_DEVICE_PRIMARY_DEVICE = 0x4;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct DISPLAY_DEVICE
+        {
+            public int cb;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public string DeviceName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string DeviceString;
+            public int StateFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string DeviceID;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string DeviceKey;
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumDisplayDevices(string? lpDevice, uint iDevNum, ref DISPLAY_DEVICE lpDisplayDevice, uint dwFlags);
 
         [DllImport(User32, SetLastError = true)]
         public static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
@@ -294,8 +339,7 @@ namespace Fluence.Wpf.Native
         /// <summary>
         /// Reads the read-only <see cref="NativeConstants.DWMWA_CLOAKED"/> attribute, returning the
         /// reason flags for why the window is cloaked. Zero means the window is not cloaked. Returns
-        /// zero on any failure (for example when DWM composition is disabled). Retained purely as a
-        /// regression guard: FluenceWindow deliberately never cloaks outside the first-paint hold.
+        /// zero on any failure (for example when DWM composition is disabled).
         /// </summary>
         public static int GetWindowCloakedState(IntPtr hwnd)
         {
@@ -305,6 +349,22 @@ namespace Fluence.Wpf.Native
             }
             int result = DwmGetWindowAttribute(hwnd, NativeConstants.DWMWA_CLOAKED, out int cloaked, sizeof(int));
             return result == 0 ? cloaked : 0;
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when the window's extended style carries
+        /// <see cref="NativeConstants.WS_EX_LAYERED"/>. Returns <see langword="false"/> for a null
+        /// handle. Used to assert the never-hide first-paint invariant: the window is fully presented
+        /// rather than held invisible via layered alpha.
+        /// </summary>
+        public static bool IsWindowLayered(IntPtr hwnd)
+        {
+            if (hwnd == IntPtr.Zero)
+            {
+                return false;
+            }
+            int exStyle = GetWindowLong(hwnd, NativeConstants.GWL_EXSTYLE);
+            return (exStyle & NativeConstants.WS_EX_LAYERED) != 0;
         }
 
         public static bool SetMicaEffect(IntPtr hwnd, bool enabled)
@@ -357,6 +417,33 @@ namespace Fluence.Wpf.Native
         public static int ColorToColorRef(System.Windows.Media.Color color)
         {
             return (color.B << 16) | (color.G << 8) | color.R;
+        }
+
+        /// <summary>
+        /// Returns true when the primary display adapter is a Microsoft basic or synthetic adapter
+        /// (Hyper-V Video, Basic Display Adapter, Basic Render Driver, Remote Display Adapter).
+        /// Microsoft ships no discrete or integrated GPUs, so a Microsoft-vendor display adapter is
+        /// always a synthetic/software adapter on which DWM cannot composite a Mica or Acrylic
+        /// backdrop: it can report a usable WPF render tier yet the backdrop never renders, leaving
+        /// the transparent window surface to bleed the uncomposited accent color. A real GPU,
+        /// including Hyper-V GPU-PV or GPU passthrough (which exposes the host adapter name),
+        /// reports its true vendor and is treated as backdrop-capable.
+        /// </summary>
+        public static bool IsPrimaryDisplayAdapterMicrosoftBasic()
+        {
+            DISPLAY_DEVICE device = new() { cb = Marshal.SizeOf<DISPLAY_DEVICE>() };
+            for (uint index = 0; EnumDisplayDevices(null, index, ref device, 0); index++)
+            {
+                if ((device.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE) != 0)
+                {
+                    return !string.IsNullOrWhiteSpace(device.DeviceString)
+                        && device.DeviceString.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase);
+                }
+
+                device.cb = Marshal.SizeOf<DISPLAY_DEVICE>();
+            }
+
+            return false;
         }
 
         public static bool IsCompositionEnabled()

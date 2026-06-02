@@ -353,32 +353,22 @@ namespace Fluence.Wpf.Tests
             RunWithWindow(w =>
             {
                 WindowChrome chrome = WindowChrome.GetWindowChrome(w);
-
-                // The glass frame follows the EFFECTIVE (gated) backdrop AND the real DWM
-                // composition state, not the requested SystemBackdropType DP. With the default
-                // shadow and Auto backdrop the frame is the full minus one value only when DWM
-                // will actually composite. When DWM will not composite in this session (forced
-                // software rendering, disabled composition, or transparency turned off) the
-                // frame is the thin value instead, because asking DWM to extend glass with
-                // nothing composited behind it is the first-paint black flash. Verify the
-                // window's chrome equals the same policy the production path uses for the
-                // current session, so this stays deterministic on any host. See
-                // WindowPolicy.GetGlassFrameThickness.
+                // GlassFrameThickness now also depends on whether DWM will composite a backdrop this
+                // session (WindowCapabilities.BackdropCompositionAvailable). When composition/transparency
+                // is unavailable the frame is always the thin 0.00001 fallback, never -1, so this
+                // window-level assertion tracks that runtime gate to stay hermetic across machines. The
+                // value-for-inputs correctness is covered deterministically by WindowPolicyTests.
                 bool compositionAvailable = WindowCapabilities.Current.BackdropCompositionAvailable;
-                Thickness expectedDefault = WindowPolicy.GetGlassFrameThickness(
-                    WindowPolicy.ResolveEffectiveBackdrop(w.SystemBackdropType, WindowCapabilities.Current),
-                    w.HasShadow,
-                    compositionAvailable);
-                Assert.AreEqual(expectedDefault, chrome.GlassFrameThickness,
-                    "Default GlassFrameThickness must equal the composition-gated policy value for this session.");
+                Assert.AreEqual(new Thickness(compositionAvailable ? -1 : 0.00001), chrome.GlassFrameThickness,
+                    "Default GlassFrameThickness is -1 when a backdrop/shadow is active and DWM will composite, else the thin 0.00001 fallback.");
 
                 w.HasShadow = false;
                 w.SystemBackdropType = BackdropType.None;
 
-                // When backdrop resolves to None AND HasShadow is false the frame is the thin
-                // 0.00001 value on BOTH paths (composited or not): the resize border still
-                // hit-tests but no DWM glass is extended and no visible glass-frame artifact is
-                // painted on Windows 11. This is host-independent.
+                // The dual-path GlassFrameThickness uses 0.00001 (not 0) when both backdrop
+                // is None AND HasShadow is false, so the WindowChrome resize border still
+                // hit-tests but no visible glass-frame artifact is painted on Windows 11.
+                // See WindowPolicy.GetGlassFrameThickness for the rationale.
                 Assert.AreEqual(new Thickness(0.00001), chrome.GlassFrameThickness,
                     "GlassFrameThickness should be 0.00001 when HasShadow=false and SystemBackdropType=None.");
             });
