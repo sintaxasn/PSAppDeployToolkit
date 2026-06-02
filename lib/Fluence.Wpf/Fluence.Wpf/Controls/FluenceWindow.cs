@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 Dan Cunningham
  *
  * Redistribution and use in source and binary forms, with or without
@@ -470,13 +470,13 @@ namespace Fluence.Wpf.Controls
             _hwndSource?.AddHook(WndProc);
             UpdateWindowChrome();
             ApplyWindowShell();
-            // Install the first-paint hold AFTER ApplyWindowShell so chrome, backdrop, and
-            // opaque/Mica background are committed before the window is hidden. The hold keeps
-            // the HWND invisible until OnContentRendered fires, at which point layout (including
-            // SizeToContent and any PositionWindow call by a subclass in its OnSourceInitialized
-            // continuation) and WPF's first paint have all completed. Revealing then shows a
-            // fully-formed, correctly-positioned, already-painted window in one step.
-            HideForFirstPaint();
+            // After the chrome has collapsed the non-client frame, arm the first-paint guard on the
+            // software-rendering / no-composition path so the classic OS-drawn frame is never
+            // presented. On the hardware-composited path the gate is false and nothing below runs.
+            if (ShouldGuardFirstPaint() && _handle != IntPtr.Zero)
+            {
+                HideForFirstPaint();
+            }
             SystemThemeWatcher.Watch(this);
             ApplicationThemeManager.Changed += OnThemeChanged;
             ApplicationAccentColorManager.AccentColorChanged += OnAccentColorChanged;
