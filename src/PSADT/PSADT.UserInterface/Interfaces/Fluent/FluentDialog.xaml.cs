@@ -109,6 +109,13 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             IsMinimizeButtonVisible = _dialogMinimizeVisible ? Visibility.Visible : Visibility.Collapsed;
 
             WindowStartupLocation = WindowStartupLocation.Manual;
+            // Park the window far off every monitor before any layout or show. SizeToContent,
+            // FluentDialog_SizeChanged, FD.Loaded, and PositionWindow calls will all no-op or
+            // operate on this off-screen position until OnContentRendered clears _firstShowPending
+            // and places the window on-screen in one step. The FluenceWindow cloak (belt-and-braces)
+            // will have already hidden the window by the time it is moved on-screen.
+            Left = OffscreenCoordinate;
+            Top = OffscreenCoordinate;
             Topmost = options.DialogTopMost;
 
             // Set supplemental options also
@@ -281,51 +288,77 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             Dispose();
         }
 
+        /// <inheritdoc />
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            // FluenceWindow.OnSourceInitialized applies the window shell (chrome, opaque/backdrop
+            // background, frame) before the first paint.
+            base.OnSourceInitialized(e);
+
+            // Configure all content-dependent layout and position the window BEFORE the first paint
+            // so the first composed frame is already settled - no visible jump from a default
+            // position, and no pre-arrangement flash of the buttons / content rows. This runs after
+            // the full object graph is constructed (base plus subclass constructors, which set each
+            // dialog's button visibility and content) but before the window renders. Forcing one
+            // layout pass here gives PositionWindow the final ActualWidth / ActualHeight; the wired
+            // SizeChanged handler still repositions if the content size changes later (e.g. the
+            // CloseApps list updating).
+            AutomationProperties.SetName(this, Title);
+            UpdateButtonLayout();
+            UpdateRowDefinition();
+            UpdateLayout();
+            // PositionWindow is suppressed while _firstShowPending=true; the window stays
+            // off-screen at OffscreenCoordinate. _startingLeft/_startingTop will be set to
+            // the on-screen coords by the reveal-time PositionWindow call in OnContentRendered.
+            PositionWindow();
+
+            // Pre-populate the countdown display so the first rendered frame shows the real
+            // remaining time (full duration) rather than the XAML-default "00:00:00". The
+            // _countdownStopwatch has not started yet at this point (InitializeCountdown starts
+            // it at Loaded), so Elapsed == 0 and remaining == full duration -- the correct value.
+            // UpdateCountdownDisplay guards against null _countdownDuration internally. This
+            // does NOT start the timer; it only sets the text block once for the first frame.
+            // InitializeCountdown (called from Loaded) still owns timer start and the tick loop.
+            UpdateCountdownDisplay();
+        }
+
+        /// <inheritdoc />
+        protected override void OnContentRendered(EventArgs e)
+        {
+            // First-show reveal: clear the off-screen hold, position the window on-screen, then
+            // let the base (FluenceWindow.OnContentRendered -> RevealAfterFirstPaint) uncloak or
+            // un-alpha the window. The ordering is deliberate:
+            //   1. Clear _firstShowPending so PositionWindow computes the real on-screen coords.
+            //   2. Call PositionWindow -- moves the HWND to its final position while the
+            //      FluenceWindow cloak still holds the window invisible (belt-and-braces).
+            //   3. base.OnContentRendered -> RevealAfterFirstPaint -> uncloak.
+            //   Result: the window appears fully-formed at its final position in one step.
+            //
+            // _startingLeft/_startingTop are set inside PositionWindow (Left = _startingLeft = left)
+            // so RestoreWindow will correctly restore to the on-screen position, not OffscreenCoordinate.
+            if (_firstShowPending)
+            {
+                _firstShowPending = false;
+                PositionWindow();
+            }
+            base.OnContentRendered(e);
+        }
+
         /// <summary>
-        /// Handles the Loaded event for the dialog, performing initialization and layout updates required for correct
-        /// display and interaction.
+        /// Handles the Loaded event for the dialog. Layout, button arrangement, and window
+        /// positioning now run in <see cref="OnSourceInitialized"/> (before the first paint) so the
+        /// first composed frame is already settled; only genuine post-show concerns remain here.
         /// </summary>
-        /// <remarks>This method updates the dialog's layout and button arrangement, initializes any countdown
-        /// display, and positions the window appropriately. It also starts any configured timers and signals operation
-        /// success for client-server scenarios. Override this method to customize dialog initialization behavior when
-        /// the dialog is loaded.</remarks>
-        /// <param name="sender">The source of the event, typically the dialog instance that is being loaded.</param>
+        /// <param name="sender">The source of the event, typically the dialog instance being loaded.</param>
         /// <param name="e">A RoutedEventArgs object that contains the event data.</param>
         private protected virtual void FluentDialog_Loaded(object? sender, RoutedEventArgs e)
         {
-            // Note: software rendering is already forced process-wide via RenderOptions.ProcessRenderMode in
-            // DialogManager's static constructor (set at Application.Startup, before any window exists). Do NOT
-            // re-assign CompositionTarget.RenderMode here: mutating the composition target during the Loaded event
-            // tears down and recreates the window's render target while FluenceWindow.BeginCloakForFirstPaint is
-            // holding the window cloaked until its first composed frame. That race intermittently uncloaks the
-            // window around a black/native-chrome frame, producing the "first-launch corruption" flash on the
-            // CloseApps and Restart dialogs.
-
-            // Finish registration that must occur after construction has completed.
-            AutomationProperties.SetName(this, Title);
-
-            // Update dialog layout
-            UpdateButtonLayout();
-            UpdateLayout();
-
-            // Initialize countdown display if needed
+            // Post-show concerns only: start the countdown and persist/expiry timers, signal the
+            // client-server success flag the caller may be awaiting, and bring the realised window
+            // to the front.
             InitializeCountdown();
-
-            // Update row definitions based on current content
-            UpdateRowDefinition();
-
-            // Position the window
-            PositionWindow();
-
-            // Record the starting point for the window.
-            _startingLeft = Left;
-            _startingTop = Top;
-
-            // Start the timers if specified
             _persistTimer?.Start();
             _expiryTimer?.Start();
-
-            // Set the NoWait success flag as the caller may be waiting for it.
             ClientServerUtilities.SetOperationSuccessFlag();
             try
             {
@@ -333,6 +366,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
             catch
             {
+                // Best-effort: failing to raise the window must never abort dialog display.
                 return;
                 throw;
             }
@@ -742,10 +776,18 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Positions the window on the screen based on the specified dialog position.
+        /// Positions the window on the screen based on the specified dialog position. Suppressed
+        /// while <see cref="_firstShowPending"/> is <see langword="true"/> so the window stays at
+        /// <see cref="OffscreenCoordinate"/> until the first-show reveal in
+        /// <see cref="OnContentRendered"/>.
         /// </summary>
         private void PositionWindow()
         {
+            if (_firstShowPending)
+            {
+                return;
+            }
+
             // Get the working area in DIPs.
             Rect workingArea = SystemParameters.WorkArea;
 
@@ -1054,6 +1096,25 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private double _startingLeft;
 
         /// <summary>
+        /// A coordinate guaranteed to be off every monitor regardless of DPI or multi-monitor
+        /// arrangement. The window is parked here from construction until the first
+        /// <see cref="OnContentRendered"/> reveal so that <see cref="SizeToContent"/> growth,
+        /// <see cref="PositionWindow"/> calls from <see cref="FluentDialog_SizeChanged"/>, and
+        /// the <c>Loaded</c> event all occur while the window is invisible and off-screen.
+        /// </summary>
+        private const double OffscreenCoordinate = -32000;
+
+        /// <summary>
+        /// Guards the off-screen first-show hold. <see langword="true"/> from construction until
+        /// <see cref="OnContentRendered"/> fires and the window is placed on-screen for the first
+        /// time. While <see langword="true"/>, <see cref="PositionWindow"/> is suppressed so the
+        /// window stays at <see cref="OffscreenCoordinate"/> regardless of <see cref="SizeToContent"/>
+        /// growth or event-driven repositions. Cleared exactly once by
+        /// <see cref="OnContentRendered"/>.
+        /// </summary>
+        private bool _firstShowPending = true;
+
+        /// <summary>
         /// The application tray icon bitmap source, if AppTaskbarIconImage was specified.
         /// </summary>
         private readonly BitmapSource? _appTaskbarIcon;
@@ -1137,6 +1198,11 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                     IsItalic = IsItalic
                 };
             }
+        }
+
+        private void CloseAppsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Selection changes in the close-apps list view require no additional action.
         }
     }
 }

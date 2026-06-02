@@ -50,14 +50,16 @@ namespace Fluence.Wpf.Tests
             bool legacyMica = false,
             bool roundedCorners = false,
             bool captionColor = false,
-            bool borderColor = false)
+            bool borderColor = false,
+            bool backdropCompositionAvailable = true)
         {
             return new WindowCapabilities(
                 systemBackdrop,
                 legacyMica,
                 roundedCorners,
                 captionColor,
-                borderColor);
+                borderColor,
+                backdropCompositionAvailable);
         }
 
         #region ResolveEffectiveBackdrop - capability matrix
@@ -197,6 +199,78 @@ namespace Fluence.Wpf.Tests
                 Caps());
 
             Assert.AreEqual(BackdropType.None, effective);
+        }
+
+        #endregion
+
+        #region ResolveEffectiveBackdrop - backdrop composition unavailable (flicker guard)
+
+        // When DWM will not composite a backdrop (forced software rendering on the PSADT remoting
+        // path, disabled composition, or the user's "Transparency effects" turned off) a transparent
+        // Mica/Acrylic window has nothing painted behind it and flashes the uncomposited surface on
+        // first paint. These pin the opaque-fallback downgrade that keeps the client never-transparent
+        // in those sessions, regardless of how rich the OS-version capabilities are.
+
+        [TestMethod]
+        public void ResolveEffectiveBackdrop_Mica_Win22H2_NoComposition_DowngradesToNone()
+        {
+            BackdropType effective = WindowPolicy.ResolveEffectiveBackdrop(
+                BackdropType.Mica,
+                Caps(systemBackdrop: true, roundedCorners: true, captionColor: true, borderColor: true, backdropCompositionAvailable: false));
+
+            Assert.AreEqual(BackdropType.None, effective,
+                "Mica must downgrade to None when DWM will not composite a backdrop (software rendering / no composition / transparency off), even on a fully capable 22H2 build.");
+        }
+
+        [TestMethod]
+        public void ResolveEffectiveBackdrop_Auto_Win22H2_NoComposition_DowngradesToNone()
+        {
+            BackdropType effective = WindowPolicy.ResolveEffectiveBackdrop(
+                BackdropType.Auto,
+                Caps(systemBackdrop: true, roundedCorners: true, backdropCompositionAvailable: false));
+
+            Assert.AreEqual(BackdropType.None, effective,
+                "Auto must downgrade to None when the backdrop cannot be composited.");
+        }
+
+        [TestMethod]
+        public void ResolveEffectiveBackdrop_Acrylic_Win22H2_NoComposition_DowngradesToNone()
+        {
+            BackdropType effective = WindowPolicy.ResolveEffectiveBackdrop(
+                BackdropType.Acrylic,
+                Caps(systemBackdrop: true, roundedCorners: true, backdropCompositionAvailable: false));
+
+            Assert.AreEqual(BackdropType.None, effective,
+                "Acrylic must downgrade to None when the backdrop cannot be composited.");
+        }
+
+        [TestMethod]
+        public void ResolveEffectiveBackdrop_Mica_LegacyPath_NoComposition_DowngradesToNone()
+        {
+            BackdropType effective = WindowPolicy.ResolveEffectiveBackdrop(
+                BackdropType.Mica,
+                Caps(legacyMica: true, roundedCorners: true, backdropCompositionAvailable: false));
+
+            Assert.AreEqual(BackdropType.None, effective,
+                "The legacy pre-22H2 Mica path must also downgrade to None when the backdrop cannot be composited.");
+        }
+
+        [TestMethod]
+        public void BuildBackdropPlan_Mica_Win22H2_NoComposition_UsesOpaqueFallback()
+        {
+            Color fallback = Color.FromRgb(0x20, 0x20, 0x20);
+            BackdropPlan plan = WindowPolicy.BuildBackdropPlan(
+                BackdropType.Mica,
+                ApplicationTheme.Dark,
+                Caps(systemBackdrop: true, roundedCorners: true, captionColor: true, backdropCompositionAvailable: false),
+                fallback);
+
+            Assert.AreEqual(BackdropType.None, plan.EffectiveBackdrop,
+                "A Mica request must resolve to None when the backdrop cannot be composited.");
+            Assert.IsFalse(plan.UseTransparentBackground,
+                "The window must paint a solid, opaque background when no backdrop will composite - this is the flicker fix.");
+            Assert.AreEqual(fallback, plan.BackgroundColor,
+                "The opaque theme fallback color must be used for both the WPF background and the HWND redirection surface.");
         }
 
         #endregion
@@ -546,17 +620,19 @@ namespace Fluence.Wpf.Tests
 
         #endregion
 
-        #region GetGlassFrameThickness - dual-path
+        #region GetGlassFrameThickness - dual-path (composition available)
 
         // WPF-UI's GlassFrameThickness convention: -1 for full DWM glass extension when a
         // backdrop is active, 0.00001 for an invisible-but-resize-borderable frame when no
         // backdrop is active and no shadow is requested. The combined check makes sure we
         // don't render a visible glass-frame artifact when SystemBackdropType=None on Win11.
+        // These cases all pass backdropCompositionAvailable: true so the historical -1 / 0.00001
+        // behavior is pinned for the composited path; the non-composited path is covered below.
 
         [TestMethod]
         public void GetGlassFrameThickness_NoBackdrop_NoShadow_VeryThin()
         {
-            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.None, hasShadow: false);
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.None, hasShadow: false, backdropCompositionAvailable: true);
             Assert.AreEqual(0.00001, t.Left, 1e-9, "No backdrop + no shadow must use the thin-but-nonzero glass frame.");
             Assert.AreEqual(0.00001, t.Top, 1e-9);
             Assert.AreEqual(0.00001, t.Right, 1e-9);
@@ -566,36 +642,89 @@ namespace Fluence.Wpf.Tests
         [TestMethod]
         public void GetGlassFrameThickness_NoBackdrop_WithShadow_FullGlass()
         {
-            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.None, hasShadow: true);
-            Assert.AreEqual(-1, t.Left, 1e-9, "Shadow requested without backdrop still extends the DWM glass frame.");
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.None, hasShadow: true, backdropCompositionAvailable: true);
+            Assert.AreEqual(-1, t.Left, 1e-9, "Shadow requested without backdrop still extends the DWM glass frame when DWM composites.");
         }
 
         [TestMethod]
         public void GetGlassFrameThickness_MicaBackdrop_FullGlass()
         {
-            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Mica, hasShadow: false);
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Mica, hasShadow: false, backdropCompositionAvailable: true);
             Assert.AreEqual(-1, t.Left, 1e-9, "Mica backdrop must extend the glass into the client area.");
         }
 
         [TestMethod]
         public void GetGlassFrameThickness_AcrylicBackdrop_FullGlass()
         {
-            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Acrylic, hasShadow: false);
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Acrylic, hasShadow: false, backdropCompositionAvailable: true);
             Assert.AreEqual(-1, t.Left, 1e-9, "Acrylic backdrop must extend the glass into the client area.");
         }
 
         [TestMethod]
         public void GetGlassFrameThickness_TabbedBackdrop_FullGlass()
         {
-            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Tabbed, hasShadow: false);
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Tabbed, hasShadow: false, backdropCompositionAvailable: true);
             Assert.AreEqual(-1, t.Left, 1e-9, "Tabbed backdrop must extend the glass into the client area.");
         }
 
         [TestMethod]
         public void GetGlassFrameThickness_AutoBackdrop_FullGlass()
         {
-            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Auto, hasShadow: false);
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Auto, hasShadow: false, backdropCompositionAvailable: true);
             Assert.AreEqual(-1, t.Left, 1e-9, "Auto backdrop is treated as backdrop-active for chrome purposes.");
+        }
+
+        #endregion
+
+        #region GetGlassFrameThickness - composition unavailable (first-paint flash guard)
+
+        // The first-paint black flash on composition-capable hardware came from extending the DWM
+        // glass frame (-1) on the software-rendered path: DWM composited the not-yet-painted glass
+        // region as black before WPF's slower software first frame landed. When DWM will not
+        // composite a backdrop in this session (forced software rendering, composition disabled, or
+        // "Transparency effects" off) the glass frame must stay thin (0.00001) so DWM is never asked
+        // to extend glass - regardless of the backdrop or whether a shadow was requested. These pin
+        // that guard so the chrome follows the real composition state, not the requested backdrop.
+
+        [TestMethod]
+        public void GetGlassFrameThickness_MicaBackdrop_NoComposition_VeryThin()
+        {
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Mica, hasShadow: false, backdropCompositionAvailable: false);
+            Assert.AreEqual(0.00001, t.Left, 1e-9, "Mica must NOT extend the glass frame when DWM will not composite a backdrop - that is the first-paint black flash.");
+            Assert.AreEqual(0.00001, t.Top, 1e-9);
+            Assert.AreEqual(0.00001, t.Right, 1e-9);
+            Assert.AreEqual(0.00001, t.Bottom, 1e-9);
+        }
+
+        [TestMethod]
+        public void GetGlassFrameThickness_NoBackdrop_WithShadow_NoComposition_VeryThin()
+        {
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.None, hasShadow: true, backdropCompositionAvailable: false);
+            Assert.AreEqual(0.00001, t.Left, 1e-9, "A requested shadow must NOT extend the glass frame when DWM will not composite - the shadowless thin frame avoids the first-paint flash. HasShadow is ignored on the non-composited path.");
+            Assert.AreEqual(0.00001, t.Top, 1e-9);
+            Assert.AreEqual(0.00001, t.Right, 1e-9);
+            Assert.AreEqual(0.00001, t.Bottom, 1e-9);
+        }
+
+        [TestMethod]
+        public void GetGlassFrameThickness_AcrylicBackdrop_NoComposition_VeryThin()
+        {
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Acrylic, hasShadow: true, backdropCompositionAvailable: false);
+            Assert.AreEqual(0.00001, t.Left, 1e-9, "Acrylic (even with a shadow requested) must keep the thin frame when DWM will not composite.");
+        }
+
+        [TestMethod]
+        public void GetGlassFrameThickness_AutoBackdrop_NoComposition_VeryThin()
+        {
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.Auto, hasShadow: false, backdropCompositionAvailable: false);
+            Assert.AreEqual(0.00001, t.Left, 1e-9, "Auto must keep the thin frame when DWM will not composite a backdrop.");
+        }
+
+        [TestMethod]
+        public void GetGlassFrameThickness_NoBackdrop_NoShadow_NoComposition_VeryThin()
+        {
+            Thickness t = WindowPolicy.GetGlassFrameThickness(BackdropType.None, hasShadow: false, backdropCompositionAvailable: false);
+            Assert.AreEqual(0.00001, t.Left, 1e-9, "None + no shadow is thin on both paths; the non-composited path must agree with the composited one here.");
         }
 
         #endregion

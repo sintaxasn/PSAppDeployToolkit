@@ -12,10 +12,6 @@
     <NoWarn>SYSLIB1045;VSTHRD001</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Page Remove="Properties\DesignTimeResources.xaml" />
-  </ItemGroup>
-
-    <ItemGroup>
     <ProjectReference Include="..\..\..\lib\Fluence.Wpf\Fluence.Wpf\Fluence.Wpf.csproj" />
     <ProjectReference Include="..\PSADT\PSADT.csproj" />
     <ProjectReference Include="..\PSAppDeployToolkit\PSAppDeployToolkit.csproj" />

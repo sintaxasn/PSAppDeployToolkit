@@ -44,6 +44,11 @@ namespace Fluence.Wpf.Native
         private const int GWL_STYLE = -16;
         private const int WS_SYSMENU = 0x80000;
 
+        // Extended window style index and layered-window constants used for the first-paint hold.
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_LAYERED = 0x00080000;
+        private const uint LWA_ALPHA = 0x00000002;
+
         #region User32 Window Style APIs
 
         [DllImport(User32, SetLastError = true)]
@@ -55,6 +60,10 @@ namespace Fluence.Wpf.Native
         [DllImport(User32, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport(User32, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
         [DllImport(User32, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -229,21 +238,64 @@ namespace Fluence.Wpf.Native
         }
 
         /// <summary>
-        /// Cloaks or uncloaks a window via <see cref="NativeConstants.DWMWA_CLOAK"/>. While cloaked,
-        /// DWM keeps the window fully composed off-screen and does not present it, so a window can be
-        /// shown, have its backdrop applied, and render its first frame without the empty client area
-        /// flashing black. Callers MUST guarantee a matching uncloak; a window left cloaked is invisible.
+        /// Sets or clears the DWM cloak on a window via <see cref="NativeConstants.DWMWA_CLOAK"/>.
+        /// When cloaked the window is fully composited off-screen by DWM (including any Mica or
+        /// Acrylic backdrop) but invisible to the user. Requires DWM composition to be enabled; if
+        /// it is not, the call silently returns false and the caller must fall back to the layered-
+        /// window alpha approach. Used as the preferred first-paint hold mechanism so the window
+        /// is only revealed after layout, sizing, and WPF's first paint have completed.
         /// </summary>
+        /// <param name="hwnd">The window handle to cloak or uncloak.</param>
+        /// <param name="cloak"><see langword="true"/> to cloak (hide); <see langword="false"/> to uncloak (reveal).</param>
+        /// <returns><see langword="true"/> when the DWM call succeeded.</returns>
         public static bool SetWindowCloak(IntPtr hwnd, bool cloak)
         {
+            if (hwnd == IntPtr.Zero)
+            {
+                return false;
+            }
             int value = cloak ? NativeConstants.DWM_TRUE : NativeConstants.DWM_FALSE;
             return SetWindowAttribute(hwnd, NativeConstants.DWMWA_CLOAK, value);
         }
 
         /// <summary>
+        /// Adds or removes <c>WS_EX_LAYERED</c> on the window and, when adding, applies an alpha
+        /// value of zero (fully transparent) via <c>SetLayeredWindowAttributes</c>. When removing,
+        /// clears <c>WS_EX_LAYERED</c> so the window returns to its normal compositing mode. Used
+        /// as the fallback first-paint hold when DWM composition is unavailable and
+        /// <see cref="SetWindowCloak"/> cannot be used. In that case the window is opaque anyway
+        /// (no Mica/Acrylic), so <c>WS_EX_LAYERED</c> does not interfere with backdrop compositing.
+        /// </summary>
+        /// <param name="hwnd">The window handle to modify.</param>
+        /// <param name="alpha">Alpha value: 0 to hide, 255 to reveal.</param>
+        /// <returns><see langword="true"/> when both the style change and the attribute call succeeded.</returns>
+        public static bool SetWindowLayeredAlpha(IntPtr hwnd, byte alpha)
+        {
+            if (hwnd == IntPtr.Zero)
+            {
+                return false;
+            }
+            int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            if (alpha == 0)
+            {
+                // Add WS_EX_LAYERED if not already set, then force alpha to 0.
+                _ = SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
+                return SetLayeredWindowAttributes(hwnd, 0, 0, LWA_ALPHA);
+            }
+            else
+            {
+                // Reveal at full opacity then remove WS_EX_LAYERED so the window reverts to normal.
+                bool ok = SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+                _ = SetWindowLong(hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_LAYERED);
+                return ok;
+            }
+        }
+
+        /// <summary>
         /// Reads the read-only <see cref="NativeConstants.DWMWA_CLOAKED"/> attribute, returning the
         /// reason flags for why the window is cloaked. Zero means the window is not cloaked. Returns
-        /// zero on any failure (for example when DWM composition is disabled).
+        /// zero on any failure (for example when DWM composition is disabled). Retained purely as a
+        /// regression guard: FluenceWindow deliberately never cloaks outside the first-paint hold.
         /// </summary>
         public static int GetWindowCloakedState(IntPtr hwnd)
         {

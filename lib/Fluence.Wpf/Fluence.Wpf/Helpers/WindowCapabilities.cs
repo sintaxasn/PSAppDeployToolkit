@@ -26,6 +26,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using Fluence.Wpf.Native;
+
 namespace Fluence.Wpf.Helpers
 {
     internal sealed class WindowCapabilities(
@@ -33,7 +35,8 @@ namespace Fluence.Wpf.Helpers
         bool supportsMicaEffect,
         bool supportsRoundedCorners,
         bool supportsCaptionColor,
-        bool supportsBorderColor = false)
+        bool supportsBorderColor = false,
+        bool backdropCompositionAvailable = true)
     {
         internal bool SupportsSystemBackdropType { get; private set; } = supportsSystemBackdropType;
 
@@ -45,11 +48,46 @@ namespace Fluence.Wpf.Helpers
 
         internal bool SupportsBorderColor { get; private set; } = supportsBorderColor;
 
+        /// <summary>
+        /// Runtime gate, distinct from the OS-version capabilities above: whether DWM will actually
+        /// composite a system backdrop right now. A Mica or Acrylic window is transparent and relies
+        /// on DWM painting the backdrop behind it. When DWM composition is disabled or the user's
+        /// "Transparency effects" setting is off, the transparent client has nothing behind it and
+        /// flashes the uncomposited surface on first paint, and stays see-through while transparency is
+        /// off. In those cases the backdrop must resolve to None with an opaque background instead. See
+        /// <c>WindowPolicy.ResolveEffectiveBackdrop</c>.
+        /// <para>
+        /// Note: WPF's <c>RenderOptions.ProcessRenderMode</c> (which selects software or hardware
+        /// rasterization of WPF content) is deliberately NOT included in this gate. DWM desktop
+        /// composition is a separate kernel-mode subsystem; it composites Mica and Acrylic behind a
+        /// transparent window independently of how WPF rasterizes its content. A window that forces
+        /// WPF software rendering still receives a real DWM Mica backdrop on a composition-capable
+        /// desktop with transparency enabled.
+        /// </para>
+        /// </summary>
+        internal bool BackdropCompositionAvailable { get; private set; } = backdropCompositionAvailable;
+
         internal static WindowCapabilities Current => new(
             OsVersionHelper.SupportsSystemBackdropType,
             OsVersionHelper.SupportsMicaEffect,
             OsVersionHelper.SupportsRoundedCorners,
             OsVersionHelper.SupportsCaptionColor,
-            OsVersionHelper.SupportsBorderColor);
+            OsVersionHelper.SupportsBorderColor,
+            IsBackdropCompositionAvailable());
+
+        /// <summary>
+        /// Determines whether DWM will composite a system backdrop in the current session.
+        /// Gated on DWM composition being enabled and the user's "Transparency effects" setting being
+        /// on. DWM desktop composition is independent of WPF's render mode: even when WPF is forced to
+        /// software rasterization (<c>RenderOptions.ProcessRenderMode = SoftwareOnly</c>), DWM
+        /// composites Mica and Acrylic behind a transparent window as long as these two conditions
+        /// hold. When either is false a transparent backdrop window would flicker; the opaque fallback
+        /// is used instead.
+        /// </summary>
+        private static bool IsBackdropCompositionAvailable()
+        {
+            return NativeMethods.IsCompositionEnabled()
+                && RegistryHelper.IsTransparencyEnabled();
+        }
     }
 }

@@ -55,6 +55,26 @@ maintainers.
 
 ## Resolved (Unreleased)
 
+- **`FluenceWindow` flicker / see-through when the backdrop will not
+  composite** - The backdrop was chosen from OS *version* only
+  (`OsVersionHelper`), so on any Windows 11 build the window went
+  transparent and requested Mica even when DWM would not paint it: under
+  forced software rendering (PSADT forces
+  `RenderOptions.ProcessRenderMode = SoftwareOnly` for every dialog), with
+  DWM composition disabled, or with the user's "Transparency effects"
+  turned off. The transparent client then had nothing composited behind
+  it and flashed the uncomposited surface as the window appeared (worst on
+  first paint, where the WPF-side reveal races the DWM composite), and on a
+  transparency-disabled machine it stayed wrong. Fix:
+  `WindowCapabilities.BackdropCompositionAvailable` is a runtime gate
+  (`ProcessRenderMode != SoftwareOnly` AND `DwmIsCompositionEnabled` AND
+  the `EnableTransparency` registry setting), and
+  `WindowPolicy.ResolveEffectiveBackdrop` downgrades to `None` with an
+  opaque theme background whenever it is false. An opaque base cannot
+  flash, matching the reference Fluent window libraries (WPF-UI, iNKORE,
+  MicaWPF) which paint solid when the backdrop is unavailable.
+  Hardware-composited sessions with transparency on are unchanged.
+  Covered by `WindowPolicyTests`.
 - **`FluenceWindow` black-flash on first paint** - WPF presented the HWND
   before its first composed frame; with the extended glass frame, a DWM
   system backdrop, and suppressed native caption painting, the empty client

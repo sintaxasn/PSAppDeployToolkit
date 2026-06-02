@@ -8,13 +8,13 @@
     xmlns:psconv="clr-namespace:PSADT.UserInterface.Utilities"
     xmlns:ui="clr-namespace:Fluence.Wpf.Controls;assembly=Fluence.Wpf"
     xmlns:uicore="clr-namespace:Fluence.Wpf;assembly=Fluence.Wpf"
-    Background="Transparent"
     MinHeight="0"
     MaxWidth="540"
     MaxHeight="1050"
     x:ClassModifier="internal"
     AutomationProperties.AutomationId="PSAppDeployToolkitDialog"
     AutomationProperties.Name="PSAppDeployToolkit Dialog"
+    Background="{DynamicResource ApplicationBackgroundBrush}"
     ExtendsContentIntoTitleBar="True"
     IsCloseButtonVisible="Collapsed"
     IsMaximizeButtonVisible="Collapsed"
@@ -243,6 +243,7 @@
                         ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                         ScrollViewer.IsDeferredScrollingEnabled="True"
                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        SelectionChanged="CloseAppsListView_SelectionChanged"
                         SelectionMode="Single"
                         VirtualizingPanel.IsVirtualizing="True"
                         VirtualizingPanel.ScrollUnit="Pixel"
@@ -319,9 +320,7 @@
                     Orientation="Vertical"
                     >
 
-                    <ui:Separator
-                        x:Name="ProgressPanelSeparator"
-                        />
+                    <ui:Separator x:Name="ProgressPanelSeparator" />
 
                     <TextBlock
                         x:Name="ProgressMessageDetailTextBlock"
@@ -418,9 +417,7 @@
                     </ui:DockPanel>
                 </StackPanel>
 
-                <ui:Separator 
-                    x:Name="CountdownDeferPanelSeparator"
-                    />
+                <ui:Separator x:Name="CountdownDeferPanelSeparator" />
 
                 <StackPanel
                     x:Name="CountdownStackPanel"

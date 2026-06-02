@@ -38,6 +38,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
+using System.Windows.Threading;
 
 namespace Fluence.Wpf.Controls
 {
@@ -469,6 +470,13 @@ namespace Fluence.Wpf.Controls
             _hwndSource?.AddHook(WndProc);
             UpdateWindowChrome();
             ApplyWindowShell();
+            // Install the first-paint hold AFTER ApplyWindowShell so chrome, backdrop, and
+            // opaque/Mica background are committed before the window is hidden. The hold keeps
+            // the HWND invisible until OnContentRendered fires, at which point layout (including
+            // SizeToContent and any PositionWindow call by a subclass in its OnSourceInitialized
+            // continuation) and WPF's first paint have all completed. Revealing then shows a
+            // fully-formed, correctly-positioned, already-painted window in one step.
+            HideForFirstPaint();
             SystemThemeWatcher.Watch(this);
             ApplicationThemeManager.Changed += OnThemeChanged;
             ApplicationAccentColorManager.AccentColorChanged += OnAccentColorChanged;
@@ -555,8 +563,34 @@ namespace Fluence.Wpf.Controls
         #endregion
 
         /// <inheritdoc />
+        protected override void OnContentRendered(EventArgs e)
+        {
+            base.OnContentRendered(e);
+            // Defer the uncloak by one CompositionTarget.Rendering tick so DWM has one full frame
+            // to composite the on-screen window at its final position before the cloak is lifted.
+            // Revealing synchronously inside OnContentRendered put the uncloak in the same display
+            // frame as the on-screen move, which let DWM briefly show an uncomposited surface.
+            // If the hold was never armed (hardware-composited path, guard returned false) or has
+            // already been revealed by the safety timer, this is a no-op.
+            if (!_firstPaintRevealed)
+            {
+                _firstPaintRenderingHandler = OnFirstPaintRenderingTick;
+                CompositionTarget.Rendering += _firstPaintRenderingHandler;
+            }
+        }
+
+        /// <inheritdoc />
         protected override void OnClosed(EventArgs e)
         {
+            StopFirstPaintTimer();
+            // Unsubscribe the deferred rendering handler before calling RevealAfterFirstPaint so
+            // CompositionTarget.Rendering is never left subscribed after the window is destroyed.
+            // RevealAfterFirstPaint also calls StopFirstPaintRenderingHandler as a belt-and-braces
+            // guard; the double-call is idempotent (nil-checks the field).
+            StopFirstPaintRenderingHandler();
+            // Ensure the window is never left permanently hidden if it is closed before
+            // OnContentRendered fires (e.g. a subclass closing in OnSourceInitialized).
+            RevealAfterFirstPaint();
             SystemThemeWatcher.UnWatch(this);
             ApplicationThemeManager.Changed -= OnThemeChanged;
             ApplicationAccentColorManager.AccentColorChanged -= OnAccentColorChanged;
@@ -595,7 +629,8 @@ namespace Fluence.Wpf.Controls
         {
             if (d is FluenceWindow window)
             {
-                // GlassFrameThickness depends on the backdrop too (dual-path); refresh chrome.
+                // GlassFrameThickness follows the effective (gated) backdrop, so a backdrop change
+                // must refresh the chrome before ApplyBackdrop re-issues the DWM attributes.
                 window.UpdateWindowChrome();
                 window.ApplyBackdrop();
             }
@@ -635,11 +670,18 @@ namespace Fluence.Wpf.Controls
         {
             _windowChrome.CaptionHeight = 0;
             _windowChrome.UseAeroCaptionButtons = false;
-            // GlassFrameThickness must reflect both the requested backdrop and shadow policy.
-            // When SystemBackdropType is None and HasShadow is false, an unconditional -1
-            // glass frame paints a visible artifact on Windows 11; using 0.00001 keeps the
-            // resize border alive without that artifact. See WindowPolicy.GetGlassFrameThickness.
-            _windowChrome.GlassFrameThickness = WindowPolicy.GetGlassFrameThickness(SystemBackdropType, HasShadow);
+            // GlassFrameThickness must follow the EFFECTIVE (gated) backdrop and the real DWM
+            // composition state, never the requested SystemBackdropType DP. When the backdrop is
+            // downgraded to an opaque None (forced software rendering, composition disabled, or
+            // transparency off) the frame must stay thin (0.00001): asking DWM to extend glass on a
+            // composition-capable desktop composites a not-yet-painted glass region as black before
+            // the software-rendered first frame lands, producing a first-paint black flash. When DWM
+            // genuinely composites a backdrop (or a shadow is requested) the frame is -1 so the glass
+            // extends and the backdrop or shadow shows through. See WindowPolicy.GetGlassFrameThickness.
+            _windowChrome.GlassFrameThickness = WindowPolicy.GetGlassFrameThickness(
+                GetEffectiveBackdrop(),
+                HasShadow,
+                WindowCapabilities.Current.BackdropCompositionAvailable);
         }
 
         private void UpdateShellMetrics()
@@ -1146,6 +1188,139 @@ namespace Fluence.Wpf.Controls
 
         #endregion
 
+        /// <summary>
+        /// Resolves the effective (gated) backdrop for chrome decisions: the requested
+        /// <see cref="SystemBackdropType"/> mapped through <see cref="WindowPolicy.ResolveEffectiveBackdrop"/>
+        /// against the current capabilities, which downgrades to an opaque <see cref="BackdropType.None"/>
+        /// whenever DWM will not composite a backdrop in this session. Chrome (the glass frame in
+        /// particular) must key off this, not the requested DP, so it never asks DWM to extend glass
+        /// when there is no composited backdrop behind it.
+        /// </summary>
+        private BackdropType GetEffectiveBackdrop()
+        {
+            return WindowPolicy.ResolveEffectiveBackdrop(SystemBackdropType, WindowCapabilities.Current);
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when the first-paint hold should be applied. The hold is
+        /// needed on the software-rendered path (WPF CPU rasterization is slow, leaving a multi-frame
+        /// gap before the first opaque frame) and when DWM composition is disabled (no desktop
+        /// compositor to paper over the gap). On the hardware-accelerated, composition-enabled path
+        /// the first WPF frame arrives almost instantly, so the hold is skipped to avoid any
+        /// unnecessary flicker-at-reveal risk on that path.
+        /// </summary>
+        private static bool ShouldGuardFirstPaint()
+        {
+            return RenderOptions.ProcessRenderMode == RenderMode.SoftwareOnly
+                || !NativeMethods.IsCompositionEnabled();
+        }
+
+        /// <summary>
+        /// Hides the window using the best available mechanism before the first WPF paint. Prefers
+        /// <c>DWMWA_CLOAK</c> when DWM composition is enabled: the window is fully composed
+        /// off-screen (including any Mica/Acrylic backdrop) but invisible. Falls back to a layered-
+        /// window alpha of zero when composition is unavailable; in that case the window is opaque
+        /// (no backdrop), so <c>WS_EX_LAYERED</c> does not interfere with backdrop compositing.
+        /// Also arms a safety <see cref="DispatcherTimer"/> (~1000 ms) so the window is never left
+        /// permanently hidden if <see cref="OnContentRendered"/> is not raised (for example because
+        /// the window is closed before content renders).
+        /// </summary>
+        private void HideForFirstPaint()
+        {
+            if (!ShouldGuardFirstPaint() || _handle == IntPtr.Zero)
+            {
+                return;
+            }
+            _firstPaintUseCloak = NativeMethods.IsCompositionEnabled();
+            _ = _firstPaintUseCloak
+                ? NativeMethods.SetWindowCloak(_handle, cloak: true)
+                : NativeMethods.SetWindowLayeredAlpha(_handle, alpha: 0);
+            // Safety fallback: reveal the window after ~1000 ms even if OnContentRendered never fires.
+            _firstPaintTimer = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(1000),
+            };
+            _firstPaintTimer.Tick += OnFirstPaintTimerTick;
+            _firstPaintTimer.Start();
+        }
+
+        /// <summary>
+        /// Reveals the window by undoing the first-paint hold. Idempotent: only the first call
+        /// acts. Stops the safety timer, then uncloak or restores the layered-window alpha depending
+        /// on which mechanism was used to hide.
+        /// </summary>
+        private void RevealAfterFirstPaint()
+        {
+            if (_firstPaintRevealed)
+            {
+                return;
+            }
+            _firstPaintRevealed = true;
+            StopFirstPaintTimer();
+            // Cancel the deferred rendering tick if it has not fired yet (timer wins race) or if
+            // called from OnClosed before OnContentRendered. Either way the handler must not remain
+            // subscribed to the static CompositionTarget.Rendering event.
+            StopFirstPaintRenderingHandler();
+            if (_handle == IntPtr.Zero)
+            {
+                return;
+            }
+            if (_firstPaintUseCloak)
+            {
+                _ = NativeMethods.SetWindowCloak(_handle, cloak: false);
+            }
+            else if (ShouldGuardFirstPaint())
+            {
+                // Guard was active and layered alpha was used (cloak was unavailable). Undo it.
+                _ = NativeMethods.SetWindowLayeredAlpha(_handle, alpha: 255);
+            }
+        }
+
+        private void StopFirstPaintTimer()
+        {
+            if (_firstPaintTimer is null)
+            {
+                return;
+            }
+            _firstPaintTimer.Stop();
+            _firstPaintTimer.Tick -= OnFirstPaintTimerTick;
+            _firstPaintTimer = null;
+        }
+
+        private void OnFirstPaintTimerTick(object? sender, EventArgs e)
+        {
+            RevealAfterFirstPaint();
+        }
+
+        /// <summary>
+        /// Unsubscribes the one-shot <see cref="CompositionTarget.Rendering"/> handler used to
+        /// defer the first-paint reveal by one render tick. Safe to call when no handler is
+        /// subscribed.
+        /// </summary>
+        private void StopFirstPaintRenderingHandler()
+        {
+            if (_firstPaintRenderingHandler is null)
+            {
+                return;
+            }
+            CompositionTarget.Rendering -= _firstPaintRenderingHandler;
+            _firstPaintRenderingHandler = null;
+        }
+
+        /// <summary>
+        /// One-shot <see cref="CompositionTarget.Rendering"/> handler. Fires on the first render
+        /// tick after <see cref="OnContentRendered"/>, unsubscribes itself immediately, then calls
+        /// <see cref="RevealAfterFirstPaint"/>. By this point DWM has composited the window at its
+        /// final on-screen position for one full frame, so uncloaking reveals a fully-settled image.
+        /// </summary>
+        private void OnFirstPaintRenderingTick(object? sender, EventArgs e)
+        {
+            // Unsubscribe before revealing so that RevealAfterFirstPaint's StopFirstPaintTimer
+            // path and the idempotency guard both see a clean state.
+            StopFirstPaintRenderingHandler();
+            RevealAfterFirstPaint();
+        }
+
         private static Color GetFallbackBackgroundColor()
         {
             ApplicationTheme resolvedTheme = ApplicationThemeManager.GetResolvedTheme();
@@ -1253,6 +1428,15 @@ namespace Fluence.Wpf.Controls
         /// non-client elements in WPF applications. This field is typically used to apply or modify custom window
         /// chrome settings.</remarks>
         private readonly WindowChrome _windowChrome;
+
+        // First-paint hold state. HideForFirstPaint arms these; RevealAfterFirstPaint clears them.
+        private bool _firstPaintRevealed;
+        private bool _firstPaintUseCloak;
+        private DispatcherTimer? _firstPaintTimer;
+        // One-shot CompositionTarget.Rendering handler used to defer the reveal by exactly one
+        // render tick after OnContentRendered. Stored as a field so it can be unsubscribed from
+        // RevealAfterFirstPaint, OnClosed, and the safety-timer tick without leaking.
+        private EventHandler? _firstPaintRenderingHandler;
 
         /// <summary>
         /// Represents the native handle associated with the underlying resource.

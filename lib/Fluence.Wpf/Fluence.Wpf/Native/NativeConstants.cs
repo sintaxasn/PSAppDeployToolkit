@@ -31,8 +31,8 @@ namespace Fluence.Wpf.Native
     internal static class NativeConstants
     {
         // DWM Window Attributes
-        public const int DWMWA_CLOAK = 13;
-        public const int DWMWA_CLOAKED = 14;
+        public const int DWMWA_CLOAK = 13;   // Set: cloak or uncloak the window (DWM_TRUE / DWM_FALSE)
+        public const int DWMWA_CLOAKED = 14; // Get: read-only flags indicating why the window is cloaked
         public const int DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19;
         public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         public const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
@@ -88,6 +88,7 @@ namespace Fluence.Wpf.Native
 
         // System Commands
         public const int SC_MOVE = 0xF010;
+        public const int SC_RESTORE = 0xF120;
 
         // Hit Test Results
         public const int HTCLIENT = 1;
@@ -133,6 +134,7 @@ namespace Fluence.Wpf.Native
         public const string AppsUseLightTheme = "AppsUseLightTheme";
         public const string SystemUsesLightTheme = "SystemUsesLightTheme";
         public const string ColorPrevalence = "ColorPrevalence";
+        public const string EnableTransparency = "EnableTransparency";
         public const string AccentPalette = "AccentPalette";
         public const string AccentColor = "AccentColor";
         public const string AccentColorInactive = "AccentColorInactive";

@@ -50,19 +50,30 @@ namespace Fluence.Wpf.Controls
         }
 
         /// <summary>
-        /// Returns the glass-frame thickness appropriate for the given backdrop and shadow state.
-        /// When a DWM backdrop (Mica/Acrylic/Tabbed/Auto) is active the thickness is <c>-1</c>
-        /// so DWM extends the glass into the client area and the backdrop shows through. When
-        /// no backdrop is active and the user wants a shadow, the thickness is still <c>-1</c>
-        /// so WPF's <see cref="System.Windows.Shell.WindowChrome"/> draws the resize border with
-        /// a glass-frame fallback. When neither is active we use a very-thin-but-nonzero value
-        /// (<c>0.00001</c>) so the resize border continues to hit-test while WindowChrome's
-        /// renderer does not paint a visible glass-frame artifact - matching the pattern in
+        /// Returns the glass-frame thickness appropriate for the given backdrop, shadow state, and
+        /// real DWM composition state. The thickness must follow the EFFECTIVE backdrop and whether
+        /// DWM will actually composite right now, never the requested backdrop alone.
+        /// <para>
+        /// When DWM will not composite a backdrop in this session (forced software rendering,
+        /// composition disabled, or the user's "Transparency effects" turned off) the thickness is
+        /// the very-thin-but-nonzero value (<c>0.00001</c>) regardless of <paramref name="hasShadow"/>:
+        /// the resize border still hit-tests, but WPF's <see cref="System.Windows.Shell.WindowChrome"/>
+        /// is never asked to extend glass into the client. Asking DWM to extend glass on a
+        /// composition-capable desktop maps the window with a not-yet-painted glass region that DWM
+        /// composites as black before the (slower) software-rendered first frame lands, producing a
+        /// first-paint black flash. Keeping the frame thin avoids that on the non-composited path.
+        /// </para>
+        /// <para>
+        /// When DWM will composite, behavior is unchanged: a DWM backdrop (Mica/Acrylic/Tabbed/Auto)
+        /// or a requested shadow yields <c>-1</c> so the glass extends into the client and the backdrop
+        /// or shadow shows through; otherwise the thin value is used so WindowChrome's renderer does
+        /// not paint a visible glass-frame artifact. Mirrors the convention in
         /// <c>wpfui-main\src\Wpf.Ui\Controls\FluentWindow\FluentWindow.cs</c>.
+        /// </para>
         /// </summary>
-        internal static Thickness GetGlassFrameThickness(BackdropType backdrop, bool hasShadow)
+        internal static Thickness GetGlassFrameThickness(BackdropType backdrop, bool hasShadow, bool backdropCompositionAvailable)
         {
-            return backdrop != BackdropType.None || hasShadow
+            return backdropCompositionAvailable && (backdrop != BackdropType.None || hasShadow)
                 ? new Thickness(-1)
                 : new Thickness(0.00001);
         }
@@ -98,16 +109,24 @@ namespace Fluence.Wpf.Controls
 
         internal static BackdropType ResolveEffectiveBackdrop(BackdropType requestedBackdrop, WindowCapabilities capabilities)
         {
-            return requestedBackdrop switch
-            {
-                BackdropType.Auto or BackdropType.Mica => capabilities.SupportsSystemBackdropType || capabilities.SupportsMicaEffect
-                    ? BackdropType.Mica
-                    : BackdropType.None,
-                BackdropType.Acrylic or BackdropType.Tabbed => !capabilities.SupportsSystemBackdropType
-                    ? capabilities.SupportsMicaEffect ? BackdropType.Mica : BackdropType.None
-                    : requestedBackdrop,
-                BackdropType.None or _ => requestedBackdrop
-            };
+            // When DWM will not composite a system backdrop in this session (forced software
+            // rendering, composition disabled, or "Transparency effects" turned off), a transparent
+            // Mica/Acrylic window has nothing painted behind it: it flashes the uncomposited surface
+            // on first paint and stays wrong while transparency is off. Resolve to an opaque, solid
+            // window (None) so the client is never transparent, matching the reference Fluent window
+            // libraries which paint solid whenever the backdrop is unavailable.
+            return !capabilities.BackdropCompositionAvailable
+                ? BackdropType.None
+                : requestedBackdrop switch
+                {
+                    BackdropType.Auto or BackdropType.Mica => capabilities.SupportsSystemBackdropType || capabilities.SupportsMicaEffect
+                        ? BackdropType.Mica
+                        : BackdropType.None,
+                    BackdropType.Acrylic or BackdropType.Tabbed => !capabilities.SupportsSystemBackdropType
+                        ? capabilities.SupportsMicaEffect ? BackdropType.Mica : BackdropType.None
+                        : requestedBackdrop,
+                    BackdropType.None or _ => requestedBackdrop
+                };
         }
 
         internal static BackdropPlan BuildBackdropPlan(
