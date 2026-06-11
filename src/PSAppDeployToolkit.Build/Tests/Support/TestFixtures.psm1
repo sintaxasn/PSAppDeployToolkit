@@ -201,7 +201,7 @@ function Get-ADTFakeInstaller
     }
     else
     {
-        Build-ADTFakeInstallerWithDotNet -OutputPath $OutputPath
+        New-ADTFakeInstallerWithDotNet -OutputPath $OutputPath
     }
 
     $Script:FakeInstallerCache[$cacheKey] = $OutputPath
@@ -210,11 +210,11 @@ function Get-ADTFakeInstaller
 
 #-----------------------------------------------------------------------------
 #
-# MARK: Build-ADTFakeInstallerWithDotNet (private)
+# MARK: New-ADTFakeInstallerWithDotNet (private)
 #
 #-----------------------------------------------------------------------------
 
-function Build-ADTFakeInstallerWithDotNet
+function New-ADTFakeInstallerWithDotNet
 {
     <#
 
