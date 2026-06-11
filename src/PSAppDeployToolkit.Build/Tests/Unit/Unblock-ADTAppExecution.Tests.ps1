@@ -117,9 +117,9 @@ Describe 'Unblock-ADTAppExecution' {
 
         It 'Throws ParameterArgumentValidationError when Tasks contains a null element' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Unblock-ADTAppExecution'
+                ErrorId = 'ParameterArgumentValidationError,Unblock-ADTAppExecution'
             }
             { Unblock-ADTAppExecution -Tasks $null } | Should @shouldParams
         }

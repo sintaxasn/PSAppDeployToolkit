@@ -27,9 +27,9 @@ Describe 'Set-ADTPowerShellCulture' {
 
         It 'Throws an ArgumentException with ErrorId CultureNotInstalled when the culture is not installed' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'CultureNotInstalled,Set-ADTPowerShellCulture'
+                ErrorId = 'CultureNotInstalled,Set-ADTPowerShellCulture'
             }
             { Set-ADTPowerShellCulture -CultureInfo 'fr-FR' -ErrorAction Stop } | Should @shouldParams
         }

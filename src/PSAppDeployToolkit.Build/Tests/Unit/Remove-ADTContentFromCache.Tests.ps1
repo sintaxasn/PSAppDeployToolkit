@@ -15,9 +15,9 @@ Describe 'Remove-ADTContentFromCache' {
 
         It 'Should throw ParameterArgumentValidationError when LiteralPath is null, empty or whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Remove-ADTContentFromCache'
+                ErrorId = 'ParameterArgumentValidationError,Remove-ADTContentFromCache'
             }
             { Remove-ADTContentFromCache -LiteralPath $null } | Should @shouldParams
             { Remove-ADTContentFromCache -LiteralPath '' } | Should @shouldParams
@@ -40,8 +40,8 @@ Describe 'Remove-ADTContentFromCache' {
 
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 return [PSCustomObject]@{
-                    InstallName     = 'TestApp'
-                    DirFiles        = "$FakeScriptDir\Files"
+                    InstallName = 'TestApp'
+                    DirFiles = "$FakeScriptDir\Files"
                     DirSupportFiles = "$FakeScriptDir\SupportFiles"
                     ScriptDirectory = @($FakeScriptDir)
                 }
@@ -79,8 +79,8 @@ Describe 'Remove-ADTContentFromCache' {
 
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 return [PSCustomObject]@{
-                    InstallName     = 'TestApp'
-                    DirFiles        = "$FakeScriptDir2\Files"
+                    InstallName = 'TestApp'
+                    DirFiles = "$FakeScriptDir2\Files"
                     DirSupportFiles = "$FakeScriptDir2\SupportFiles"
                     ScriptDirectory = @($FakeScriptDir2)
                 }
@@ -114,8 +114,8 @@ Describe 'Remove-ADTContentFromCache' {
             New-Item -Path $cacheToRemove3 -ItemType Directory -Force | Out-Null
 
             $fakeSession = [PSCustomObject]@{
-                InstallName     = 'TestApp'
-                DirFiles        = $cacheToRemove3
+                InstallName = 'TestApp'
+                DirFiles = $cacheToRemove3
                 DirSupportFiles = $cacheToRemove3
                 ScriptDirectory = @($FakeScriptDir2)
             }

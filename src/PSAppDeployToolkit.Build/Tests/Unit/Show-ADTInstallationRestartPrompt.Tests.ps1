@@ -20,8 +20,8 @@ Describe 'Show-ADTInstallationRestartPrompt' {
         {
             return [PSCustomObject]@{
                 RestartPrompt = [PSCustomObject]@{
-                    Title         = 'PSADT Restart Prompt Unique Title'
-                    Subtitle      = [PSCustomObject]@{ Install = 'Restart required' }
+                    Title = 'PSADT Restart Prompt Unique Title'
+                    Subtitle = [PSCustomObject]@{ Install = 'Restart required' }
                     CustomMessage = 'Custom restart message'
                 }
             }
@@ -31,7 +31,7 @@ Describe 'Show-ADTInstallationRestartPrompt' {
         {
             return [PSCustomObject]@{
                 Assets = [PSCustomObject]@{ Logo = $null; LogoDark = $null; Banner = $null; TaskbarIcon = $null }
-                UI     = [PSCustomObject]@{ DialogStyle = 'Classic'; DefaultTimeout = 60; DefaultExitCode = 60012; FluentAccentColor = $null }
+                UI = [PSCustomObject]@{ DialogStyle = 'Classic'; DefaultTimeout = 60; DefaultExitCode = 60012; FluentAccentColor = $null }
             }
         }
     }
@@ -55,18 +55,18 @@ Describe 'Show-ADTInstallationRestartPrompt' {
 
         It 'Throws a validation error when CountdownSeconds exceeds the 86,400 second ceiling' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'InvalidCountdownSecondsParameterValue,Show-ADTInstallationRestartPrompt'
+                ErrorId = 'InvalidCountdownSecondsParameterValue,Show-ADTInstallationRestartPrompt'
             }
             { Show-ADTInstallationRestartPrompt -CountdownSeconds 90000 -Title 'T' -Subtitle 'S' } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when CountdownSeconds is zero (ValidateGreaterThanZero)' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Show-ADTInstallationRestartPrompt'
+                ErrorId = 'ParameterArgumentValidationError,Show-ADTInstallationRestartPrompt'
             }
             { Show-ADTInstallationRestartPrompt -CountdownSeconds 0 -Title 'T' -Subtitle 'S' } | Should @shouldParams
         }
@@ -102,9 +102,9 @@ Describe 'Show-ADTInstallationRestartPrompt' {
             Mock -ModuleName PSAppDeployToolkit Test-ADTSessionActive { return $true }
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 $sess = [PSCustomObject]@{
-                    InstallTitle                = 'Test Application'
-                    DeploymentType              = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
-                    DeployMode                  = 'Interactive'
+                    InstallTitle = 'Test Application'
+                    DeploymentType = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
+                    DeployMode = 'Interactive'
                     DeployAppScriptSessionState = $null
                 }
                 $sess | Add-Member -MemberType ScriptMethod -Name IsSilent -Value { return $false } -PassThru
@@ -166,9 +166,9 @@ Describe 'Show-ADTInstallationRestartPrompt' {
             Mock -ModuleName PSAppDeployToolkit Test-ADTSessionActive { return $true }
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 $sess = [PSCustomObject]@{
-                    InstallTitle                = 'Test Application'
-                    DeploymentType              = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
-                    DeployMode                  = 'Interactive'
+                    InstallTitle = 'Test Application'
+                    DeploymentType = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
+                    DeployMode = 'Interactive'
                     DeployAppScriptSessionState = $null
                 }
                 $sess | Add-Member -MemberType ScriptMethod -Name IsSilent -Value { return $false } -PassThru
@@ -194,9 +194,9 @@ Describe 'Show-ADTInstallationRestartPrompt' {
             Mock -ModuleName PSAppDeployToolkit Test-ADTSessionActive { return $true }
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 $sess = [PSCustomObject]@{
-                    InstallTitle                = 'Test Application'
-                    DeploymentType              = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
-                    DeployMode                  = 'Silent'
+                    InstallTitle = 'Test Application'
+                    DeploymentType = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
+                    DeployMode = 'Silent'
                     DeployAppScriptSessionState = $null
                 }
                 $sess | Add-Member -MemberType ScriptMethod -Name IsSilent -Value { return $true } -PassThru

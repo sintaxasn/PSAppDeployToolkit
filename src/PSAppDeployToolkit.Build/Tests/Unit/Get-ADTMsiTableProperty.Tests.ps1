@@ -16,8 +16,8 @@
     # Author the MSI into a temp path with the five known seed properties.
     $tmpMsiPath = "$env:TEMP\GetMsiTableProp_$(New-Guid).msi"
     $null = New-ADTTestMsiDatabase -Path $tmpMsiPath -ProductName 'Fixture App' -ProductCode $MsiFixtureGuid -Properties @{
-        ProductVersion  = '1.2.3'
-        Manufacturer    = 'Fixture Corp'
+        ProductVersion = '1.2.3'
+        Manufacturer = 'Fixture Corp'
         ProductLanguage = '1033'
     }
 
@@ -98,7 +98,7 @@ Describe 'Get-ADTMsiTableProperty' {
             $result = Get-ADTMsiTableProperty -LiteralPath $MsiFixturePath
             $result | Should -Not -BeNullOrEmpty
             ($result -is [System.Collections.Generic.IReadOnlyDictionary[System.String, System.String]] -or
-             $result -is [System.Collections.Generic.IReadOnlyDictionary[System.String, System.Object]]) | Should -BeTrue
+            $result -is [System.Collections.Generic.IReadOnlyDictionary[System.String, System.Object]]) | Should -BeTrue
             $result['ProductName'] | Should -Be 'Fixture App'
             $result['ProductVersion'] | Should -Be '1.2.3'
             $result['Manufacturer'] | Should -Be 'Fixture Corp'

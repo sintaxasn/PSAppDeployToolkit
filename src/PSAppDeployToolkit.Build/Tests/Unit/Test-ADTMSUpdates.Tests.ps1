@@ -28,7 +28,7 @@ Describe 'Test-ADTMSUpdates' {
 
         It 'Throws when KbNumber is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Test-ADTMSUpdates -KbNumber $null } | Should @shouldParams
@@ -36,7 +36,7 @@ Describe 'Test-ADTMSUpdates' {
 
         It 'Throws when KbNumber is empty string' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Test-ADTMSUpdates -KbNumber '' } | Should @shouldParams
@@ -44,7 +44,7 @@ Describe 'Test-ADTMSUpdates' {
 
         It 'Throws when KbNumber is whitespace only' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Test-ADTMSUpdates -KbNumber '   ' } | Should @shouldParams

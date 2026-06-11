@@ -120,18 +120,18 @@ Describe 'Uninstall-ADTApplication' {
 
         It 'NameMatch only accepts Contains, Exact, Wildcard, or Regex' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Uninstall-ADTApplication'
+                ErrorId = 'ParameterArgumentValidationError,Uninstall-ADTApplication'
             }
             { Uninstall-ADTApplication -Name 'App' -NameMatch 'InvalidMatch' } | Should @shouldParams
         }
 
         It 'ApplicationType only accepts All, MSI, or EXE' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Uninstall-ADTApplication'
+                ErrorId = 'ParameterArgumentValidationError,Uninstall-ADTApplication'
             }
             { Uninstall-ADTApplication -Name 'App' -ApplicationType 'InvalidType' } | Should @shouldParams
         }

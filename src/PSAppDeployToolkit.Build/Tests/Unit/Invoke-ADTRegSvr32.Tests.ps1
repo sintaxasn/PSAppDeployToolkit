@@ -71,18 +71,18 @@ Describe 'Invoke-ADTRegSvr32' {
 
         It 'Throws InvalidFilePathParameterValue when the DLL file does not exist' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'InvalidFilePathParameterValue,Invoke-ADTRegSvr32'
+                ErrorId = 'InvalidFilePathParameterValue,Invoke-ADTRegSvr32'
             }
             { Invoke-ADTRegSvr32 -FilePath (Join-Path $TestDrive 'nonexistent.dll') -Action Register } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when Action is not Register or Unregister' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTRegSvr32'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTRegSvr32'
             }
             { Invoke-ADTRegSvr32 -FilePath $DllPath -Action 'Install' } | Should @shouldParams
         }

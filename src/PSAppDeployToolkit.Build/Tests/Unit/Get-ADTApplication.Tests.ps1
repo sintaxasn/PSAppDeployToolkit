@@ -174,18 +174,18 @@ Describe 'Get-ADTApplication' {
     Context 'Input Validation' {
         It 'NameMatch only accepts Contains, Exact, Wildcard, or Regex' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTApplication'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTApplication'
             }
             { Get-ADTApplication -NameMatch 'InvalidMatch' } | Should @shouldParams
         }
 
         It 'ApplicationType only accepts All, MSI, or EXE' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTApplication'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTApplication'
             }
             { Get-ADTApplication -ApplicationType 'InvalidType' } | Should @shouldParams
         }

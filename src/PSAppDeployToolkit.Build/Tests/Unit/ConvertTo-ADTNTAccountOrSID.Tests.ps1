@@ -92,7 +92,7 @@ Describe 'ConvertTo-ADTNTAccountOrSID' {
 
         It 'Throws ParameterArgumentTransformationError when SID is an invalid SID string' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { ConvertTo-ADTNTAccountOrSID -SID 'not-a-valid-sid' } | Should @shouldParams
@@ -100,7 +100,7 @@ Describe 'ConvertTo-ADTNTAccountOrSID' {
 
         It 'Throws ParameterArgumentTransformationError when WellKnownSIDName is an invalid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { ConvertTo-ADTNTAccountOrSID -WellKnownSIDName 'NotARealSidName' } | Should @shouldParams
@@ -108,9 +108,9 @@ Describe 'ConvertTo-ADTNTAccountOrSID' {
 
         It 'LdapUri only accepts LDAP:// or LDAPS://' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,ConvertTo-ADTNTAccountOrSID'
+                ErrorId = 'ParameterArgumentValidationError,ConvertTo-ADTNTAccountOrSID'
             }
             { ConvertTo-ADTNTAccountOrSID -WellKnownSIDName LocalSystemSid -LdapUri 'HTTP://' } | Should @shouldParams
         }

@@ -52,30 +52,30 @@ Describe 'New-ADTErrorRecord' {
     Context 'Input Validation' {
         It 'Throws ParameterBindingException when Exception is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,New-ADTErrorRecord'
+                ErrorId = 'ParameterArgumentValidationError,New-ADTErrorRecord'
             }
             { New-ADTErrorRecord -Exception $null -Category NotSpecified } | Should @shouldParams
         }
         It 'Throws ParameterBindingException when Category is an invalid value' {
             $ex = [System.Exception]::new('Test error')
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,New-ADTErrorRecord'
+                ErrorId = 'ParameterArgumentTransformationError,New-ADTErrorRecord'
             }
             { New-ADTErrorRecord -Exception $ex -Category 'NotACategory' } | Should @shouldParams
         }
         It 'Throws ParameterArgumentValidationError when ErrorId is empty or whitespace: <Label>' -ForEach @(
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $ex = [System.Exception]::new('Test error')
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,New-ADTErrorRecord'
+                ErrorId = 'ParameterArgumentValidationError,New-ADTErrorRecord'
             }
             { New-ADTErrorRecord -Exception $ex -Category NotSpecified -ErrorId $Value } | Should @shouldParams
         }

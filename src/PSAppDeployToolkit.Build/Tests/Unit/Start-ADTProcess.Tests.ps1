@@ -25,27 +25,27 @@ Describe 'Start-ADTProcess' {
             @{ Name = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Start-ADTProcess'
+                ErrorId = 'ParameterArgumentValidationError,Start-ADTProcess'
             }
             { Start-ADTProcess -FilePath $Value -CreateNoWindow } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when FilePath is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Start-ADTProcess'
+                ErrorId = 'ParameterArgumentValidationError,Start-ADTProcess'
             }
             { Start-ADTProcess -FilePath $null -CreateNoWindow } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentTransformationError when Timeout is not a TimeSpan' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Start-ADTProcess'
+                ErrorId = 'ParameterArgumentTransformationError,Start-ADTProcess'
             }
             { Start-ADTProcess -FilePath $script:FakeExe -CreateNoWindow -Timeout 'not-a-timespan' } | Should @shouldParams
         }
@@ -64,9 +64,9 @@ Describe 'Start-ADTProcess' {
 
         It 'Throws an ExternalException with ProcessExitCodeError when the exit code is a failure' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Runtime.InteropServices.ExternalException]
-                ErrorId       = 'ProcessExitCodeError,Start-ADTProcess'
+                ErrorId = 'ProcessExitCodeError,Start-ADTProcess'
             }
             { Start-ADTProcess -FilePath $script:FakeExe -ArgumentList '--exit-code', '5' -CreateNoWindow -ErrorAction Stop } | Should @shouldParams
         }
@@ -120,9 +120,9 @@ Describe 'Start-ADTProcess' {
     Context 'Timeout handling (real subprocess)' {
         It 'Throws OperationCanceledException with ProcessExecutionCancelled when the process exceeds the timeout' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.OperationCanceledException]
-                ErrorId       = 'ProcessExecutionCancelled,Start-ADTProcess'
+                ErrorId = 'ProcessExecutionCancelled,Start-ADTProcess'
             }
             { Start-ADTProcess -FilePath $script:FakeExe -ArgumentList '--sleep', '5000' -CreateNoWindow -Timeout ([System.TimeSpan]::FromSeconds(1)) -ErrorAction Stop } | Should @shouldParams
         }

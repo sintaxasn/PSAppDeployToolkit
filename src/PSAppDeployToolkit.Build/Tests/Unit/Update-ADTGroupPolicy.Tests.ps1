@@ -16,9 +16,9 @@ Describe 'Update-ADTGroupPolicy' {
     Context 'Input Validation' {
         It 'Should accept only Computer or User for the Target parameter' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Update-ADTGroupPolicy'
+                ErrorId = 'ParameterArgumentValidationError,Update-ADTGroupPolicy'
             }
             { Update-ADTGroupPolicy -Target 'Bogus' } | Should @shouldParams
         }

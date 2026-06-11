@@ -75,9 +75,9 @@ Describe 'Get-ADTModuleCallback' {
             # ReadOnlyCollection<T> does not expose RemoveAt/Insert on its public surface; PowerShell
             # surfaces MethodException/MethodCountCouldNotFindBest when attempting to call them.
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.MethodException]
-                ErrorId       = 'MethodCountCouldNotFindBest'
+                ErrorId = 'MethodCountCouldNotFindBest'
             }
             { $result.RemoveAt(0) } | Should @shouldParams
         }
@@ -90,18 +90,18 @@ Describe 'Get-ADTModuleCallback' {
 
         It 'Throws ParameterArgumentTransformationError when Hookpoint is an invalid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Get-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentTransformationError,Get-ADTModuleCallback'
             }
             { Get-ADTModuleCallback -Hookpoint 'NotAValidHookpoint' } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentTransformationError when Hookpoint is empty string' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Get-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentTransformationError,Get-ADTModuleCallback'
             }
             { Get-ADTModuleCallback -Hookpoint '' } | Should @shouldParams
         }

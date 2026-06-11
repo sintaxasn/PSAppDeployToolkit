@@ -78,18 +78,18 @@ Describe 'Open-ADTSession' {
     Context 'Input Validation' {
         It 'Throws ParameterArgumentTransformationError when DeploymentType is an invalid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Open-ADTSession'
+                ErrorId = 'ParameterArgumentTransformationError,Open-ADTSession'
             }
             { Open-ADTSession -DeploymentType 'NotARealType' -NoSessionDetection } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentTransformationError when DeployMode is an invalid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Open-ADTSession'
+                ErrorId = 'ParameterArgumentTransformationError,Open-ADTSession'
             }
             { Open-ADTSession -DeployMode 'NotARealMode' -NoSessionDetection } | Should @shouldParams
         }

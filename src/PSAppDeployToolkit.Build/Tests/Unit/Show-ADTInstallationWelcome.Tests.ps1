@@ -23,14 +23,14 @@ Describe 'Show-ADTInstallationWelcome' {
         {
             return [PSCustomObject]@{
                 Assets = [PSCustomObject]@{ Logo = $null; LogoDark = $null; Banner = $null; TaskbarIcon = $null }
-                UI     = [PSCustomObject]@{
-                    DialogStyle                 = 'Classic'
-                    DefaultTimeout              = 60
-                    DefaultExitCode             = 60012
-                    DeferExitCode               = 60012
+                UI = [PSCustomObject]@{
+                    DialogStyle = 'Classic'
+                    DefaultTimeout = 60
+                    DefaultExitCode = 60012
+                    DeferExitCode = 60012
                     DefaultPromptPersistInterval = 60
-                    PromptToSaveTimeout         = 60
-                    FluentAccentColor           = $null
+                    PromptToSaveTimeout = 60
+                    FluentAccentColor = $null
                 }
             }
         }
@@ -39,7 +39,7 @@ Describe 'Show-ADTInstallationWelcome' {
         {
             return [PSCustomObject]@{
                 CloseAppsPrompt = [PSCustomObject]@{
-                    Fluent        = [PSCustomObject]@{ Subtitle = [PSCustomObject]@{ Install = 'Close apps' } }
+                    Fluent = [PSCustomObject]@{ Subtitle = [PSCustomObject]@{ Install = 'Close apps' } }
                     CustomMessage = 'Custom close-apps message'
                 }
             }
@@ -61,9 +61,9 @@ Describe 'Show-ADTInstallationWelcome' {
         {
             param ([System.Boolean]$Silent = $false)
             $sess = [PSCustomObject]@{
-                InstallTitle                = 'Test Application'
-                DeploymentType              = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
-                DeployMode                  = 'Interactive'
+                InstallTitle = 'Test Application'
+                DeploymentType = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
+                DeployMode = 'Interactive'
                 DeployAppScriptSessionState = $null
             }
             $sess | Add-Member -MemberType ScriptMethod -Name IsSilent -Value ([scriptblock]::Create("return `$$Silent"))
@@ -89,9 +89,9 @@ Describe 'Show-ADTInstallationWelcome' {
 
         It 'Throws a transformation error when CloseProcessesCountdown is not an unsigned integer' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Show-ADTInstallationWelcome'
+                ErrorId = 'ParameterArgumentTransformationError,Show-ADTInstallationWelcome'
             }
             { Show-ADTInstallationWelcome -CloseProcesses winword -CloseProcessesCountdown 'soon' -Title 'T' } | Should @shouldParams
         }

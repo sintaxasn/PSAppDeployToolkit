@@ -43,9 +43,9 @@ Describe 'Register-ADTDll' {
 
         It 'Throws InvalidFilePathParameterValue when the DLL file does not exist' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'InvalidFilePathParameterValue,Register-ADTDll'
+                ErrorId = 'InvalidFilePathParameterValue,Register-ADTDll'
             }
             { Register-ADTDll -FilePath (Join-Path $TestDrive 'nonexistent.dll') } | Should @shouldParams
         }

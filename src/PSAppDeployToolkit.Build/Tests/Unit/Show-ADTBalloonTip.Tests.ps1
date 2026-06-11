@@ -17,9 +17,9 @@ Describe 'Show-ADTBalloonTip' {
         {
             param([System.Boolean]$Silent = $false)
             return [PSCustomObject]@{
-                InstallName  = 'TestApp'
+                InstallName = 'TestApp'
                 InstallTitle = 'Test Application'
-                DeployMode   = 'Silent'
+                DeployMode = 'Silent'
             } | Add-Member -MemberType ScriptMethod -Name IsSilent -Value ([System.Management.Automation.ScriptBlock]::Create("return `$$Silent")) -PassThru
         }
 
@@ -27,9 +27,9 @@ Describe 'Show-ADTBalloonTip' {
         {
             param([System.Boolean]$BalloonNotifications = $true)
             return [PSCustomObject]@{
-                UI      = [PSCustomObject]@{ BalloonNotifications = $BalloonNotifications }
+                UI = [PSCustomObject]@{ BalloonNotifications = $BalloonNotifications }
                 Toolkit = [PSCustomObject]@{ CompanyName = 'Test Co' }
-                Assets  = [PSCustomObject]@{ Logo = 'logo.png'; TaskbarIcon = 'taskbar.ico' }
+                Assets = [PSCustomObject]@{ Logo = 'logo.png'; TaskbarIcon = 'taskbar.ico' }
             }
         }
     }
@@ -41,9 +41,9 @@ Describe 'Show-ADTBalloonTip' {
 
         It 'Should throw ParameterArgumentValidationError when Text is empty or whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Show-ADTBalloonTip'
+                ErrorId = 'ParameterArgumentValidationError,Show-ADTBalloonTip'
             }
             { Show-ADTBalloonTip -Text '' -Title 'T' } | Should @shouldParams
             { Show-ADTBalloonTip -Text " `f`n`r`t`v" -Title 'T' } | Should @shouldParams
@@ -62,9 +62,9 @@ Describe 'Show-ADTBalloonTip' {
 
         It 'Should reject an invalid Icon value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Show-ADTBalloonTip'
+                ErrorId = 'ParameterArgumentTransformationError,Show-ADTBalloonTip'
             }
             { Show-ADTBalloonTip -Text 'Hello' -Title 'T' -Icon 'NotAnIcon' } | Should @shouldParams
         }

@@ -30,14 +30,14 @@ Describe 'Out-ADTPowerShellEncodedCommand' {
 
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError for invalid Command value: <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Out-ADTPowerShellEncodedCommand'
+                ErrorId = 'ParameterArgumentValidationError,Out-ADTPowerShellEncodedCommand'
             }
             { Out-ADTPowerShellEncodedCommand -Command $Value } | Should @shouldParams
         }

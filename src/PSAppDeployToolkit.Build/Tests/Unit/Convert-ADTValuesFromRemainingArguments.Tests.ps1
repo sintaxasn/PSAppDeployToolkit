@@ -38,7 +38,7 @@ Describe 'Convert-ADTValuesFromRemainingArguments' {
         It 'Throws when a non-list object is passed that cannot be converted to IReadOnlyList' {
             # An unconvertible type triggers a ParameterBindingException.
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Convert-ADTValuesFromRemainingArguments -RemainingArguments ([System.IO.FileInfo]::new('C:\x.txt')) } | Should @shouldParams

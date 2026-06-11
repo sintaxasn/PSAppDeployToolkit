@@ -41,14 +41,14 @@ Describe 'New-ADTLogFileName' {
 
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError when Discriminator is <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,New-ADTLogFileName'
+                ErrorId = 'ParameterArgumentValidationError,New-ADTLogFileName'
             }
             { New-ADTLogFileName -Discriminator $Value -FileNameOnly } | Should @shouldParams
         }

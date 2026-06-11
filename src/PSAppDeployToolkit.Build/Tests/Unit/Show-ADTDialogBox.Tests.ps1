@@ -65,18 +65,18 @@ Describe 'Show-ADTDialogBox' {
 
         It 'Throws ParameterArgumentTransformationError when Buttons is not a valid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Show-ADTDialogBox'
+                ErrorId = 'ParameterArgumentTransformationError,Show-ADTDialogBox'
             }
             { Show-ADTDialogBox -Text 'hi' -Buttons 'NotAButton' } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when Text is whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Show-ADTDialogBox'
+                ErrorId = 'ParameterArgumentValidationError,Show-ADTDialogBox'
             }
             { Show-ADTDialogBox -Text ' ' } | Should @shouldParams
         }

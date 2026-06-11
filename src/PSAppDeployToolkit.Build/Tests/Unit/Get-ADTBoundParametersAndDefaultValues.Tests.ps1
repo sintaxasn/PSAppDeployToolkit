@@ -111,17 +111,17 @@ Describe 'Get-ADTBoundParametersAndDefaultValues' {
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError when Invocation is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTBoundParametersAndDefaultValues'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTBoundParametersAndDefaultValues'
             }
             { Get-ADTBoundParametersAndDefaultValues -Invocation $null } | Should @shouldParams
         }
         It 'Throws ParameterArgumentValidationError when Exclude is empty string' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTBoundParametersAndDefaultValues'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTBoundParametersAndDefaultValues'
             }
             { Get-ADTBoundParametersAndDefaultValues -Invocation $MyInvocation -Exclude '' } | Should @shouldParams
         }

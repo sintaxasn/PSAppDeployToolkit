@@ -32,18 +32,18 @@ Describe 'Show-ADTInstallationPrompt' {
 
         It 'Throws ParameterArgumentValidationError when Message is whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Show-ADTInstallationPrompt'
+                ErrorId = 'ParameterArgumentValidationError,Show-ADTInstallationPrompt'
             }
             { Show-ADTInstallationPrompt -Message ' ' -Title 'T' -Subtitle 'S' -ButtonLeftText OK } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentTransformationError when MessageAlignment is not a valid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Show-ADTInstallationPrompt'
+                ErrorId = 'ParameterArgumentTransformationError,Show-ADTInstallationPrompt'
             }
             { Show-ADTInstallationPrompt -Message 'Hi' -MessageAlignment 'Sideways' -Title 'T' -Subtitle 'S' -ButtonLeftText OK } | Should @shouldParams
         }
@@ -58,27 +58,27 @@ Describe 'Show-ADTInstallationPrompt' {
 
         It 'Throws when no button is specified' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'MandatoryParameterMissing,Show-ADTInstallationPrompt'
+                ErrorId = 'MandatoryParameterMissing,Show-ADTInstallationPrompt'
             }
             { Show-ADTInstallationPrompt -Message 'Proceed?' -Title 'T' -Subtitle 'S' } | Should @shouldParams
         }
 
         It 'Throws SecureInputWithoutActiveSession when -SecureInput is used without an active session' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.InvalidOperationException]
-                ErrorId       = 'SecureInputWithoutActiveSession,Show-ADTInstallationPrompt'
+                ErrorId = 'SecureInputWithoutActiveSession,Show-ADTInstallationPrompt'
             }
             { Show-ADTInstallationPrompt -RequestInput -SecureInput -Message 'Password?' -ButtonRightText Submit -Title 'T' -Subtitle 'S' } | Should @shouldParams
         }
 
         It 'Throws DefaultIndexOutOfBoundsError when DefaultIndex is not less than the ListItems count' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentOutOfRangeException]
-                ErrorId       = 'DefaultIndexOutOfBoundsError,Show-ADTInstallationPrompt'
+                ErrorId = 'DefaultIndexOutOfBoundsError,Show-ADTInstallationPrompt'
             }
             { Show-ADTInstallationPrompt -Message 'Pick' -ListItems @('A', 'B') -DefaultIndex 5 -ButtonRightText OK -Title 'T' -Subtitle 'S' } | Should @shouldParams
         }
@@ -191,9 +191,9 @@ Describe 'Show-ADTInstallationPrompt' {
             Mock -ModuleName PSAppDeployToolkit Test-ADTSessionActive { return $true }
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 $sess = [PSCustomObject]@{
-                    InstallTitle                = 'Test Application'
-                    DeploymentType              = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
-                    DeployMode                  = 'Silent'
+                    InstallTitle = 'Test Application'
+                    DeploymentType = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
+                    DeployMode = 'Silent'
                     DeployAppScriptSessionState = $null
                 }
                 $sess | Add-Member -MemberType ScriptMethod -Name IsNonInteractive -Value { return $true } -PassThru
@@ -201,7 +201,7 @@ Describe 'Show-ADTInstallationPrompt' {
             Mock -ModuleName PSAppDeployToolkit Get-ADTConfig {
                 return [PSCustomObject]@{
                     Assets = [PSCustomObject]@{ Logo = $null; LogoDark = $null; Banner = $null; TaskbarIcon = $null }
-                    UI     = [PSCustomObject]@{ DialogStyle = 'Classic'; DefaultTimeout = 60; DefaultExitCode = 60012; FluentAccentColor = $null }
+                    UI = [PSCustomObject]@{ DialogStyle = 'Classic'; DefaultTimeout = 60; DefaultExitCode = 60012; FluentAccentColor = $null }
                 }
             }
             Mock -ModuleName PSAppDeployToolkit Get-ADTClientServerUser { return (New-MockRunAsActiveUser) }

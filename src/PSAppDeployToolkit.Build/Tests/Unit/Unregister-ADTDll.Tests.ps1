@@ -43,9 +43,9 @@ Describe 'Unregister-ADTDll' {
 
         It 'Throws InvalidFilePathParameterValue when the DLL file does not exist' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'InvalidFilePathParameterValue,Unregister-ADTDll'
+                ErrorId = 'InvalidFilePathParameterValue,Unregister-ADTDll'
             }
             { Unregister-ADTDll -FilePath (Join-Path $TestDrive 'nonexistent.dll') } | Should @shouldParams
         }

@@ -23,9 +23,9 @@ Describe 'Get-ADTMsiExitCodeMessage' {
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError when MsiExitCode is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTMsiExitCodeMessage'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTMsiExitCodeMessage'
             }
             { Get-ADTMsiExitCodeMessage -MsiExitCode $null } | Should @shouldParams
         }

@@ -23,9 +23,9 @@ Describe 'Show-ADTInstallationProgress' {
         {
             param ([System.Boolean]$Silent = $false)
             $sess = [PSCustomObject]@{
-                InstallTitle                = 'Test Application'
-                DeploymentType              = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
-                DeployMode                  = 'Interactive'
+                InstallTitle = 'Test Application'
+                DeploymentType = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
+                DeployMode = 'Interactive'
                 DeployAppScriptSessionState = $null
             }
             $sess | Add-Member -MemberType ScriptMethod -Name IsSilent -Value ([scriptblock]::Create("return `$$Silent")) -PassThru
@@ -53,18 +53,18 @@ Describe 'Show-ADTInstallationProgress' {
 
         It 'Throws ParameterArgumentTransformationError when MessageAlignment is not a valid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Show-ADTInstallationProgress'
+                ErrorId = 'ParameterArgumentTransformationError,Show-ADTInstallationProgress'
             }
             { Show-ADTInstallationProgress -MessageAlignment 'NotAnAlignment' } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when StatusMessage is whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Show-ADTInstallationProgress'
+                ErrorId = 'ParameterArgumentValidationError,Show-ADTInstallationProgress'
             }
             { Show-ADTInstallationProgress -StatusMessage ' ' } | Should @shouldParams
         }
@@ -131,7 +131,7 @@ Describe 'Show-ADTInstallationProgress' {
             Mock -ModuleName PSAppDeployToolkit Get-ADTConfig {
                 return [PSCustomObject]@{
                     Assets = [PSCustomObject]@{ Logo = $null; LogoDark = $null; Banner = $null; TaskbarIcon = $null }
-                    UI     = [PSCustomObject]@{ DialogStyle = 'Classic'; FluentAccentColor = $null; DefaultTimeout = 60 }
+                    UI = [PSCustomObject]@{ DialogStyle = 'Classic'; FluentAccentColor = $null; DefaultTimeout = 60 }
                 }
             }
         }

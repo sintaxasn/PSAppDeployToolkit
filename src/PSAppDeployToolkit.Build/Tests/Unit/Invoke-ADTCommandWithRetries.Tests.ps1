@@ -67,27 +67,27 @@ Describe 'Invoke-ADTCommandWithRetries' {
 
         It 'Throws ParameterArgumentValidationError when Command is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTCommandWithRetries'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTCommandWithRetries'
             }
             { Invoke-ADTCommandWithRetries -Command $null } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when Command is empty string' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTCommandWithRetries'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTCommandWithRetries'
             }
             { Invoke-ADTCommandWithRetries -Command '' } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when Retries is zero' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTCommandWithRetries'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTCommandWithRetries'
             }
             { Invoke-ADTCommandWithRetries -Command Test-ADTRetrySuccess -Retries 0 } | Should @shouldParams
         }

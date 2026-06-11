@@ -13,12 +13,12 @@ Describe 'Convert-ADTValueType' {
             Convert-ADTValueType -Value 256 -To SByte | Should -Be 0
         }
         It 'Converts <Value> to <To> yielding <Expected>' -ForEach @(
-            @{ Value = 7;    To = 'Int32'; Expected = 7 }
-            @{ Value = 255;  To = 'Byte';  Expected = 255 }
-            @{ Value = 256;  To = 'Byte';  Expected = 0 }
-            @{ Value = -1;   To = 'Byte';  Expected = 255 }
-            @{ Value = 127;  To = 'SByte'; Expected = 127 }
-            @{ Value = 128;  To = 'SByte'; Expected = -128 }
+            @{ Value = 7; To = 'Int32'; Expected = 7 }
+            @{ Value = 255; To = 'Byte'; Expected = 255 }
+            @{ Value = 256; To = 'Byte'; Expected = 0 }
+            @{ Value = -1; To = 'Byte'; Expected = 255 }
+            @{ Value = 127; To = 'SByte'; Expected = 127 }
+            @{ Value = 128; To = 'SByte'; Expected = -128 }
         ) {
             Convert-ADTValueType -Value $Value -To $To | Should -Be $Expected
         }

@@ -45,9 +45,9 @@ Describe 'Select-ADTUniqueObject' {
     Context 'Input Validation' {
         It 'Throws ParameterArgumentTransformationError when CaseSensitivity is an invalid value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Select-ADTUniqueObject'
+                ErrorId = 'ParameterArgumentTransformationError,Select-ADTUniqueObject'
             }
             { 'a', 'b' | Select-ADTUniqueObject -CaseSensitivity 'NotAValue' } | Should @shouldParams
         }

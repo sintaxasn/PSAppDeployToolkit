@@ -54,9 +54,9 @@ Describe 'Remove-ADTEnvironmentVariable' {
             @{ BadValue = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Remove-ADTEnvironmentVariable'
+                ErrorId = 'ParameterArgumentValidationError,Remove-ADTEnvironmentVariable'
             }
             { Remove-ADTEnvironmentVariable -Variable $BadValue } | Should @shouldParams
         }

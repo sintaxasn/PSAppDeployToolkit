@@ -16,9 +16,9 @@ Describe 'Get-ADTSession' {
                 return
             }
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.InvalidOperationException]
-                ErrorId       = 'ADTSessionBufferEmpty,Get-ADTSession'
+                ErrorId = 'ADTSessionBufferEmpty,Get-ADTSession'
             }
             { Get-ADTSession } | Should @shouldParams
         }

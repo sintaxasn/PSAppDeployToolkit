@@ -17,7 +17,7 @@ Describe 'Send-ADTKeys' {
         {
             param([System.String]$Title = 'foobar - Notepad', [System.Int64]$Handle = 12345)
             return [PSCustomObject]@{
-                WindowTitle  = $Title
+                WindowTitle = $Title
                 WindowHandle = [System.IntPtr]::new($Handle)
             }
         }
@@ -38,9 +38,9 @@ Describe 'Send-ADTKeys' {
 
         It 'Should throw ParameterArgumentValidationError when WindowTitle is empty or whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Send-ADTKeys'
+                ErrorId = 'ParameterArgumentValidationError,Send-ADTKeys'
             }
             { Send-ADTKeys -WindowTitle '' -Keys 'abc' } | Should @shouldParams
             { Send-ADTKeys -WindowTitle " `f`n`r`t`v" -Keys 'abc' } | Should @shouldParams
@@ -48,9 +48,9 @@ Describe 'Send-ADTKeys' {
 
         It 'Should throw ParameterArgumentValidationError when Keys is empty or whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Send-ADTKeys'
+                ErrorId = 'ParameterArgumentValidationError,Send-ADTKeys'
             }
             { Send-ADTKeys -WindowTitle 'foo' -Keys '' } | Should @shouldParams
             { Send-ADTKeys -WindowTitle 'foo' -Keys " `f`n`r`t`v" } | Should @shouldParams

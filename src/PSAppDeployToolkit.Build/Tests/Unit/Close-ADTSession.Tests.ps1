@@ -15,9 +15,9 @@ Describe 'Close-ADTSession' {
                 return
             }
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.InvalidOperationException]
-                ErrorId       = 'ADTSessionBufferEmpty,Close-ADTSession'
+                ErrorId = 'ADTSessionBufferEmpty,Close-ADTSession'
             }
             { Close-ADTSession } | Should @shouldParams
         }

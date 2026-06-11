@@ -33,9 +33,9 @@ Describe 'Set-ADTActiveSetup' {
 
         It 'Should reject a StubExePath with an unsupported file extension' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Set-ADTActiveSetup'
+                ErrorId = 'ParameterArgumentValidationError,Set-ADTActiveSetup'
             }
             { Set-ADTActiveSetup -StubExePath 'C:\Tool\config.txt' -Key 'K' -Description 'D' } | Should @shouldParams
         }
@@ -54,18 +54,18 @@ Describe 'Set-ADTActiveSetup' {
 
         It 'Should reject a Version containing more than four octets' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'InvalidVersionParameterValue,Set-ADTActiveSetup'
+                ErrorId = 'InvalidVersionParameterValue,Set-ADTActiveSetup'
             }
             { Set-ADTActiveSetup -StubExePath 'C:\Tool\app.exe' -Key 'K' -Description 'D' -Version '1.2.3.4.5' } | Should @shouldParams
         }
 
         It 'Should reject a Version containing non-numeric, non-separator characters' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.ArgumentException]
-                ErrorId       = 'InvalidVersionParameterValue,Set-ADTActiveSetup'
+                ErrorId = 'InvalidVersionParameterValue,Set-ADTActiveSetup'
             }
             { Set-ADTActiveSetup -StubExePath 'C:\Tool\app.exe' -Key 'K' -Description 'D' -Version 'abc' } | Should @shouldParams
         }

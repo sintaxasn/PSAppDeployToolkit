@@ -96,9 +96,9 @@ Describe 'Initialize-ADTModuleIfUninitialized' {
 
         It 'Throws ParameterArgumentValidationError when Cmdlet is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Initialize-ADTModuleIfUninitialized'
+                ErrorId = 'ParameterArgumentValidationError,Initialize-ADTModuleIfUninitialized'
             }
             { Initialize-ADTModuleIfUninitialized -Cmdlet $null } | Should @shouldParams
         }

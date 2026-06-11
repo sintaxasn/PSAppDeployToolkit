@@ -74,18 +74,18 @@ Describe 'Clear-ADTModuleCallback' {
 
         It 'Throws ParameterArgumentTransformationError when Hookpoint is an invalid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Clear-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentTransformationError,Clear-ADTModuleCallback'
             }
             { Clear-ADTModuleCallback -Hookpoint 'NotAValidHookpoint' } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentTransformationError when Hookpoint is empty string' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Clear-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentTransformationError,Clear-ADTModuleCallback'
             }
             { Clear-ADTModuleCallback -Hookpoint '' } | Should @shouldParams
         }

@@ -48,7 +48,7 @@ Describe 'Get-ADTConfig' {
         }
 
         It 'Returns the same object on successive calls (referential consistency)' {
-            $first  = Get-ADTConfig
+            $first = Get-ADTConfig
             $second = Get-ADTConfig
             # Both calls should return the same underlying hashtable reference.
             [System.Object]::ReferenceEquals($first, $second) | Should -BeTrue
@@ -72,9 +72,9 @@ Describe 'Get-ADTConfig' {
 
         It 'Throws InvalidOperationException with ErrorId ADTConfigNotLoaded when config is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.InvalidOperationException]
-                ErrorId       = 'ADTConfigNotLoaded,Get-ADTConfig'
+                ErrorId = 'ADTConfigNotLoaded,Get-ADTConfig'
             }
             { Get-ADTConfig } | Should @shouldParams
         }

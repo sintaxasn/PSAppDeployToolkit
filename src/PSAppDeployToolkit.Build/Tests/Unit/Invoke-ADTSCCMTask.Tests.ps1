@@ -61,7 +61,7 @@ Describe 'Invoke-ADTSCCMTask' {
 
         It 'Throws ParameterArgumentTransformationError when ScheduleId is not a valid TriggerScheduleId value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Invoke-ADTSCCMTask -ScheduleId 'NotAValidScheduleId' } | Should @shouldParams

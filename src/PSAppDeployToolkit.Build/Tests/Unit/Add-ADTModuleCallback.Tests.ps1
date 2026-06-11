@@ -76,18 +76,18 @@ Describe 'Add-ADTModuleCallback' {
 
         It 'Throws ParameterArgumentTransformationError when Hookpoint is an invalid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Add-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentTransformationError,Add-ADTModuleCallback'
             }
             { Add-ADTModuleCallback -Hookpoint 'NotAValidHookpoint' -Callback (Get-Command -Name 'Get-Process') } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when Callback is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Add-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentValidationError,Add-ADTModuleCallback'
             }
             { Add-ADTModuleCallback -Hookpoint OnExit -Callback $null } | Should @shouldParams
         }

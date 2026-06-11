@@ -61,9 +61,9 @@ Describe 'Set-ADTEnvironmentVariable' {
             @{ BadValue = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Set-ADTEnvironmentVariable'
+                ErrorId = 'ParameterArgumentValidationError,Set-ADTEnvironmentVariable'
             }
             { Set-ADTEnvironmentVariable -Variable $BadValue -Value 'x' } | Should @shouldParams
         }
@@ -74,9 +74,9 @@ Describe 'Set-ADTEnvironmentVariable' {
             @{ BadValue = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Set-ADTEnvironmentVariable'
+                ErrorId = 'ParameterArgumentValidationError,Set-ADTEnvironmentVariable'
             }
             { Set-ADTEnvironmentVariable -Variable 'PSADT_TEST_SETVAR' -Value $BadValue } | Should @shouldParams
         }

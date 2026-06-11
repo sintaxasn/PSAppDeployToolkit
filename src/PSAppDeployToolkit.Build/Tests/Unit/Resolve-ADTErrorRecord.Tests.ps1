@@ -57,7 +57,7 @@ Describe 'Resolve-ADTErrorRecord' {
         }
 
         It 'Pipeline input yields the same non-empty string as direct parameter' {
-            $direct   = Resolve-ADTErrorRecord -ErrorRecord $script:SyntheticRecord
+            $direct = Resolve-ADTErrorRecord -ErrorRecord $script:SyntheticRecord
             $pipeline = $script:SyntheticRecord | Resolve-ADTErrorRecord
             $direct   | Should -Not -BeNullOrEmpty
             $pipeline | Should -Not -BeNullOrEmpty
@@ -127,9 +127,9 @@ Describe 'Resolve-ADTErrorRecord' {
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError when ErrorRecord is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Resolve-ADTErrorRecord'
+                ErrorId = 'ParameterArgumentValidationError,Resolve-ADTErrorRecord'
             }
             { Resolve-ADTErrorRecord -ErrorRecord $null } | Should @shouldParams
         }

@@ -32,34 +32,34 @@ Describe 'Invoke-ADTObjectMethod' {
 
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError when InputObject is <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTObjectMethod'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTObjectMethod'
             }
             { Invoke-ADTObjectMethod -InputObject $Value -MethodName 'ToUpper' } | Should @shouldParams
         }
         It 'Throws ParameterArgumentValidationError when MethodName is <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTObjectMethod'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTObjectMethod'
             }
             { Invoke-ADTObjectMethod -InputObject 'Hello' -MethodName $Value } | Should @shouldParams
         }
         It 'Throws ParameterArgumentValidationError when Parameter hashtable is empty' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTObjectMethod'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTObjectMethod'
             }
             { Invoke-ADTObjectMethod -InputObject 'Hello' -MethodName 'ToUpper' -Parameter @{} } | Should @shouldParams
         }

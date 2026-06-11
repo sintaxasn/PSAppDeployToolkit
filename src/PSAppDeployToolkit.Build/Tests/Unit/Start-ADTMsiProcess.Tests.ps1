@@ -48,9 +48,9 @@ Describe 'Start-ADTMsiProcess' {
 
         It 'Throws ProductCodeInstallActionNotSupported when a ProductCode is used with the Install action' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.InvalidOperationException]
-                ErrorId       = 'ProductCodeInstallActionNotSupported,Start-ADTMsiProcess'
+                ErrorId = 'ProductCodeInstallActionNotSupported,Start-ADTMsiProcess'
             }
             { Start-ADTMsiProcess -Action Install -ProductCode '{11111111-1111-1111-1111-111111111111}' } | Should @shouldParams
         }

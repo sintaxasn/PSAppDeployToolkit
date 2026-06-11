@@ -38,9 +38,9 @@ Describe 'Initialize-ADTModule' {
             Mock -ModuleName PSAppDeployToolkit Test-ADTSessionActive { return $true }
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession { return [PSCustomObject]@{ SessionState = 'Active' } }
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.InvalidOperationException]
-                ErrorId       = 'InitWithActiveSessionError,Initialize-ADTModule'
+                ErrorId = 'InitWithActiveSessionError,Initialize-ADTModule'
             }
             { Initialize-ADTModule } | Should @shouldParams
         }

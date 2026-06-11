@@ -39,26 +39,26 @@ Describe 'New-ADTValidateScriptErrorRecord' {
 
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError when ParameterName is <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,New-ADTValidateScriptErrorRecord'
+                ErrorId = 'ParameterArgumentValidationError,New-ADTValidateScriptErrorRecord'
             }
             { New-ADTValidateScriptErrorRecord -ParameterName $Value -ProvidedValue 'val' -ExceptionMessage 'msg' } | Should @shouldParams
         }
         It 'Throws ParameterArgumentValidationError when ExceptionMessage is <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,New-ADTValidateScriptErrorRecord'
+                ErrorId = 'ParameterArgumentValidationError,New-ADTValidateScriptErrorRecord'
             }
             { New-ADTValidateScriptErrorRecord -ParameterName 'Param' -ProvidedValue 'val' -ExceptionMessage $Value } | Should @shouldParams
         }

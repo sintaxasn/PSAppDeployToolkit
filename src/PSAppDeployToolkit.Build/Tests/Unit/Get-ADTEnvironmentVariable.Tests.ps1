@@ -56,9 +56,9 @@ Describe 'Get-ADTEnvironmentVariable' {
             @{ BadValue = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTEnvironmentVariable'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTEnvironmentVariable'
             }
             { Get-ADTEnvironmentVariable -Variable $BadValue } | Should @shouldParams
         }

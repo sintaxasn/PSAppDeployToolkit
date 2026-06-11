@@ -10,10 +10,10 @@ Describe 'Set-ADTDeferHistory' {
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'NewRecordingSession', Justification = 'Invoked inside It blocks.')]
         $NewRecordingSession = {
             $record = [PSCustomObject]@{
-                Called                   = $false
-                DeferTimesRemaining      = 'unset'
-                DeferDeadline            = 'unset'
-                DeferRunInterval         = 'unset'
+                Called = $false
+                DeferTimesRemaining = 'unset'
+                DeferDeadline = 'unset'
+                DeferRunInterval = 'unset'
                 DeferRunIntervalLastTime = 'unset'
             }
             $session = [PSCustomObject]@{ Record = $record }

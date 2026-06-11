@@ -18,7 +18,7 @@ Describe 'Show-ADTNotifyIcon' {
             param([System.Boolean]$Silent = $false)
             return [PSCustomObject]@{
                 InstallName = 'TestApp'
-                DeployMode  = 'Silent'
+                DeployMode = 'Silent'
             } | Add-Member -MemberType ScriptMethod -Name IsSilent -Value ([System.Management.Automation.ScriptBlock]::Create("return `$$Silent")) -PassThru
         }
 
@@ -26,7 +26,7 @@ Describe 'Show-ADTNotifyIcon' {
         {
             return [PSCustomObject]@{
                 Toolkit = [PSCustomObject]@{ CompanyName = 'Test Co' }
-                Assets  = [PSCustomObject]@{ Logo = 'logo.png'; TaskbarIcon = 'taskbar.ico' }
+                Assets = [PSCustomObject]@{ Logo = 'logo.png'; TaskbarIcon = 'taskbar.ico' }
             }
         }
     }

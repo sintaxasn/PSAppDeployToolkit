@@ -23,7 +23,7 @@ Describe 'Dismount-ADTWimFile' {
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', 'FakeMountInfo', Justification = 'This variable is used within script blocks that PSScriptAnalyzer has no visibility of.')]
         $FakeMountInfo = [PSCustomObject]@{
             ImagePath = $WimFilePath
-            Path      = $MountPath
+            Path = $MountPath
             ImageIndex = 1
             MountMode = 'ReadOnly'
         }
@@ -119,9 +119,9 @@ Describe 'Dismount-ADTWimFile' {
 
         It 'Throws ParameterArgumentValidationError when ImagePath is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Dismount-ADTWimFile'
+                ErrorId = 'ParameterArgumentValidationError,Dismount-ADTWimFile'
             }
             { Dismount-ADTWimFile -ImagePath $null } | Should @shouldParams
         }

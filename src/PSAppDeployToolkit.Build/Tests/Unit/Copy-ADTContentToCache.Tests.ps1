@@ -19,9 +19,9 @@ Describe 'Copy-ADTContentToCache' {
 
         It 'Should throw ParameterArgumentValidationError when LiteralPath is null, empty or whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Copy-ADTContentToCache'
+                ErrorId = 'ParameterArgumentValidationError,Copy-ADTContentToCache'
             }
             { Copy-ADTContentToCache -LiteralPath $null } | Should @shouldParams
             { Copy-ADTContentToCache -LiteralPath '' } | Should @shouldParams
@@ -32,9 +32,9 @@ Describe 'Copy-ADTContentToCache' {
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession { return [PSCustomObject]@{ InstallName = 'TestApp'; DirFiles = $null; DirSupportFiles = $null; ScriptDirectory = @() } }
             Mock -ModuleName PSAppDeployToolkit Get-ADTConfig { return [PSCustomObject]@{ Toolkit = [PSCustomObject]@{ CachePath = "$TestDrive\Cache" } } }
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Copy-ADTContentToCache'
+                ErrorId = 'ParameterArgumentValidationError,Copy-ADTContentToCache'
             }
             { Copy-ADTContentToCache -LiteralPath "$TestDrive\Cache\TestApp" -Exclude 'InvalidValue' } | Should @shouldParams
         }
@@ -67,10 +67,10 @@ Describe 'Copy-ADTContentToCache' {
 
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 return [PSCustomObject]@{
-                    InstallName      = 'TestApp'
-                    DirFiles         = "$FakeScriptDir\Files"
-                    DirSupportFiles  = "$FakeScriptDir\SupportFiles"
-                    ScriptDirectory  = @($FakeScriptDir)
+                    InstallName = 'TestApp'
+                    DirFiles = "$FakeScriptDir\Files"
+                    DirSupportFiles = "$FakeScriptDir\SupportFiles"
+                    ScriptDirectory = @($FakeScriptDir)
                 }
             }
             Mock -ModuleName PSAppDeployToolkit Get-ADTConfig {

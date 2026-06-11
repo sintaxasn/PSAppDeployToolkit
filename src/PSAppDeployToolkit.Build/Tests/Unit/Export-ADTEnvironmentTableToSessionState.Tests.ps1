@@ -12,7 +12,7 @@ Describe 'Export-ADTEnvironmentTableToSessionState' {
         # Helper to mint a fresh, isolated [System.Management.Automation.SessionState].
         function Get-IsolatedSessionState
         {
-            $tmpMod = New-Module -Name "TmpExportTarget_$([System.Guid]::NewGuid().ToString('N'))" -ScriptBlock {
+            $tmpMod = New-Module -Name "TmpExportTarget_$([System.Guid]::NewGuid().ToString('N'))" {
                 function Get-LocalSessionState { $ExecutionContext.SessionState }
             } | Import-Module -PassThru
             $ss = & $tmpMod { $ExecutionContext.SessionState }

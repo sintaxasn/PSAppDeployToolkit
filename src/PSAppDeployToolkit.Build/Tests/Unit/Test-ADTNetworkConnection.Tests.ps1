@@ -46,7 +46,7 @@ Describe 'Test-ADTNetworkConnection' {
     Context 'Input Validation' {
         It 'Should throw when -InterfaceType is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Test-ADTNetworkConnection -InterfaceType $null } | Should @shouldParams

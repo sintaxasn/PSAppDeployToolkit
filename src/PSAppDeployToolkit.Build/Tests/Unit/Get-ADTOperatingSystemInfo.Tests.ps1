@@ -50,7 +50,7 @@ Describe 'Get-ADTOperatingSystemInfo' {
         }
 
         It 'Should return the same singleton on consecutive calls' {
-            $first  = Get-ADTOperatingSystemInfo
+            $first = Get-ADTOperatingSystemInfo
             $second = Get-ADTOperatingSystemInfo
             [System.Object]::ReferenceEquals($first, $second) | Should -BeTrue
         }

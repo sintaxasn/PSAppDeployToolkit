@@ -55,7 +55,7 @@ Describe 'Get-ADTUserProfiles' {
         }
 
         It 'Should return fewer or equal profiles with -ExcludeDefaultUser than without' {
-            $withDefault    = @(Get-ADTUserProfiles)
+            $withDefault = @(Get-ADTUserProfiles)
             $withoutDefault = @(Get-ADTUserProfiles -ExcludeDefaultUser)
             $withoutDefault.Count | Should -BeLessOrEqual $withDefault.Count
         }
@@ -98,7 +98,7 @@ Describe 'Get-ADTUserProfiles' {
 
         It 'Should return more or equal profiles with -IncludeSystemProfiles than without' {
             $withoutSystem = @(Get-ADTUserProfiles)
-            $withSystem    = @(Get-ADTUserProfiles -IncludeSystemProfiles)
+            $withSystem = @(Get-ADTUserProfiles -IncludeSystemProfiles)
             $withSystem.Count | Should -BeGreaterOrEqual $withoutSystem.Count
         }
     }
@@ -115,7 +115,7 @@ Describe 'Get-ADTUserProfiles' {
 
         It 'Should return all profiles when -FilterScript always returns true' {
             $unfiltered = @(Get-ADTUserProfiles)
-            $filtered   = @(Get-ADTUserProfiles -FilterScript { $true })
+            $filtered = @(Get-ADTUserProfiles -FilterScript { $true })
             $filtered.Count | Should -Be $unfiltered.Count
         }
     }
@@ -161,7 +161,7 @@ Describe 'Get-ADTUserProfiles' {
 
         It 'ExcludeNTAccount does not accept null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Get-ADTUserProfiles -ExcludeNTAccount $null } | Should @shouldParams

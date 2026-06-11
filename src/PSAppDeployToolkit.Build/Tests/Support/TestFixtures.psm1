@@ -198,7 +198,8 @@ function Get-ADTFakeInstaller
     if ($PSEdition -eq 'Desktop')
     {
         Add-Type -TypeDefinition $Script:FakeInstallerSource -OutputType ConsoleApplication -OutputAssembly $OutputPath
-    } else
+    }
+    else
     {
         Build-ADTFakeInstallerWithDotNet -OutputPath $OutputPath
     }
@@ -278,9 +279,12 @@ function Build-ADTFakeInstallerWithDotNet
         # not exist' once separated from its sidecars, so single-file self-contained is required.
         $publishDir = [System.IO.Path]::Combine($buildRoot, 'out')
         $rid = if ([System.Environment]::Is64BitOperatingSystem)
-        { 'win-x64' 
-        } else
-        { 'win-x86' 
+        {
+            'win-x64'
+        }
+        else
+        {
+            'win-x86'
         }
         $buildOutput = & dotnet publish $csprojPath -c Release -o $publishDir -r $rid --self-contained true -p:PublishSingleFile=true --nologo 2>&1
         $builtExe = [System.IO.Path]::Combine($publishDir, 'FakeInstaller.exe')
@@ -295,7 +299,8 @@ function Build-ADTFakeInstallerWithDotNet
             $null = [System.IO.Directory]::CreateDirectory($destDir)
         }
         Copy-Item -LiteralPath $builtExe -Destination $OutputPath -Force
-    } finally
+    }
+    finally
     {
         Remove-Item -LiteralPath $buildRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -436,7 +441,8 @@ function New-ADTTestMsiDatabase
         }
 
         $null = $db.GetType().InvokeMember('Commit', [System.Reflection.BindingFlags]::InvokeMethod, $null, $db, @())
-    } finally
+    }
+    finally
     {
         # Release every COM handle so the file lock is freed, then force a GC so finalizers run.
         if ($null -ne $db)
@@ -593,7 +599,8 @@ function New-ADTTestInstallMsi
             if ($val -is [System.Int32])
             {
                 $null = $rec.GetType().InvokeMember('IntegerData', [System.Reflection.BindingFlags]::SetProperty, $null, $rec, @($field, [System.Int32]$val))
-            } else
+            }
+            else
             {
                 $null = $rec.GetType().InvokeMember('StringData', [System.Reflection.BindingFlags]::SetProperty, $null, $rec, @($field, [System.String]$val))
             }
@@ -738,7 +745,8 @@ function New-ADTTestInstallMsi
         }
 
         $null = $db.GetType().InvokeMember('Commit', [System.Reflection.BindingFlags]::InvokeMethod, $null, $db, @())
-    } finally
+    }
+    finally
     {
         if ($null -ne $db)
         {
@@ -840,7 +848,8 @@ function New-ADTTestRegFile
             }
             $null = $sb.AppendLine()
         }
-    } else
+    }
+    else
     {
         # Treat as a verbatim string body.
         $null = $sb.AppendLine([System.String]$Content)
@@ -915,7 +924,8 @@ function New-ADTTestWim
     try
     {
         $null = New-WindowsImage -CapturePath $SourceFolder -ImagePath $Path -Name 'PSADT Test Image' -CompressionType None -ErrorAction Stop
-    } catch
+    }
+    catch
     {
         throw [System.InvalidOperationException]::new("Failed to capture '$SourceFolder' into a .wim. Capturing a Windows image typically requires an elevated session. Inner error: $($_.Exception.Message)", $_.Exception)
     }

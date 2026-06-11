@@ -19,9 +19,9 @@ Describe 'Block-ADTAppExecution' {
 
         It 'Throws ParameterArgumentValidationError when Processes is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Block-ADTAppExecution'
+                ErrorId = 'ParameterArgumentValidationError,Block-ADTAppExecution'
             }
             { Block-ADTAppExecution -Processes $null } | Should @shouldParams
         }
@@ -45,23 +45,23 @@ Describe 'Block-ADTAppExecution' {
             # Supply a fake session so the begin{} barrier is satisfied without Open-ADTSession.
             Mock -ModuleName PSAppDeployToolkit Get-ADTSession {
                 return [PSCustomObject]@{
-                    InstallName                 = 'TestApp'
-                    InstallTitle                = 'Test Application'
-                    DeploymentType              = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
+                    InstallName = 'TestApp'
+                    InstallTitle = 'Test Application'
+                    DeploymentType = [PSAppDeployToolkit.Foundation.DeploymentType]::Install
                     DeployAppScriptSessionState = $null
                 }
             }
             Mock -ModuleName PSAppDeployToolkit Get-ADTConfig {
                 return [PSCustomObject]@{
                     Assets = [PSCustomObject]@{
-                        Logo        = $null
-                        LogoDark    = $null
-                        Banner      = $null
+                        Logo = $null
+                        LogoDark = $null
+                        Banner = $null
                         TaskbarIcon = $null
                     }
-                    UI     = [PSCustomObject]@{
-                        DefaultTimeout    = 60
-                        DialogStyle       = 'Classic'
+                    UI = [PSCustomObject]@{
+                        DefaultTimeout = 60
+                        DialogStyle = 'Classic'
                         FluentAccentColor = $null
                     }
                 }
@@ -70,7 +70,7 @@ Describe 'Block-ADTAppExecution' {
                 return [PSCustomObject]@{
                     BlockExecutionText = [PSCustomObject]@{
                         Subtitle = [PSCustomObject]@{ Install = 'Please wait...' }
-                        Message  = [PSCustomObject]@{ Install = 'Installation in progress.' }
+                        Message = [PSCustomObject]@{ Install = 'Installation in progress.' }
                     }
                 }
             }
@@ -95,9 +95,9 @@ Describe 'Block-ADTAppExecution' {
             BeforeAll {
                 Mock -ModuleName PSAppDeployToolkit Get-ADTEnvironmentTable {
                     return [PSCustomObject]@{
-                        IsAdmin                              = $false
-                        ProcessNTAccount                     = 'TEST\user'
-                        appDeployToolkitName                 = 'PSAppDeployToolkit'
+                        IsAdmin = $false
+                        ProcessNTAccount = 'TEST\user'
+                        appDeployToolkitName = 'PSAppDeployToolkit'
                         InvalidScheduledTaskNameCharsRegExPattern = [regex]::new('[^\w\-]')
                     }
                 }
@@ -129,9 +129,9 @@ Describe 'Block-ADTAppExecution' {
             BeforeAll {
                 Mock -ModuleName PSAppDeployToolkit Get-ADTEnvironmentTable {
                     return [PSCustomObject]@{
-                        IsAdmin                              = $true
-                        ProcessNTAccount                     = 'TEST\admin'
-                        appDeployToolkitName                 = 'PSAppDeployToolkit'
+                        IsAdmin = $true
+                        ProcessNTAccount = 'TEST\admin'
+                        appDeployToolkitName = 'PSAppDeployToolkit'
                         InvalidScheduledTaskNameCharsRegExPattern = [regex]::new('[^\w\-]')
                     }
                 }
@@ -174,9 +174,9 @@ Describe 'Block-ADTAppExecution' {
             BeforeAll {
                 Mock -ModuleName PSAppDeployToolkit Get-ADTEnvironmentTable {
                     return [PSCustomObject]@{
-                        IsAdmin                              = $true
-                        ProcessNTAccount                     = 'TEST\admin'
-                        appDeployToolkitName                 = 'PSAppDeployToolkit'
+                        IsAdmin = $true
+                        ProcessNTAccount = 'TEST\admin'
+                        appDeployToolkitName = 'PSAppDeployToolkit'
                         InvalidScheduledTaskNameCharsRegExPattern = [regex]::new('[^\w\-]')
                     }
                 }
@@ -195,9 +195,9 @@ Describe 'Block-ADTAppExecution' {
             BeforeAll {
                 Mock -ModuleName PSAppDeployToolkit Get-ADTEnvironmentTable {
                     return [PSCustomObject]@{
-                        IsAdmin                              = $true
-                        ProcessNTAccount                     = 'TEST\admin'
-                        appDeployToolkitName                 = 'PSAppDeployToolkit'
+                        IsAdmin = $true
+                        ProcessNTAccount = 'TEST\admin'
+                        appDeployToolkitName = 'PSAppDeployToolkit'
                         InvalidScheduledTaskNameCharsRegExPattern = [regex]::new('[^\w\-]')
                     }
                 }
@@ -213,9 +213,9 @@ Describe 'Block-ADTAppExecution' {
             BeforeAll {
                 Mock -ModuleName PSAppDeployToolkit Get-ADTEnvironmentTable {
                     return [PSCustomObject]@{
-                        IsAdmin                              = $true
-                        ProcessNTAccount                     = 'TEST\admin'
-                        appDeployToolkitName                 = 'PSAppDeployToolkit'
+                        IsAdmin = $true
+                        ProcessNTAccount = 'TEST\admin'
+                        appDeployToolkitName = 'PSAppDeployToolkit'
                         InvalidScheduledTaskNameCharsRegExPattern = [regex]::new('[^\w\-]')
                     }
                 }

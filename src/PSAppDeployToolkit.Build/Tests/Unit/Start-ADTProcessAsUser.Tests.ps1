@@ -37,27 +37,27 @@ Describe 'Start-ADTProcessAsUser' {
             @{ Name = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Start-ADTProcessAsUser'
+                ErrorId = 'ParameterArgumentValidationError,Start-ADTProcessAsUser'
             }
             { Start-ADTProcessAsUser -FilePath $Value -CreateNoWindow } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when FilePath is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Start-ADTProcessAsUser'
+                ErrorId = 'ParameterArgumentValidationError,Start-ADTProcessAsUser'
             }
             { Start-ADTProcessAsUser -FilePath $null -CreateNoWindow } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentTransformationError when Timeout is not a TimeSpan' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Start-ADTProcessAsUser'
+                ErrorId = 'ParameterArgumentTransformationError,Start-ADTProcessAsUser'
             }
             { Start-ADTProcessAsUser -FilePath 'setup.exe' -CreateNoWindow -Timeout 'not-a-timespan' } | Should @shouldParams
         }

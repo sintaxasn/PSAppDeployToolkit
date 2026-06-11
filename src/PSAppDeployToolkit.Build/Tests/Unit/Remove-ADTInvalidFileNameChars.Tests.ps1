@@ -13,9 +13,9 @@ Describe 'Remove-ADTInvalidFileNameChars' {
             Remove-ADTInvalidFileNameChars -Name 'ValidFileName' | Should -Be 'ValidFileName'
         }
         It 'Removes backslash and forward-slash (both are invalid filename chars): <Name> -> <Expected>' -ForEach @(
-            @{ Name = 'Filename/\1';   Expected = 'Filename1' }
+            @{ Name = 'Filename/\1'; Expected = 'Filename1' }
             @{ Name = 'path\file.txt'; Expected = 'pathfile.txt' }
-            @{ Name = 'a/b/c';        Expected = 'abc' }
+            @{ Name = 'a/b/c'; Expected = 'abc' }
         ) {
             Remove-ADTInvalidFileNameChars -Name $Name | Should -Be $Expected
         }
@@ -44,14 +44,14 @@ Describe 'Remove-ADTInvalidFileNameChars' {
 
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError for invalid Name value: <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Remove-ADTInvalidFileNameChars'
+                ErrorId = 'ParameterArgumentValidationError,Remove-ADTInvalidFileNameChars'
             }
             { Remove-ADTInvalidFileNameChars -Name $Value } | Should @shouldParams
         }

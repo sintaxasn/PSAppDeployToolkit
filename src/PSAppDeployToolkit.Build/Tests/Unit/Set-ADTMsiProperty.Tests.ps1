@@ -80,27 +80,27 @@ Describe 'Set-ADTMsiProperty' {
 
         It 'Should throw ValidateNotNullOrEmpty when Database is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
+                ErrorId = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
             }
             { Set-ADTMsiProperty -Database $null -PropertyName 'ALLUSERS' -PropertyValue '1' } | Should @shouldParams
         }
 
         It 'Should throw ValidateNotNullOrWhiteSpace when PropertyName is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
+                ErrorId = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
             }
             { Set-ADTMsiProperty -Database $TestDb -PropertyName $null -PropertyValue '1' } | Should @shouldParams
         }
 
         It 'Should throw ValidateNotNullOrWhiteSpace when PropertyName is empty or whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
+                ErrorId = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
             }
             { Set-ADTMsiProperty -Database $TestDb -PropertyName '' -PropertyValue '1' } | Should @shouldParams
             { Set-ADTMsiProperty -Database $TestDb -PropertyName " `f`n`r`t`v" -PropertyValue '1' } | Should @shouldParams
@@ -108,9 +108,9 @@ Describe 'Set-ADTMsiProperty' {
 
         It 'Should throw ValidateNotNullOrWhiteSpace when PropertyValue is null or whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
+                ErrorId = 'ParameterArgumentValidationError,Set-ADTMsiProperty'
             }
             { Set-ADTMsiProperty -Database $TestDb -PropertyName 'ALLUSERS' -PropertyValue $null } | Should @shouldParams
             { Set-ADTMsiProperty -Database $TestDb -PropertyName 'ALLUSERS' -PropertyValue " `f`n`r`t`v" } | Should @shouldParams

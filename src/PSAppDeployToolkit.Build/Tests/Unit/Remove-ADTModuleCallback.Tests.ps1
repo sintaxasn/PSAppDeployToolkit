@@ -90,18 +90,18 @@ Describe 'Remove-ADTModuleCallback' {
 
         It 'Throws ParameterArgumentTransformationError when Hookpoint is an invalid enum value' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentTransformationError,Remove-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentTransformationError,Remove-ADTModuleCallback'
             }
             { Remove-ADTModuleCallback -Hookpoint 'NotAValidHookpoint' -Callback (Get-Command -Name 'Get-Process') } | Should @shouldParams
         }
 
         It 'Throws ParameterArgumentValidationError when Callback is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Remove-ADTModuleCallback'
+                ErrorId = 'ParameterArgumentValidationError,Remove-ADTModuleCallback'
             }
             { Remove-ADTModuleCallback -Hookpoint OnExit -Callback $null } | Should @shouldParams
         }

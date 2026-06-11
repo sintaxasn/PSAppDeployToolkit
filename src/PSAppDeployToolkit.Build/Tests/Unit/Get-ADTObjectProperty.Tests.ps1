@@ -23,9 +23,9 @@ Describe 'Get-ADTObjectProperty' {
         It 'Throws MissingMethodException when the property does not exist' {
             $fi = [System.IO.FileInfo]::new('C:\x.txt')
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.MethodInvocationException]
-                ErrorId       = 'MissingMethodException,Get-ADTObjectProperty'
+                ErrorId = 'MissingMethodException,Get-ADTObjectProperty'
             }
             { Get-ADTObjectProperty -InputObject $fi -PropertyName 'NonExistentProperty' -ErrorAction Stop } | Should @shouldParams
         }
@@ -33,27 +33,27 @@ Describe 'Get-ADTObjectProperty' {
 
     Context 'Input Validation' {
         It 'Throws ParameterArgumentValidationError when InputObject is <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTObjectProperty'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTObjectProperty'
             }
             { Get-ADTObjectProperty -InputObject $Value -PropertyName 'Name' } | Should @shouldParams
         }
         It 'Throws ParameterArgumentValidationError when PropertyName is <Label>' -ForEach @(
-            @{ Label = 'null';       Value = $null }
-            @{ Label = 'empty';      Value = '' }
+            @{ Label = 'null'; Value = $null }
+            @{ Label = 'empty'; Value = '' }
             @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
         ) {
             $fi = [System.IO.FileInfo]::new('C:\x.txt')
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTObjectProperty'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTObjectProperty'
             }
             { Get-ADTObjectProperty -InputObject $fi -PropertyName $Value } | Should @shouldParams
         }

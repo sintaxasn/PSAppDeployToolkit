@@ -116,9 +116,9 @@ Describe 'Invoke-ADTAllUsersRegistryAction' {
 
         It 'Throws ParameterArgumentValidationError when ScriptBlock is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Invoke-ADTAllUsersRegistryAction'
+                ErrorId = 'ParameterArgumentValidationError,Invoke-ADTAllUsersRegistryAction'
             }
             { Invoke-ADTAllUsersRegistryAction -ScriptBlock $null } | Should @shouldParams
         }

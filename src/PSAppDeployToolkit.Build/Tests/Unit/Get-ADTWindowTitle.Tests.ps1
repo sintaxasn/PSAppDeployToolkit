@@ -87,25 +87,25 @@ Describe 'Get-ADTWindowTitle' {
     Context 'Input Validation' {
         It 'Should throw ParameterArgumentValidationError when -WindowTitle is empty string' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTWindowTitle'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTWindowTitle'
             }
             { Get-ADTWindowTitle -WindowTitle '' } | Should @shouldParams
         }
 
         It 'Should throw ParameterArgumentValidationError when -WindowTitle is whitespace' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
-                ErrorId       = 'ParameterArgumentValidationError,Get-ADTWindowTitle'
+                ErrorId = 'ParameterArgumentValidationError,Get-ADTWindowTitle'
             }
             { Get-ADTWindowTitle -WindowTitle '   ' } | Should @shouldParams
         }
 
         It 'Should throw ParameterArgumentValidationError when -WindowHandle is null' {
             $shouldParams = @{
-                Throw         = $true
+                Throw = $true
                 ExceptionType = [System.Management.Automation.ParameterBindingException]
             }
             { Get-ADTWindowTitle -WindowHandle $null } | Should @shouldParams
