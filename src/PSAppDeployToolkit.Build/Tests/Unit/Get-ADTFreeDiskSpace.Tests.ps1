@@ -40,7 +40,8 @@ Describe 'Get-ADTFreeDiskSpace' {
 
         It 'Should throw when a non-existent drive is specified' {
             # Find a drive letter that does not exist on this system.
-            $missingLetter = [char[]]('D'..'Z') | & {
+            # A literal string is used because the 'D'..'Z' char-range syntax is PowerShell 6+ only.
+            $missingLetter = 'DEFGHIJKLMNOPQRSTUVWXYZ'.ToCharArray() | & {
                 process
                 {
                     if (![System.IO.DriveInfo]::GetDrives().Name.TrimEnd('\').Contains("${_}:"))
