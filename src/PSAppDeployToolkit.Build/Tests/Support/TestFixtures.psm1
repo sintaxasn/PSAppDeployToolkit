@@ -1,25 +1,17 @@
 ﻿<#
-
 .SYNOPSIS
-Shared real-fixture toolkit for PSAppDeployToolkit unit and integration tests.
+PSAppDeployToolkit.Build - This module script contains the shared real-fixture toolkit for PSAppDeployToolkit unit and integration tests.
 
 .DESCRIPTION
-Provides helper functions that author lightweight, real on-disk fixtures for use by the
-Pester test suites. Everything written by these helpers targets a caller-supplied path
-(normally $TestDrive) - none of these helpers mutate the host machine (no registry, no
-services, no global state, no machine-wide installs).
+Provides helper functions that author lightweight, real on-disk fixtures for use by the Pester test suites. Everything written by these helpers targets a caller-supplied path (normally $TestDrive) - none of these helpers mutate the host machine (no registry, no services, no global state, no machine-wide installs).
 
-This file is intentionally a .psm1 (NOT a *.Tests.ps1) and lives under Tests\Support, which
-is a sibling of Tests\Unit. The unit-test runner (Invoke-ADTPesterUnitTesting) points
-Pester's Run.Path at Tests\Unit only and collects *.Tests.ps1 files, so nothing in this
-folder is ever picked up as a test.
+This file is intentionally a .psm1 (NOT a *.Tests.ps1) and lives under Tests\Support, which is a sibling of Tests\Unit. The unit-test runner (Invoke-ADTPesterUnitTesting) points Pester's Run.Path at Tests\Unit only and collects *.Tests.ps1 files, so nothing in this folder is ever picked up as a test.
 
-PSAppDeployToolkit is licensed under the GNU LGPLv3 License - © 2026 PSAppDeployToolkit Team (Sean Lillis, Dan Cunningham, Muhammad Mashwani, Mitch Richters, Dan Gough).
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation, either version 3 of the License, or any later version. This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
-for more details. You should have received a copy of the GNU Lesser General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+.NOTES
+    Tags: psadt<br />
+    Website: https://psappdeploytoolkit.com<br />
+    Copyright: (C) 2026 PSAppDeployToolkit Team (Sean Lillis, Dan Cunningham, Muhammad Mashwani, Mitch Richters, Dan Gough).<br />
+    License: https://opensource.org/license/lgpl-3-0
 
 .LINK
 https://psappdeploytoolkit.com
@@ -28,16 +20,14 @@ https://psappdeploytoolkit.com
 
 #-----------------------------------------------------------------------------
 #
-# MARK: Module-scope state
+# MARK: Module Initialization Code
 #
 #-----------------------------------------------------------------------------
 
-# Per-run cache of compiled FakeInstaller.exe paths, keyed by the (lower-cased) output path.
-# This prevents recompiling the same executable repeatedly within a single test run.
+# Per-run cache of compiled FakeInstaller.exe paths, keyed by the (lower-cased) output path. This prevents recompiling the same executable repeatedly within a single test run.
 $Script:FakeInstallerCache = @{}
 
-# C# source for the fake installer console application. Kept deliberately tiny and tolerant of
-# argument order. The contract is documented in Get-ADTFakeInstaller and the Support README.
+# C# source for the fake installer console application. Kept deliberately tiny and tolerant of argument order. The contract is documented in Get-ADTFakeInstaller and the Support README.
 $Script:FakeInstallerSource = @'
 using System;
 using System.IO;
@@ -142,7 +132,6 @@ internal static class FakeInstaller
 function Get-ADTFakeInstaller
 {
     <#
-
     .SYNOPSIS
     Compiles (on first use) and returns the path to a tiny FakeInstaller.exe console app.
 
@@ -209,8 +198,7 @@ function Get-ADTFakeInstaller
     if ($PSEdition -eq 'Desktop')
     {
         Add-Type -TypeDefinition $Script:FakeInstallerSource -OutputType ConsoleApplication -OutputAssembly $OutputPath
-    }
-    else
+    } else
     {
         Build-ADTFakeInstallerWithDotNet -OutputPath $OutputPath
     }
@@ -289,7 +277,11 @@ function Build-ADTFakeInstallerWithDotNet
         # dependent build produces an apphost .exe that fails with 'application to execute does
         # not exist' once separated from its sidecars, so single-file self-contained is required.
         $publishDir = [System.IO.Path]::Combine($buildRoot, 'out')
-        $rid = if ([System.Environment]::Is64BitOperatingSystem) { 'win-x64' } else { 'win-x86' }
+        $rid = if ([System.Environment]::Is64BitOperatingSystem)
+        { 'win-x64' 
+        } else
+        { 'win-x86' 
+        }
         $buildOutput = & dotnet publish $csprojPath -c Release -o $publishDir -r $rid --self-contained true -p:PublishSingleFile=true --nologo 2>&1
         $builtExe = [System.IO.Path]::Combine($publishDir, 'FakeInstaller.exe')
         if (!(Test-Path -LiteralPath $builtExe -PathType Leaf))
@@ -303,8 +295,7 @@ function Build-ADTFakeInstallerWithDotNet
             $null = [System.IO.Directory]::CreateDirectory($destDir)
         }
         Copy-Item -LiteralPath $builtExe -Destination $OutputPath -Force
-    }
-    finally
+    } finally
     {
         Remove-Item -LiteralPath $buildRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -445,8 +436,7 @@ function New-ADTTestMsiDatabase
         }
 
         $null = $db.GetType().InvokeMember('Commit', [System.Reflection.BindingFlags]::InvokeMethod, $null, $db, @())
-    }
-    finally
+    } finally
     {
         # Release every COM handle so the file lock is freed, then force a GC so finalizers run.
         if ($null -ne $db)
@@ -603,8 +593,7 @@ function New-ADTTestInstallMsi
             if ($val -is [System.Int32])
             {
                 $null = $rec.GetType().InvokeMember('IntegerData', [System.Reflection.BindingFlags]::SetProperty, $null, $rec, @($field, [System.Int32]$val))
-            }
-            else
+            } else
             {
                 $null = $rec.GetType().InvokeMember('StringData', [System.Reflection.BindingFlags]::SetProperty, $null, $rec, @($field, [System.String]$val))
             }
@@ -749,8 +738,7 @@ function New-ADTTestInstallMsi
         }
 
         $null = $db.GetType().InvokeMember('Commit', [System.Reflection.BindingFlags]::InvokeMethod, $null, $db, @())
-    }
-    finally
+    } finally
     {
         if ($null -ne $db)
         {
@@ -852,8 +840,7 @@ function New-ADTTestRegFile
             }
             $null = $sb.AppendLine()
         }
-    }
-    else
+    } else
     {
         # Treat as a verbatim string body.
         $null = $sb.AppendLine([System.String]$Content)
@@ -928,8 +915,7 @@ function New-ADTTestWim
     try
     {
         $null = New-WindowsImage -CapturePath $SourceFolder -ImagePath $Path -Name 'PSADT Test Image' -CompressionType None -ErrorAction Stop
-    }
-    catch
+    } catch
     {
         throw [System.InvalidOperationException]::new("Failed to capture '$SourceFolder' into a .wim. Capturing a Windows image typically requires an elevated session. Inner error: $($_.Exception.Message)", $_.Exception)
     }
