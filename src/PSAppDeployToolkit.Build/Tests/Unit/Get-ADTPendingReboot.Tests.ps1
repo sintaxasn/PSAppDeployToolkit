@@ -57,9 +57,11 @@ Describe 'Get-ADTPendingReboot' {
             $null -ne $result.ErrorMsg | Should -BeTrue
         }
 
-        It 'Should return a PendingFileRenameOperations collection' {
+        It 'Should expose a PendingFileRenameOperations member' {
+            # The value is legitimately null on a machine with no pending file renames, so only
+            # assert the member's presence on the returned object.
             $result = Get-ADTPendingReboot
-            $result.PendingFileRenameOperations | Should -Not -Be $null
+            $result.PSObject.Properties.Name | Should -Contain 'PendingFileRenameOperations'
         }
 
         It 'Nullable reboot flags are null or boolean' {
