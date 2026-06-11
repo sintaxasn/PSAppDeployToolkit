@@ -5,6 +5,28 @@
 Describe 'Update-ADTEnvironmentPsProvider' {
     BeforeAll {
         Mock -ModuleName PSAppDeployToolkit Write-ADTLogEntry { }
+
+        # Update-ADTEnvironmentPsProvider rewrites this process's environment from the registry,
+        # which destroys process-only entries (most critically the $PSHOME\Modules portion of
+        # PSModulePath on PowerShell 7, which exists only in-process). Without restoration, every
+        # test file that runs after this one fails to import modules by name. Snapshot the
+        # environment here and restore it after every test.
+        $script:envSnapshot = [System.Environment]::GetEnvironmentVariables([System.EnvironmentVariableTarget]::Process)
+    }
+
+    AfterEach {
+        $snapshotKeys = [System.Collections.Generic.HashSet[string]]::new([string[]]$script:envSnapshot.Keys, [System.StringComparer]::OrdinalIgnoreCase)
+        foreach ($name in @([System.Environment]::GetEnvironmentVariables([System.EnvironmentVariableTarget]::Process).Keys))
+        {
+            if (!$snapshotKeys.Contains($name))
+            {
+                [System.Environment]::SetEnvironmentVariable($name, $null)
+            }
+        }
+        foreach ($entry in $script:envSnapshot.GetEnumerator())
+        {
+            [System.Environment]::SetEnvironmentVariable($entry.Key, $entry.Value)
+        }
     }
 
     Context 'Parameters' {
