@@ -22,6 +22,20 @@ Describe 'Set-ADTItemPermission' {
             $CurrentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
         }
 
+        AfterEach {
+            # Some tests apply Deny ACEs or protected ACLs that strip the current user's write
+            # access, which makes the next BeforeEach's New-Item -Force recreation fail with
+            # access denied. The owner can always rewrite the DACL, so reset both fixtures to
+            # plain inherited ACLs after every test.
+            foreach ($item in @($TestFile, $TestDir))
+            {
+                if (Test-Path -LiteralPath $item)
+                {
+                    $null = icacls.exe $item /reset /q 2>&1
+                }
+            }
+        }
+
         It 'Should add a Read permission for the current user on a file (AddAccessRule)' {
             Set-ADTItemPermission -LiteralPath $TestFile -User $CurrentUser -Permission Read -Method AddAccessRule
 
