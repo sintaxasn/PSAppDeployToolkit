@@ -135,16 +135,43 @@ Unit tests live under `src/PSAppDeployToolkit.Build/Tests/Unit/` and are run by 
 
 ## Shared Fixture Toolkit
 
-`src/PSAppDeployToolkit.Build/Tests/Support/TestFixtures.psm1` provides four helpers for authoring real on-disk artifacts:
+`src/PSAppDeployToolkit.Build/Tests/Support/TestFixtures.psm1` provides five helpers for authoring real on-disk artifacts:
 
 | Helper | What it produces |
 | --- | --- |
 | `Get-ADTFakeInstaller` | A deterministic, side-effect-free console EXE for real subprocess testing (exit codes, stdout/stderr, sleep, retry via state file). |
 | `New-ADTTestMsiDatabase` | A COM-authored MSI with a Property table — suitable for property-reading tests. Copy before reading via P/Invoke (`MsiOpenDatabase`). |
+| `New-ADTTestInstallMsi` | A genuinely installing MSI (no cabinet) with namespaced, self-removing artifacts and a `SIMULATEFAIL=1` failure contract — elevation required; integration tests only. |
 | `New-ADTTestRegFile` | A valid `.reg` file (UTF-16 LE with BOM) — written to disk, never imported. |
 | `New-ADTTestWim` | A `.wim` captured via Dism — elevation required; integration tests only. |
 
 The `Support` directory is a sibling of `Tests/Unit`, so the unit runner never collects it. Do not give any file in `Support` a `.Tests.ps1` suffix.
+
+## Run Tests the Way CI Runs Them
+
+The build harness (`build.ps1` and the build module) runs everything under `Set-StrictMode -Version 3`, on **Windows PowerShell 5.1**. A bare `Invoke-Pester` from a PowerShell 7 prompt enforces neither, so tests that pass locally can still fail the pipeline. Before pushing, verify under the same conditions:
+
+```powershell
+# Closest to CI: the real harness (also runs the analyzer gates).
+powershell.exe -File .\build.ps1
+
+# Faster inner loop for a subset of files — strict mode must be set in the calling scope:
+powershell.exe -NoProfile -Command "Set-StrictMode -Version 3; Invoke-Pester -Path src\PSAppDeployToolkit.Build\Tests\Unit\<File>.Tests.ps1"
+```
+
+Strict-mode rules the suite has been burned by:
+
+- **`.Count` on a pipeline result.** `($x | Where-Object ...).Count` throws when the pipeline yields a single object. Always wrap: `@($x | Where-Object ...).Count`.
+- **Unbound parameters in mock bodies.** Pester only defines variables for parameters the caller actually bound, and `$PSBoundParameters` is empty inside a mock scriptblock. Reading an unbound parameter throws. Probe with `Test-Path -LiteralPath Variable:Name` before reading.
+- **Member enumeration on empty collections.** `$obj.PSObject.Properties.Name` throws when the Properties collection is empty. Enumerate the collection itself: `@($obj.PSObject.Properties).Count`.
+- **Angle brackets in `It` names.** `<Anything>` in a test name is a Pester template placeholder, expanded against scope variables at runtime — under strict mode a nonexistent variable throws. Do not use `<...>` in test names unless supplying matching `-ForEach` data.
+
+Windows PowerShell 5.1 rules:
+
+- **No character ranges.** `'D'..'Z'` is PowerShell 6+ syntax; under 5.1 it attempts Int32 conversion and throws. Use `'DEFG...'.ToCharArray()` or integer ranges.
+- **Exception text and ErrorIds differ between hosts.** .NET Framework and modern .NET throw different messages (and sometimes different ErrorIds) for the same bad input. Assert only the host-agnostic parts: the exception type and a wildcard ErrorId.
+
+And do not assume machine state: CI runners have different drive letters (a `D:` drive exists), no pending file renames, no logged-on user mischief — assert structure (member exists, type is right) rather than environment-dependent values, and discover preconditions (e.g. a free drive letter) rather than hardcoding them.
 
 ## Hard-Won Gotchas
 
@@ -153,3 +180,5 @@ The `Support` directory is a sibling of `Tests/Unit`, so the unit runner never c
 - **ReadOnlyDictionary mutations throw `MethodException`.** Attempting to mutate a value returned as `ReadOnlyDictionary` throws `MethodException`, not `NotSupportedException`. Assert accordingly.
 - **`LogSeverity` enum values.** `Success=0`, `Info=1`, `Warning=2`, `Error=3`.
 - **Mockability boundary.** `Get-ADTSession` and `Get-ADTConfig` are PowerShell functions and can be mocked with `-ModuleName PSAppDeployToolkit`. Static .NET members cannot be mocked via Pester — restructure code or use a wrapper seam instead.
+- **Approved verbs are host-dependent.** `Build` is only an approved verb on PowerShell 6+; the integrity gate runs under 5.1 and flags it. Stick to verbs approved in Windows PowerShell (`New`, `Invoke`, etc.) for any function the analyzer can see.
+- **Environment refreshes poison later test files.** Functions that rewrite the process environment from the registry destroy process-only entries (the `$PSHOME\Modules` portion of `PSModulePath` on PowerShell 7). Snapshot the environment in `BeforeAll` and restore it in `AfterEach`.
