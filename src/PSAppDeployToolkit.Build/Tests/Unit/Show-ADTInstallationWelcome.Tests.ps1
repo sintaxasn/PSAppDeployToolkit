@@ -167,7 +167,12 @@ Describe 'Show-ADTInstallationWelcome' {
             Mock -ModuleName PSAppDeployToolkit Close-ADTClientServerProcess { }
             # InitCloseAppsDialog returns truthy; ShowModalDialog returns a Defer result.
             Mock -ModuleName PSAppDeployToolkit Invoke-ADTClientServerOperation {
-                if ($ShowModalDialog) { return [PSADT.UserInterface.DialogResults.CloseAppsDialogResult]::Defer }
+                # Pester only defines variables for parameters the caller actually bound, so
+                # $ShowModalDialog is undefined on the InitCloseAppsDialog call and reading it
+                # throws under the build harness's Set-StrictMode. $PSBoundParameters is empty
+                # inside a mock scriptblock; Test-Path against the Variable: provider is the
+                # reliable probe.
+                if ((Test-Path -LiteralPath Variable:ShowModalDialog) -and $ShowModalDialog) { return [PSADT.UserInterface.DialogResults.CloseAppsDialogResult]::Defer }
                 return $true
             }
         }

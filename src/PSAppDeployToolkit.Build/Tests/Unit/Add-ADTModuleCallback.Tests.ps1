@@ -28,7 +28,7 @@ Describe 'Add-ADTModuleCallback' {
             Add-ADTModuleCallback -Hookpoint OnExit -Callback $cb
             Add-ADTModuleCallback -Hookpoint OnExit -Callback $cb
             $result = Get-ADTModuleCallback -Hookpoint OnExit
-            ($result | Where-Object { $_ -eq $cb }).Count | Should -Be 1
+            @($result | Where-Object { $_ -eq $cb }).Count | Should -Be 1
         }
 
         It 'Inserts multiple callbacks in reverse order so first supplied is first in list' {

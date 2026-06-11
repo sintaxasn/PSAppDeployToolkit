@@ -61,7 +61,7 @@ Describe 'New-ADTZipFile' {
                 # New entry must be present — proves the archive was rebuilt with current source
                 $entryNames | Should -Contain 'd.txt'
                 # Pre-existing entry must appear exactly once — proves no duplication from append
-                ($entryNames | Where-Object { $_ -eq 'a.txt' }).Count | Should -Be 1
+                @($entryNames | Where-Object { $_ -eq 'a.txt' }).Count | Should -Be 1
             }
             finally
             {

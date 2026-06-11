@@ -13,7 +13,7 @@ Describe 'New-ADTMsiTransform' {
             Set-ItResult -Skipped -Because 'No MSI fixture is available in the repository for headless transform generation.'
         }
 
-        It 'Should create a transform file at the default path (<MsiBaseName>.mst) when -NewTransformPath is not specified' {
+        It 'Should create a transform file at the default path (MSI base name + .mst) when -NewTransformPath is not specified' {
             Set-ItResult -Skipped -Because 'No MSI fixture is available in the repository for headless transform generation.'
         }
 

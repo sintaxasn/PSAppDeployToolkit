@@ -14,7 +14,11 @@ Describe 'Mount-ADTWimFile' {
 
         # Mock Mount-WindowsImage so no real mounting occurs.
         Mock -ModuleName PSAppDeployToolkit Mount-WindowsImage {
-            return [PSCustomObject]@{ ImagePath = $ImagePath; Path = $Path; ImageIndex = $Index; ReadOnly = $true }
+            # Pester only defines variables for parameters the caller actually bound, so $Index is
+            # undefined when mounting by -Name and reading it throws under the build harness's
+            # Set-StrictMode. $PSBoundParameters is empty inside a mock scriptblock; Test-Path
+            # against the Variable: provider is the reliable probe.
+            return [PSCustomObject]@{ ImagePath = $ImagePath; Path = $Path; ImageIndex = $(if (Test-Path -LiteralPath Variable:Index) { $Index } else { 1 }); ReadOnly = $true }
         }
 
         # Mock the private Get-ADTMountedWimFile to return nothing (no pre-existing mount).

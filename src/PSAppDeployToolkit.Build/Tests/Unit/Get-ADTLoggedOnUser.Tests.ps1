@@ -70,7 +70,7 @@ Describe 'Get-ADTLoggedOnUser' {
                 Set-ItResult -Skipped -Because 'No logged-on user sessions found on this machine.'
                 return
             }
-            ($sessions | Where-Object { $_.IsCurrentSession }).Count | Should -BeLessOrEqual 1
+            @($sessions | Where-Object { $_.IsCurrentSession }).Count | Should -BeLessOrEqual 1
         }
 
         It 'Should return a LogonTime in the past for user sessions' {

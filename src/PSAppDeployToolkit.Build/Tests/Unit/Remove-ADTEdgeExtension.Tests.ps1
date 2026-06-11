@@ -44,7 +44,9 @@ Describe 'Remove-ADTEdgeExtension' {
             Remove-ADTEdgeExtension -ExtensionID 'abc123'
 
             $Extensions = Get-ItemPropertyValue -Path $RedirectedEdgeKey -Name 'ExtensionSettings' | ConvertFrom-Json
-            ($Extensions.PSObject.Properties.Name | Measure-Object).Count | Should -Be 0
+            # Enumerate the properties collection directly; .Name member enumeration on an empty
+            # collection throws under the build harness's Set-StrictMode.
+            @($Extensions.PSObject.Properties).Count | Should -Be 0
         }
 
         It 'Should not modify the policy value when the target extension is not configured' {
