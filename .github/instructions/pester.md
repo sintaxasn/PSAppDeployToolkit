@@ -175,6 +175,8 @@ Windows PowerShell 5.1 rules:
 
 And do not assume machine state: CI runners have different drive letters (a `D:` drive exists), no pending file renames, no logged-on user mischief — assert structure (member exists, type is right) rather than environment-dependent values, and discover preconditions (e.g. a free drive letter) rather than hardcoding them.
 
+- **`$env:TEMP` is an 8.3 short path on CI.** GitHub-hosted runners set `TEMP` to `C:\Users\RUNNER~1\...`. .NET path normalization (`FileInfo`/`DirectoryInfo` `.FullName` and `[System.IO.Path]::GetFullPath()`, on both editions) expands `~` segments of existing paths to their long form, so a fixture path that round-trips through the toolkit or an OS API (e.g. what `Get-WindowsImage -Mounted` reports) comes back long-form and never string-compares equal to a raw `$env:TEMP`-derived path. Canonicalise once up front — `[System.IO.Path]::Combine([System.IO.Path]::GetFullPath($env:TEMP), ...)` — before building fixture paths that anything compares as strings. Reproduce locally by pointing `$env:TEMP` at a short name minted via `fsutil file setshortname`.
+
 ## Hard-Won Gotchas
 
 - **BOM.** Every `*.Tests.ps1` file must be saved as UTF-8 with BOM (`utf-8-bom`). Files without a BOM cause silent parse failures under some PowerShell hosts.

@@ -62,8 +62,12 @@ Describe 'Mount-ADTWimFile' -Tag Integration -Skip:(-not $IsElevated) {
         Import-Module -Name ([System.IO.Path]::Combine($PSScriptRoot, '..', 'Support', 'TestFixtures.psm1')) -Force
 
         # Author a tiny .wim from a payload folder containing a marker file, all under a namespaced
-        # temp root.
-        $script:TestRoot = [System.IO.Path]::Combine($env:TEMP, 'PSADT.Test', "Wim_$([System.Guid]::NewGuid().ToString('N'))")
+        # temp root. $env:TEMP can be an 8.3 short path (C:\Users\RUNNER~1\... on GitHub-hosted
+        # runners), while the toolkit binds -ImagePath/-Path as FileInfo/DirectoryInfo and mounts
+        # via .FullName, which expands 8.3 segments to their long form - so DISM records long-form
+        # paths. GetFullPath applies the same expansion up front so this file's string comparisons
+        # against Get-WindowsImage output (and AfterAll's cleanup filter) match on any machine.
+        $script:TestRoot = [System.IO.Path]::Combine([System.IO.Path]::GetFullPath($env:TEMP), 'PSADT.Test', "Wim_$([System.Guid]::NewGuid().ToString('N'))")
         $script:PayloadDir = [System.IO.Path]::Combine($script:TestRoot, 'payload')
         $script:MountDir = [System.IO.Path]::Combine($script:TestRoot, 'mount')
         $null = [System.IO.Directory]::CreateDirectory($script:PayloadDir)
