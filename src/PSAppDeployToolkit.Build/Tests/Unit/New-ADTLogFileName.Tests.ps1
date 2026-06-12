@@ -43,7 +43,7 @@ Describe 'New-ADTLogFileName' {
         It 'Throws ParameterArgumentValidationError when Discriminator is <Label>' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true

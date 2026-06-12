@@ -35,7 +35,7 @@ Describe 'Get-ADTObjectProperty' {
         It 'Throws ParameterArgumentValidationError when InputObject is <Label>' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true
@@ -47,7 +47,7 @@ Describe 'Get-ADTObjectProperty' {
         It 'Throws ParameterArgumentValidationError when PropertyName is <Label>' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $fi = [System.IO.FileInfo]::new('C:\x.txt')
             $shouldParams = @{

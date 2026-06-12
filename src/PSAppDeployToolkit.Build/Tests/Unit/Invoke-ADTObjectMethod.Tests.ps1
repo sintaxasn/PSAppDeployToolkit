@@ -34,7 +34,7 @@ Describe 'Invoke-ADTObjectMethod' {
         It 'Throws ParameterArgumentValidationError when InputObject is <Label>' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true
@@ -46,7 +46,7 @@ Describe 'Invoke-ADTObjectMethod' {
         It 'Throws ParameterArgumentValidationError when MethodName is <Label>' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true

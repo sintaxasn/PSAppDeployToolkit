@@ -182,7 +182,7 @@ Describe 'Write-ADTLogEntry' {
         It 'throws a validation error for a <Label> message' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true

@@ -69,7 +69,7 @@ Describe 'New-ADTErrorRecord' {
         }
         It 'Throws ParameterArgumentValidationError when ErrorId is empty or whitespace: <Label>' -ForEach @(
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $ex = [System.Exception]::new('Test error')
             $shouldParams = @{

@@ -53,7 +53,7 @@ Describe 'Get-ADTEnvironmentVariable' {
         It 'Should throw ParameterArgumentValidationError when -Variable is null, empty, or whitespace' -ForEach @(
             @{ BadValue = $null }
             @{ BadValue = '' }
-            @{ BadValue = " `f`n`r`t`v" }
+            @{ BadValue = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true

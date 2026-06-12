@@ -41,7 +41,7 @@ Describe 'New-ADTValidateScriptErrorRecord' {
         It 'Throws ParameterArgumentValidationError when ParameterName is <Label>' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true
@@ -53,7 +53,7 @@ Describe 'New-ADTValidateScriptErrorRecord' {
         It 'Throws ParameterArgumentValidationError when ExceptionMessage is <Label>' -ForEach @(
             @{ Label = 'null'; Value = $null }
             @{ Label = 'empty'; Value = '' }
-            @{ Label = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Label = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true

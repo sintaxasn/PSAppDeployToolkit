@@ -58,7 +58,7 @@ Describe 'Set-ADTEnvironmentVariable' {
         It 'Should throw ParameterArgumentValidationError when -Variable is null, empty, or whitespace' -ForEach @(
             @{ BadValue = $null }
             @{ BadValue = '' }
-            @{ BadValue = " `f`n`r`t`v" }
+            @{ BadValue = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true
@@ -71,7 +71,7 @@ Describe 'Set-ADTEnvironmentVariable' {
         It 'Should throw ParameterArgumentValidationError when -Value is null, empty, or whitespace' -ForEach @(
             @{ BadValue = $null }
             @{ BadValue = '' }
-            @{ BadValue = " `f`n`r`t`v" }
+            @{ BadValue = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true

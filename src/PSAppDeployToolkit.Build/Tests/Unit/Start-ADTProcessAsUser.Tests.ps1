@@ -34,7 +34,7 @@ Describe 'Start-ADTProcessAsUser' {
 
         It 'Throws ParameterArgumentValidationError when FilePath is <Name>' -ForEach @(
             @{ Name = 'empty'; Value = '' }
-            @{ Name = 'whitespace'; Value = " `f`n`r`t`v" }
+            @{ Name = 'whitespace'; Value = " `t`r`n" }
         ) {
             $shouldParams = @{
                 Throw = $true

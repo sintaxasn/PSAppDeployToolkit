@@ -165,6 +165,7 @@ Strict-mode rules the suite has been burned by:
 - **Unbound parameters in mock bodies.** Pester only defines variables for parameters the caller actually bound, and `$PSBoundParameters` is empty inside a mock scriptblock. Reading an unbound parameter throws. Probe with `Test-Path -LiteralPath Variable:Name` before reading.
 - **Member enumeration on empty collections.** `$obj.PSObject.Properties.Name` throws when the Properties collection is empty. Enumerate the collection itself: `@($obj.PSObject.Properties).Count`.
 - **Angle brackets in `It` names.** `<Anything>` in a test name is a Pester template placeholder, expanded against scope variables at runtime — under strict mode a nonexistent variable throws. Do not use `<...>` in test names unless supplying matching `-ForEach` data.
+- **No control characters in `-ForEach` data.** The CI run exports an NUnit XML report, and Pester appends every data-driven test's serialized data values to its test-case name in that XML. Characters that are invalid in XML 1.0 (anything below 0x20 except tab/LF/CR — notably form feed `` `f`` and vertical tab `` `v``) crash the export after all tests have passed. For whitespace-validation cases in `-ForEach` data, use `" `t`r`n"`; the full control-character set is fine inline in a test body, which is never serialized.
 
 Windows PowerShell 5.1 rules:
 
