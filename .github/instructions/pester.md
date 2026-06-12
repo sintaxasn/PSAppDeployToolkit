@@ -122,7 +122,8 @@ Unit tests live under `src/PSAppDeployToolkit.Build/Tests/Unit/` and are run by 
 
 **Integration tests must:**
 
-- Import the **built** module (not the source tree directly).
+- **Reuse the already-loaded module when one is present** — under the build pipeline the development module is imported before Pester runs, and the toolkit's assembly-hash guard makes importing the freshly built module into the same process impossible (loaded assemblies cannot be unloaded). Only when no module is loaded, prefer the built module (`Artifacts\ModuleOnly`) and fall back to the source manifest. Never `Remove-Module` + `Import-Module -Force` a different build in-process.
+- Initialise every script-scoped fixture variable to `$null` at the top of `BeforeAll`, before anything that can throw — otherwise a failed `BeforeAll` makes `AfterAll`'s reads throw under the harness's `Set-StrictMode`, masking cleanup.
 - Carry `-Tag Integration` on the top-level `Describe`.
 - Skip the entire `Describe` block (via `BeforeAll` + `Set-ItResult -Skipped` or `Skip`) when not running in an elevated session.
 - Use only `BeforeAll`/`AfterAll` for ordered setup and teardown within a single file, with best-effort `AfterAll` cleanup.

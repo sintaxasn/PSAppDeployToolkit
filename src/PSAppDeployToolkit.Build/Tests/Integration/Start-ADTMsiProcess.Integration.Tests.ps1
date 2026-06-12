@@ -35,17 +35,25 @@ BeforeDiscovery {
 
 Describe 'Start-ADTMsiProcess' -Tag Integration -Skip:(-not $IsElevated) {
     BeforeAll {
-        # Import the BUILT module the same way the integration sample documents (the compiled module
-        # under Artifacts). Mirror the sample's relative-to-Artifacts approach, but resolve to the
-        # real build output location (Artifacts\ModuleOnly\PSAppDeployToolkit). If no build output
-        # exists (e.g. running this file directly on a dev box without a prior Build step), fall back
-        # to the source manifest so the integration test is still runnable.
+        # Initialise the script-scoped fixture variables up front so AfterAll's reads are safe
+        # under the build harness's Set-StrictMode even if this BeforeAll throws partway through.
+        $script:TestRoot = $null
+        $script:MsiPath = $null
+        $script:Msi = $null
+
+        # Under the build pipeline the development module is already imported, and the module's
+        # assembly-hash guard makes importing the freshly built module into the same process
+        # impossible (loaded assemblies cannot be unloaded). Reuse the loaded module when present;
+        # otherwise prefer the built module (Artifacts\ModuleOnly) and fall back to the source
+        # manifest so the test remains runnable on a dev box without a prior Build step.
         $ModuleName = 'PSAppDeployToolkit'
-        $builtManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', 'Artifacts', 'ModuleOnly', $ModuleName, "$ModuleName.psd1")
-        $sourceManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', $ModuleName, "$ModuleName.psd1")
-        $manifest = if (Test-Path -LiteralPath $builtManifest) { $builtManifest } else { $sourceManifest }
-        Get-Module -Name $ModuleName -ErrorAction SilentlyContinue | Remove-Module -Force
-        Import-Module -Name $manifest -Force
+        if (!(Get-Module -Name $ModuleName))
+        {
+            $builtManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', 'Artifacts', 'ModuleOnly', $ModuleName, "$ModuleName.psd1")
+            $sourceManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', $ModuleName, "$ModuleName.psd1")
+            $manifest = if (Test-Path -LiteralPath $builtManifest) { $builtManifest } else { $sourceManifest }
+            Import-Module -Name $manifest -Force
+        }
 
         # Import the shared fixture toolkit (authors the installing MSI).
         Import-Module -Name ([System.IO.Path]::Combine($PSScriptRoot, '..', 'Support', 'TestFixtures.psm1')) -Force

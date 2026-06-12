@@ -36,16 +36,27 @@ BeforeDiscovery {
 
 Describe 'Mount-ADTWimFile' -Tag Integration -Skip:(-not $IsElevated) {
     BeforeAll {
-        # Import the BUILT module (compiled output under Artifacts\ModuleOnly), mirroring the
-        # integration sample. Fall back to the source manifest when no build output exists so the
-        # test remains runnable on a dev box without a prior Build step.
+        # Initialise the script-scoped fixture variables up front so AfterAll's reads are safe
+        # under the build harness's Set-StrictMode even if this BeforeAll throws partway through.
+        $script:TestRoot = $null
+        $script:PayloadDir = $null
+        $script:MountDir = $null
+        $script:WimPath = $null
+
+        # Under the build pipeline the development module is already imported, and the module's
+        # assembly-hash guard makes importing the freshly built module into the same process
+        # impossible (loaded assemblies cannot be unloaded). Reuse the loaded module when present;
+        # otherwise prefer the built module (Artifacts\ModuleOnly) and fall back to the source
+        # manifest so the test remains runnable on a dev box without a prior Build step.
         $ModuleName = 'PSAppDeployToolkit'
-        $builtManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', 'Artifacts', 'ModuleOnly', $ModuleName, "$ModuleName.psd1")
-        $sourceManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', $ModuleName, "$ModuleName.psd1")
-        $manifest = if (Test-Path -LiteralPath $builtManifest) { $builtManifest } else { $sourceManifest }
-        Get-Module -Name $ModuleName -ErrorAction SilentlyContinue | Remove-Module -Force
-        Import-Module -Name $manifest -Force
-        $script:AdtModule = Get-Module -Name $ModuleName
+        if (!($script:AdtModule = Get-Module -Name $ModuleName))
+        {
+            $builtManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', 'Artifacts', 'ModuleOnly', $ModuleName, "$ModuleName.psd1")
+            $sourceManifest = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', $ModuleName, "$ModuleName.psd1")
+            $manifest = if (Test-Path -LiteralPath $builtManifest) { $builtManifest } else { $sourceManifest }
+            Import-Module -Name $manifest -Force
+            $script:AdtModule = Get-Module -Name $ModuleName
+        }
 
         # Import the shared fixture toolkit (authors the .wim).
         Import-Module -Name ([System.IO.Path]::Combine($PSScriptRoot, '..', 'Support', 'TestFixtures.psm1')) -Force
