@@ -25,6 +25,12 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 IsMinimizeButtonVisible = Visibility.Visible;
             }
             ProgressStackPanel.Visibility = Visibility.Visible;
+
+            // The progress message is the natural place for a screen reader to begin reading when the
+            // dialog opens. Make it focusable for assistive technology without inserting it into the tab
+            // cycle (the progress dialog has no interactive controls to tab between).
+            MessageTextBlock.Focusable = true;
+            System.Windows.Input.KeyboardNavigation.SetIsTabStop(MessageTextBlock, isTabStop: false);
         }
 
         /// <summary>
@@ -100,6 +106,12 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             string detail = GetPlainText(ProgressMessageDetailTextBlock);
             string combined = $"{message} {detail}".Trim();
             return combined.Length > 0 ? combined : null;
+        }
+
+        /// <inheritdoc />
+        private protected override FrameworkElement? GetInitialFocusElement()
+        {
+            return MessageTextBlock;
         }
 
         /// <summary>
