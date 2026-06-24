@@ -1323,6 +1323,105 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
+        /// Rewrites dot-separated version tokens (e.g. <c>14.04.03</c>) so a screen reader speaks them
+        /// segment-by-segment with "point" between segments ("fourteen point zero four point zero three")
+        /// rather than voicing them as a date (SR4). Each segment is read as a cardinal number when it is a
+        /// one- or two-digit value with no leading zero; otherwise (leading zero, or three or more digits) it
+        /// is read digit-by-digit. Text outside a dotted digit group is returned unchanged. The transform is
+        /// scoped to the app version token; callers apply it only to the app title.
+        /// </summary>
+        /// <param name="text">The text to normalize, typically the app title.</param>
+        /// <returns>The text with any version tokens rewritten for speech.</returns>
+        internal static string NormalizeVersionForSpeech(string? text)
+        {
+            return string.IsNullOrWhiteSpace(text) ? text ?? string.Empty : VersionTokenRegex.Replace(text, static m => SpeakVersionToken(m.Value));
+        }
+
+        /// <summary>
+        /// Matches a version token: two or more dot-separated runs of digits (e.g. <c>1.2</c>, <c>14.04.03</c>).
+        /// </summary>
+        private static readonly Regex VersionTokenRegex = new(@"\d+(?:\.\d+)+", RegexOptions.CultureInvariant);
+
+        /// <summary>Speaks a whole version token by joining its spoken segments with " point ".</summary>
+        /// <param name="token">The dotted version token, e.g. <c>14.04.03</c>.</param>
+        /// <returns>The spoken form, e.g. "fourteen point zero four point zero three".</returns>
+        private static string SpeakVersionToken(string token)
+        {
+            return string.Join(" point ", token.Split('.').Select(SpeakVersionSegment));
+        }
+
+        /// <summary>
+        /// Speaks a single version segment: a one- or two-digit value with no leading zero is read as a cardinal
+        /// number (e.g. "fourteen"); any other segment (leading zero, or three or more digits) is read
+        /// digit-by-digit (e.g. "zero four", "one nine zero four one").
+        /// </summary>
+        /// <param name="segment">A single dot-delimited version segment, e.g. <c>14</c> or <c>04</c>.</param>
+        /// <returns>The spoken form of the segment.</returns>
+        private static string SpeakVersionSegment(string segment)
+        {
+            bool readAsCardinal = segment.Length <= 2 && !(segment.Length == 2 && segment[0] == '0');
+            return readAsCardinal
+                ? CardinalUnderHundred(int.Parse(segment, CultureInfo.InvariantCulture))
+                : string.Join(" ", segment.Select(static c => DigitWords[c - '0']));
+        }
+
+        /// <summary>The spoken word for each decimal digit 0-9.</summary>
+        private static readonly string[] DigitWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+
+        /// <summary>The spoken words for the cardinal numbers 0-19.</summary>
+        private static readonly string[] OnesWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+
+        /// <summary>The spoken words for the tens 20, 30, ... 90.</summary>
+        private static readonly string[] TensWords = ["twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+        /// <summary>Returns the spoken cardinal for a value in the range 0-99.</summary>
+        /// <param name="value">The value to speak, in the range 0-99.</param>
+        /// <returns>The spoken cardinal, e.g. "fourteen".</returns>
+        private static string CardinalUnderHundred(int value)
+        {
+            if (value < 20)
+            {
+                return OnesWords[value];
+            }
+            string tens = TensWords[(value / 10) - 2];
+            int ones = value % 10;
+            return ones == 0 ? tens : $"{tens} {OnesWords[ones]}";
+        }
+
+        /// <summary>
+        /// Builds a screen-reader announcement for a button per the button-reading rule (SR7): a visible enabled
+        /// button announces its access-key-stripped name; a visible disabled button announces the localized
+        /// "has been disabled" wording; a hidden button announces nothing. Pure function for unit testing.
+        /// </summary>
+        /// <param name="isVisible">Whether the button is visible.</param>
+        /// <param name="isEnabled">Whether the button is enabled.</param>
+        /// <param name="name">The button's text, which may contain an access-key marker.</param>
+        /// <param name="disabledTemplate">The localized "{0} has been disabled" format string.</param>
+        /// <returns>The announcement text, or <see langword="null"/> when nothing should be read.</returns>
+        internal static string? BuildButtonAnnouncement(bool isVisible, bool isEnabled, string? name, string disabledTemplate)
+        {
+            if (!isVisible)
+            {
+                return null;
+            }
+            string cleaned = StripAccessKeyMarker(name ?? string.Empty);
+            return isEnabled ? cleaned : string.Format(CultureInfo.CurrentCulture, disabledTemplate, cleaned);
+        }
+
+        /// <summary>
+        /// Reads a live button per the button-reading rule (SR7), using its accessible name (already stripped of
+        /// the access-key marker by <see cref="SetButtonContentWithAccelerator"/>) and the localized disabled
+        /// wording. Returns <see langword="null"/> when the button is hidden, so it contributes nothing (SR9).
+        /// </summary>
+        /// <param name="button">The button to read.</param>
+        /// <param name="disabledFormat">The localized "{0} has been disabled" format string.</param>
+        /// <returns>The announcement for the button, or <see langword="null"/> to read nothing.</returns>
+        private protected static string? GetButtonAnnouncement(Fluence.Wpf.Controls.Button button, string disabledFormat)
+        {
+            return BuildButtonAnnouncement(button.Visibility == Visibility.Visible, button.IsEnabled, AutomationProperties.GetName(button), disabledFormat);
+        }
+
+        /// <summary>
         /// Raises a UI Automation LiveRegionChanged event so a screen reader announces the element's updated
         /// content. The element must have AutomationProperties.LiveSetting set in XAML. No-op without a peer/listeners.
         /// </summary>
@@ -1398,12 +1497,51 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// A spoken summary announced via UI Automation when the dialog opens. Defaults to the primary
-        /// message text when visible; dialogs override to add detail/counts/countdown.
+        /// The application name announced first to a screen reader (SR3), with any version token rewritten so
+        /// it is spoken segment-by-segment rather than as a date (SR4). Returns <see langword="null"/> when no
+        /// app title is set.
         /// </summary>
+        /// <returns>The normalized app-name announcement, or <see langword="null"/>.</returns>
+        private protected string? GetAppNameAnnouncement()
+        {
+            string name = NormalizeVersionForSpeech(AppTitleTextBlock.Text).Trim();
+            return name.Length > 0 ? name : null;
+        }
+
+        /// <summary>
+        /// Joins announcement segments in order, dropping empty ones and separating the rest with ". " so a
+        /// screen reader pauses between them (e.g. the brief pause after the app name, SR3).
+        /// </summary>
+        /// <param name="parts">The ordered announcement segments; null/empty entries are skipped.</param>
+        /// <returns>The combined announcement, or <see langword="null"/> when every segment is empty.</returns>
+        private protected static string? JoinAnnouncement(params string?[] parts)
+        {
+            string combined = string.Join(". ", parts.Where(static p => !string.IsNullOrWhiteSpace(p)).Select(static p => p!.Trim()));
+            return combined.Length > 0 ? combined : null;
+        }
+
+        /// <summary>
+        /// The common announcement prefix shared by every dialog: the application name first (SR3/SR4), then
+        /// the primary message, then the optional custom message (SR5). Dialogs build their full ordered
+        /// announcement on top of this so leaves can control exactly where their content (and buttons) appear.
+        /// </summary>
+        /// <returns>The app-name/message/custom prefix, or <see langword="null"/> when all are empty.</returns>
+        private protected string? GetBaseOpenAnnouncement()
+        {
+            string? message = MessageTextStackPanel.Visibility == Visibility.Visible ? GetPlainText(MessageTextBlock) : null;
+            string? custom = CustomMessageTextBlock.Visibility == Visibility.Visible ? GetPlainText(CustomMessageTextBlock) : null;
+            return JoinAnnouncement(GetAppNameAnnouncement(), message, custom);
+        }
+
+        /// <summary>
+        /// A spoken summary announced via UI Automation when the dialog opens. Defaults to the shared
+        /// app-name/message/custom prefix; dialogs override to insert their ordered content (lists, countdown,
+        /// deferrals, buttons) per the brief.
+        /// </summary>
+        /// <returns>The ordered open announcement, or <see langword="null"/> when there is nothing to read.</returns>
         private protected virtual string? GetOpenAnnouncement()
         {
-            return MessageTextStackPanel.Visibility == Visibility.Visible ? GetPlainText(MessageTextBlock) : null;
+            return GetBaseOpenAnnouncement();
         }
 
         private void CloseAppsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)

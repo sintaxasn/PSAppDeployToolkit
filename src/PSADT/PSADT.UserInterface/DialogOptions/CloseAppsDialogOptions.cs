@@ -389,7 +389,10 @@ namespace PSADT.UserInterface.DialogOptions
                     (string?)strings["DeferralDeadline"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'DeferralDeadline' is missing."),
                     (string?)((IDictionary?)strings["ButtonLeftText"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonLeftText' is missing."))[deploymentType.ToString()] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonLeftText' is missing."),
                     (string?)strings["ButtonRightText"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonRightText' is missing."),
-                    (string?)((IDictionary?)strings["ButtonLeftNoProcessesText"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonLeftNoProcessesText' is missing."))[deploymentType.ToString()] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonLeftNoProcessesText' is missing."))
+                    (string?)((IDictionary?)strings["ButtonLeftNoProcessesText"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonLeftNoProcessesText' is missing."))[deploymentType.ToString()] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonLeftNoProcessesText' is missing."),
+                    (string?)strings["AppsToCloseListTitle"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'AppsToCloseListTitle' is missing."),
+                    (string?)strings["ButtonDisabledFormat"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonDisabledFormat' is missing."),
+                    (string?)strings["AppClosedFormat"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'AppClosedFormat' is missing."))
                 {
                 }
 
@@ -406,7 +409,10 @@ namespace PSADT.UserInterface.DialogOptions
                 /// <param name="buttonLeftText">The text displayed on the left button when processes are detected.</param>
                 /// <param name="buttonRightText">The text displayed on the right button.</param>
                 /// <param name="buttonLeftTextNoProcesses">The text displayed on the left button when no processes are detected.</param>
-                private CloseAppsDialogFluentStrings(string dialogMessage, string dialogMessageNoProcesses, string automaticStartCountdown, string deferralsRemaining, string deferralDeadline, string buttonLeftText, string buttonRightText, string buttonLeftTextNoProcesses)
+                /// <param name="appsToCloseListTitle">The screen-reader title announced before the list of applications to close.</param>
+                /// <param name="buttonDisabledFormat">The screen-reader "{0} has been disabled" format announced for a visible but disabled button.</param>
+                /// <param name="appClosedFormat">The screen-reader "{0} has been closed" format announced when a listed application closes.</param>
+                private CloseAppsDialogFluentStrings(string dialogMessage, string dialogMessageNoProcesses, string automaticStartCountdown, string deferralsRemaining, string deferralDeadline, string buttonLeftText, string buttonRightText, string buttonLeftTextNoProcesses, string appsToCloseListTitle, string buttonDisabledFormat, string appClosedFormat)
                 {
                     ArgumentException.ThrowIfNullOrWhiteSpace(dialogMessage);
                     ArgumentException.ThrowIfNullOrWhiteSpace(dialogMessageNoProcesses);
@@ -416,6 +422,9 @@ namespace PSADT.UserInterface.DialogOptions
                     ArgumentException.ThrowIfNullOrWhiteSpace(buttonLeftText);
                     ArgumentException.ThrowIfNullOrWhiteSpace(buttonRightText);
                     ArgumentException.ThrowIfNullOrWhiteSpace(buttonLeftTextNoProcesses);
+                    ArgumentException.ThrowIfNullOrWhiteSpace(appsToCloseListTitle);
+                    ArgumentException.ThrowIfNullOrWhiteSpace(buttonDisabledFormat);
+                    ArgumentException.ThrowIfNullOrWhiteSpace(appClosedFormat);
                     DialogMessage = dialogMessage;
                     DialogMessageNoProcesses = dialogMessageNoProcesses;
                     AutomaticStartCountdown = automaticStartCountdown;
@@ -424,6 +433,9 @@ namespace PSADT.UserInterface.DialogOptions
                     ButtonLeftText = buttonLeftText;
                     ButtonRightText = buttonRightText;
                     ButtonLeftTextNoProcesses = buttonLeftTextNoProcesses;
+                    AppsToCloseListTitle = appsToCloseListTitle;
+                    ButtonDisabledFormat = buttonDisabledFormat;
+                    AppClosedFormat = appClosedFormat;
                 }
 
                 /// <summary>
@@ -473,6 +485,24 @@ namespace PSADT.UserInterface.DialogOptions
                 /// </summary>
                 [DataMember]
                 public readonly string ButtonLeftTextNoProcesses;
+
+                /// <summary>
+                /// Screen-reader title announced before the list of applications to close (SR-only; not shown visually).
+                /// </summary>
+                [DataMember]
+                public readonly string AppsToCloseListTitle;
+
+                /// <summary>
+                /// Screen-reader "{0} has been disabled" format announced for a visible but disabled button (SR7).
+                /// </summary>
+                [DataMember]
+                public readonly string ButtonDisabledFormat;
+
+                /// <summary>
+                /// Screen-reader "{0} has been closed" format announced when a listed application closes while the dialog is open (SR8).
+                /// </summary>
+                [DataMember]
+                public readonly string AppClosedFormat;
             }
         }
     }

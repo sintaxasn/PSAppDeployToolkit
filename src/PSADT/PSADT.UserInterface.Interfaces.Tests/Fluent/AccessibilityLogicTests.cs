@@ -96,5 +96,44 @@ namespace PSADT.UserInterface.Interfaces.Tests.Fluent
                 TimeSpan.FromSeconds(remainingSeconds), warning, warnAnnounced, finalMinAnnounced);
             Assert.Equal(expectedAnnounce, decision.Announce);
         }
+
+        /// <summary>
+        /// Verifies that <see cref="FluentDialog.NormalizeVersionForSpeech"/> rewrites dot-separated version
+        /// tokens into words spoken segment-by-segment with "point" between segments (SR4), so a screen reader
+        /// never voices a version like a date. Non-version text is returned unchanged, and the transform is
+        /// scoped to dotted digit groups only.
+        /// </summary>
+        /// <param name="raw">The raw text (e.g. an app title) possibly containing a version token.</param>
+        /// <param name="expected">The expected text after version normalization.</param>
+        [Theory]
+        [InlineData("MyApp 14.04.03", "MyApp fourteen point zero four point zero three")]  // brief's canonical example
+        [InlineData("Acme 1.2", "Acme one point two")]                                     // single-digit segments
+        [InlineData("Tool 10.0.100", "Tool ten point zero point one zero zero")]           // 3-digit segment read digit-by-digit
+        [InlineData("Server 2.19041", "Server two point one nine zero four one")]          // build number read digit-by-digit
+        [InlineData("No version here", "No version here")]                                 // nothing to change
+        [InlineData("App 5", "App 5")]                                                     // lone integer is not a version token
+        public void NormalizeVersionForSpeech_SpeaksDottedVersionsSegmentByVersion(string raw, string expected)
+        {
+            Assert.Equal(expected, FluentDialog.NormalizeVersionForSpeech(raw));
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="FluentDialog.BuildButtonAnnouncement"/> implements the button-reading rule
+        /// (SR7): a visible enabled button reads its access-key-stripped name; a visible disabled button reads
+        /// the localized "has been disabled" wording; a hidden button reads nothing (null).
+        /// </summary>
+        /// <param name="isVisible">Whether the button is visible.</param>
+        /// <param name="isEnabled">Whether the button is enabled.</param>
+        /// <param name="name">The button's raw text (may contain an access-key marker).</param>
+        /// <param name="expected">The expected announcement, or null for "read nothing".</param>
+        [Theory]
+        [InlineData(true, true, "Restart _Now", "Restart Now")]                            // visible + enabled => name (marker stripped)
+        [InlineData(true, false, "_Defer", "\"Defer\" has been disabled")]                 // visible + disabled => disabled wording
+        [InlineData(false, true, "Continue", null)]                                        // hidden => nothing
+        [InlineData(false, false, "Defer", null)]                                          // hidden (disabled) => nothing
+        public void BuildButtonAnnouncement_FollowsButtonReadingRule(bool isVisible, bool isEnabled, string name, string? expected)
+        {
+            Assert.Equal(expected, FluentDialog.BuildButtonAnnouncement(isVisible, isEnabled, name, "\"{0}\" has been disabled"));
+        }
     }
 }

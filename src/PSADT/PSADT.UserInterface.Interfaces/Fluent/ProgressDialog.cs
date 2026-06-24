@@ -102,10 +102,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <inheritdoc />
         private protected override string? GetOpenAnnouncement()
         {
-            string message = base.GetOpenAnnouncement() ?? string.Empty;
-            string detail = GetPlainText(ProgressMessageDetailTextBlock);
-            string combined = $"{message} {detail}".Trim();
-            return combined.Length > 0 ? combined : null;
+            // Ordered per the Progress screen-reader spec: app name, the current percentage (when the bar is
+            // determinate), the message, the custom message, then the detail line.
+            string? percent = ProgressBar.ProgressMode == ProgressBarMode.StepProgress
+                ? $"{ProgressBar.Value.ToString("F0", CultureInfo.InvariantCulture)}%"
+                : null;
+            string? message = MessageTextStackPanel.Visibility == Visibility.Visible ? GetPlainText(MessageTextBlock) : null;
+            string? custom = CustomMessageTextBlock.Visibility == Visibility.Visible ? GetPlainText(CustomMessageTextBlock) : null;
+            string? detail = GetPlainText(ProgressMessageDetailTextBlock);
+            return JoinAnnouncement(GetAppNameAnnouncement(), percent, message, custom, detail);
         }
 
         /// <inheritdoc />

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -49,6 +50,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
             // Set heading text from localized strings if available.
             ListSelectionHeadingTextBlock.Text = options.Strings.ListSelectionMessage;
+            _buttonDisabledFormat = options.Strings.ButtonDisabledFormat;
 
             // Associate the combo box with its visible heading so a screen reader announces the heading
             // as the control's label.
@@ -60,6 +62,29 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             return ListSelectionComboBox;
         }
+
+        /// <inheritdoc />
+        private protected override string? GetOpenAnnouncement()
+        {
+            // App name + message + custom (base prefix), then the list heading and items, then each button
+            // per the button rule (SR7). SR9: nothing else is read.
+            string? heading = ListSelectionHeadingTextBlock.Visibility == Visibility.Visible ? GetPlainText(ListSelectionHeadingTextBlock) : null;
+            string? items = ListSelectionComboBox.Items.Count > 0
+                ? string.Join(", ", ListSelectionComboBox.Items.Cast<object>().Select(static i => i?.ToString()))
+                : null;
+            return JoinAnnouncement(
+                GetBaseOpenAnnouncement(),
+                heading,
+                items,
+                GetButtonAnnouncement(ButtonLeft, _buttonDisabledFormat),
+                GetButtonAnnouncement(ButtonMiddle, _buttonDisabledFormat),
+                GetButtonAnnouncement(ButtonRight, _buttonDisabledFormat));
+        }
+
+        /// <summary>
+        /// The localized "{0} has been disabled" format used when reading a visible but disabled button (SR7).
+        /// </summary>
+        private readonly string _buttonDisabledFormat;
 
         /// <summary>
         /// Handles the click event for the left button, setting the dialog result based on the selected item and the

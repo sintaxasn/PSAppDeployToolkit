@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -140,6 +140,7 @@ namespace PSADT.UserInterface.TestHarness
                 {
                     { "DialogExpiryDuration", dialogExpiryDuration },
                     { "FluentAccentColor", ValueTypeConverter.ToInt(0xFF00CC6A) }, // Accent Color: Green #00CC6A
+                    { "DialogTopMost", true },
                     { "DialogAllowMinimize", true },
                     { "AppTitle", appTitle },
                     { "Subtitle", subtitle },
@@ -160,6 +161,7 @@ namespace PSADT.UserInterface.TestHarness
                     { "AppIconImage", appIconImage },
                     { "AppIconDarkImage", appIconDarkImage },
                     { "AppBannerImage", appBannerImage },
+                    { "DialogTopMost", true },
                     { "MessageText", customDialogMessageText },
                     { "ButtonLeftText", customDialogButtonLeftText },
                     { "ButtonMiddleText", customDialogButtonMiddleText },
@@ -179,6 +181,7 @@ namespace PSADT.UserInterface.TestHarness
                     { "AppIconImage", appIconImage },
                     { "AppIconDarkImage", appIconDarkImage },
                     { "AppBannerImage", appBannerImage },
+                    { "DialogTopMost", true },
                     { "MessageText", customDialogMessageText },
                     { "ButtonLeftText", customDialogButtonLeftText },
                     { "ButtonRightText", customDialogButtonRightText },
@@ -198,6 +201,9 @@ namespace PSADT.UserInterface.TestHarness
                     { "AppIconImage", appIconImage },
                     { "AppIconDarkImage", appIconDarkImage },
                     { "AppBannerImage", appBannerImage },
+                    { "DialogTopMost", true },
+                    { "DialogAllowMove", true },
+                    { "DialogAllowMinimize", true },
                     { "MessageText", customDialogMessageText },
                     { "ButtonRightText", customDialogButtonRightText },
                     { "Icon", DialogSystemIcon.Information },
@@ -215,6 +221,9 @@ namespace PSADT.UserInterface.TestHarness
                     { "AppIconImage", appIconImage },
                     { "AppIconDarkImage", appIconDarkImage },
                     { "AppBannerImage", appBannerImage },
+                    { "DialogTopMost", true },
+                    { "DialogAllowMove", true },
+                    { "DialogAllowMinimize", true },
                     { "MessageText", listDialogMessageText },
                     { "ButtonLeftText", listDialogButtonLeftText },
                     { "ButtonRightText", listDialogButtonRightText },
@@ -235,6 +244,9 @@ namespace PSADT.UserInterface.TestHarness
                     { "AppIconImage", appIconImage },
                     { "AppIconDarkImage", appIconDarkImage },
                     { "AppBannerImage", appBannerImage },
+                    { "DialogTopMost", true },
+                    { "DialogAllowMove", true },
+                    { "DialogAllowMinimize", true },
                     { "MessageText", inputDialogMessageText },
                     { "InitialInputText", inputDialogTextBox },
                     { "ButtonLeftText", inputDialogButtonLeftText },
