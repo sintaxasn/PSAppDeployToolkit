@@ -12,8 +12,6 @@
     MaxWidth="580"
     MaxHeight="1050"
     x:ClassModifier="internal"
-    AutomationProperties.AutomationId="PSAppDeployToolkitDialog"
-    AutomationProperties.Name="PSAppDeployToolkit Dialog"
     Background="{DynamicResource ApplicationBackgroundBrush}"
     ExtendsContentIntoTitleBar="True"
     IsCloseButtonVisible="Collapsed"
@@ -198,7 +196,6 @@
                         Margin="16"
                         ui:TextBlockExtensions.Typography="Body"
                         Text="This is the dialog primary message. This will be replaced when the application dialog is displayed."
-                        AutomationProperties.Name="{Binding Text, RelativeSource={RelativeSource Self}}"
                         TextWrapping="Wrap"
                         />
 
@@ -207,7 +204,6 @@
                         Margin="16,0,16,16"
                         ui:TextBlockExtensions.Typography="Body"
                         Text="This is a custom message that can be added to the CloseApps and Restart dialogs directly via PowerShell."
-                        AutomationProperties.Name="{Binding Text, RelativeSource={RelativeSource Self}}"
                         TextWrapping="Wrap"
                         />
 
@@ -290,7 +286,6 @@
                                             ui:TextBlockExtensions.Typography="BodyStrong"
                                             FontSize="12"
                                             Foreground="{DynamicResource AccentFillColorTertiaryBrush}"
-                                            AutomationProperties.Name="{Binding Text, RelativeSource={RelativeSource Self}}"
                                             Text="{Binding Name, Mode=OneWay}"
                                             TextTrimming="CharacterEllipsis"
                                             TextWrapping="Wrap"

@@ -128,6 +128,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 FormatMessageWithHyperlinks(CustomMessageTextBlock, _customMessageText);
                 CustomMessageTextBlock.Visibility = Visibility.Visible;
+                AutomationProperties.SetName(CustomMessageTextBlock, GetPlainText(CustomMessageTextBlock));
             }
             else
             {
@@ -147,6 +148,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             ButtonMiddle.Visibility = Visibility.Collapsed;
             ButtonRight.Visibility = Visibility.Collapsed;
 
+            ContentRendered += FluentDialog_ContentRendered;
             // Set up the app's tray icon if an override has been specified.
             if (options.AppTaskbarIconImage is not null)
             {
@@ -299,7 +301,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // layout pass here gives PositionWindow the final ActualWidth / ActualHeight; the wired
             // SizeChanged handler still repositions if the content size changes later (e.g. the
             // CloseApps list updating).
-            AutomationProperties.SetName(this, Title);
             UpdateButtonLayout();
             UpdateRowDefinition();
             UpdateLayout();
@@ -724,9 +725,9 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // real button text to avoid any round-trip collision.
             const string sentinel = "\x0001UNDERSCORE\x0001";
             return text
-                .Replace("__", sentinel, StringComparison.Ordinal)
-                .Replace("_", string.Empty, StringComparison.Ordinal)
-                .Replace(sentinel, "_", StringComparison.Ordinal);
+                .Replace(oldValue: "__", sentinel, StringComparison.Ordinal)
+                .Replace(oldValue: "_", string.Empty, StringComparison.Ordinal)
+                .Replace(sentinel, newValue: "_", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -1334,13 +1335,14 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <returns>The text with any version tokens rewritten for speech.</returns>
         internal static string NormalizeVersionForSpeech(string? text)
         {
-            return string.IsNullOrWhiteSpace(text) ? text ?? string.Empty : VersionTokenRegex.Replace(text, static m => SpeakVersionToken(m.Value));
+            return string.IsNullOrWhiteSpace(text) ? text ?? string.Empty : VersionTokenRegex.Replace(text, static m => SpeakVersionToken(m.Value.TrimStart('v', 'V')));
         }
 
         /// <summary>
-        /// Matches a version token: two or more dot-separated runs of digits (e.g. <c>1.2</c>, <c>14.04.03</c>).
+        /// Matches a version token: an optional "v"/"V" prefix followed by two or more dot-separated runs of
+        /// digits (e.g. <c>1.2</c>, <c>v1.10</c>, <c>v5.50.14</c>, <c>14.04.03</c>).
         /// </summary>
-        private static readonly Regex VersionTokenRegex = new(@"\d+(?:\.\d+)+", RegexOptions.CultureInvariant);
+        private static readonly Regex VersionTokenRegex = new(@"[vV]?\d+(?:\.\d+)+", RegexOptions.CultureInvariant);
 
         /// <summary>Speaks a whole version token by joining its spoken segments with " point ".</summary>
         /// <param name="token">The dotted version token, e.g. <c>14.04.03</c>.</param>
@@ -1513,7 +1515,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// screen reader pauses between them (e.g. the brief pause after the app name, SR3).
         /// </summary>
         /// <param name="parts">The ordered announcement segments; null/empty entries are skipped.</param>
-        /// <returns>The combined announcement, or <see langword="null"/> when every segment is empty.</returns>
+        /// <returns>The combined announcement, or <see langword="null"/> when there is nothing to read.</returns>
         private protected static string? JoinAnnouncement(params string?[] parts)
         {
             string combined = string.Join(". ", parts.Where(static p => !string.IsNullOrWhiteSpace(p)).Select(static p => p!.Trim()));
@@ -1543,6 +1545,97 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             return GetBaseOpenAnnouncement();
         }
+
+        /// <summary>
+        /// Handles the ContentRendered event for the dialog, performing post-render initialization
+        /// including activating the window, setting initial focus, and announcing the dialog for accessibility.
+        /// </summary>
+        /// <param name="sender">The source of the event, typically the dialog instance.</param>
+        /// <param name="e">The event data associated with the ContentRendered event.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort accessibility announcement; must never abort dialog display.")]
+        private void FluentDialog_ContentRendered(object? sender, EventArgs e)
+        {
+            // ContentRendered fires on the UI thread; no dispatcher hop needed.
+            try
+            {
+                _ = Activate();
+                if (GetInitialFocusElement() is FrameworkElement initialFocusElement)
+                {
+                    _ = initialFocusElement.Focus();
+                    _ = Keyboard.Focus(initialFocusElement);
+                }
+
+                // Speak the composed open announcement through a dedicated, visually-inert assertive live
+                // region so no visible text is overwritten. The announcer is created once and parked in the
+                // dialog's outermost panel (always on-screen once revealed); its accessible Name carries the
+                // full string. Degrades gracefully if no host panel is found.
+                string? announcement = GetOpenAnnouncement();
+                if (string.IsNullOrWhiteSpace(announcement))
+                {
+                    return;
+                }
+
+                Fluence.Wpf.Controls.TextBlock? openAnnouncer = GetOrCreateOpenAnnouncer();
+                if (openAnnouncer is null)
+                {
+                    return;
+                }
+
+                AutomationProperties.SetName(openAnnouncer, announcement!);
+                openAnnouncer.Text = announcement!;
+                AnnounceLiveRegionChanged(openAnnouncer);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex); // Best-effort: accessibility announcements are never critical to dialog functionality.
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates the open announcer TextBlock for accessibility announcements.
+        /// </summary>
+        /// <returns>The open announcer TextBlock, or null if no suitable host panel is found.</returns>
+        private Fluence.Wpf.Controls.TextBlock? GetOrCreateOpenAnnouncer()
+        {
+            if (_openAnnouncer is not null)
+            {
+                return _openAnnouncer;
+            }
+
+            DependencyObject? node = MessageTextBlock;
+            Panel? host = null;
+            while (node is not null)
+            {
+                if (node is Panel panel)
+                {
+                    host = panel;
+                }
+                node = VisualTreeHelper.GetParent(node);
+            }
+
+            if (host is null)
+            {
+                return null;
+            }
+
+            _openAnnouncer = new Fluence.Wpf.Controls.TextBlock
+            {
+                Width = 1,
+                Height = 1,
+                Opacity = 0,
+                Focusable = false,
+                IsHitTestVisible = false,
+            };
+            AutomationProperties.SetLiveSetting(_openAnnouncer, AutomationLiveSetting.Polite);
+            _ = host.Children.Add(_openAnnouncer);
+
+            return _openAnnouncer;
+        }
+
+        /// <summary>
+        /// The visually-inert assertive live region used to announce the dialog opening for screen readers.
+        /// </summary>
+        private Fluence.Wpf.Controls.TextBlock? _openAnnouncer;
 
         private void CloseAppsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

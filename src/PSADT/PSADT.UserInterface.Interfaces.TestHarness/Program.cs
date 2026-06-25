@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -8,10 +8,10 @@ using System.Management.Automation.Language;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using PSADT.ProcessManagement;
+using PSADT.UserInterface.Interfaces;
 using PSADT.UserInterface.DialogOptions;
 using PSADT.UserInterface.DialogResults;
 using PSADT.UserInterface.DialogState;
-using PSADT.UserInterface.Interfaces;
 using PSADT.Utilities;
 using PSAppDeployToolkit.Foundation;
 
@@ -84,11 +84,7 @@ namespace PSADT.UserInterface.TestHarness
 
             TimeSpan countdownDuration = TimeSpan.FromSeconds(580);
 
-            const string customMessageText = "Basic URL: [url]https://example.com[/url]\r\n" +
-                                             "URL with Description: [url=https://example.com]Read the IT Security Policy here[/url].\r\n" +
-                                             "This is [bold]bold text[/bold] and [italic]italic text[/italic].\r\n" +
-                                             "Nested tags: [bold]Bold plus [italic]italic inside[/italic], with an [accent]accent[/accent][/bold].\r\n" +
-                                             "Double nested tags: A cheeky [bold][accent][italic]bold italic accent![/italic][/accent][/bold].";
+            const string customMessageText = "Read the [url=https://example.com]IT Security Policy[/url] for information on why you are receiving this update.\r\n";
 
             const uint deferralsRemaining = 99;
             DateTime deferralDeadline = DateTime.Parse("2026-06-04T13:00:00", CultureInfo.InvariantCulture);
@@ -292,14 +288,14 @@ namespace PSADT.UserInterface.TestHarness
 
                 await DialogManager.ShowProgressDialogAsync(dialogStyle, progressDialogOptions).ConfigureAwait(false);
 
-                await Task.Delay(3000).ConfigureAwait(false); // Simulate some work being done
+                await Task.Delay(5000).ConfigureAwait(false); // Simulate some work being done
 
                 // Simulate a process with progress updates.
                 for (int i = 0; i <= 100; i += 10)
                 {
                     // Update progress
                     await DialogManager.UpdateProgressDialogAsync($"Installation progress: {i.ToString(CultureInfo.InvariantCulture)}%", $"Step {(i / 10).ToString(CultureInfo.InvariantCulture)} of 10", i).ConfigureAwait(false);
-                    await Task.Delay(250).ConfigureAwait(false);  // Simulate work being done
+                    await Task.Delay(1000).ConfigureAwait(false);  // Simulate work being done
                 }
 
                 // Close Progress Dialog
