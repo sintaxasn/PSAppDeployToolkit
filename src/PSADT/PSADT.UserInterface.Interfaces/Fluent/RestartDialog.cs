@@ -70,9 +70,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Handles the event when the left button is clicked, initiating an immediate system restart.
         /// </summary>
-        /// <remarks>This method overrides the base implementation to provide custom behavior for the left
-        /// button click event. Calling this method will immediately restart the computer, which may interrupt any
-        /// unsaved work.</remarks>
+        /// <remarks>Restarts the computer immediately, which may interrupt unsaved work.</remarks>
         /// <param name="sender">The source of the event, typically the control that raised the event.</param>
         /// <param name="e">The event data associated with the click event.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "This is OK here.")]
@@ -86,8 +84,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Handles the right button click event by minimizing the window.
         /// </summary>
-        /// <remarks>Overrides the default right button behavior to minimize the window instead of
-        /// performing any other action.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected override void ButtonRight_Click(object? sender, RoutedEventArgs e)
@@ -99,10 +95,9 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the timer tick event for the countdown, performing actions when the countdown expires or when a
         /// warning threshold is reached.
         /// </summary>
-        /// <remarks>If the countdown duration has elapsed, the computer is restarted. When the remaining
-        /// time is less than or equal to the warning duration, the minimize button is disabled and the window is
-        /// restored to alert the user. This method overrides the base timer tick behavior to provide custom countdown
-        /// handling.</remarks>
+        /// <remarks>If the countdown has elapsed, the computer is restarted. When the remaining time drops to
+        /// or below the warning duration, the minimize button is disabled and the window is restored to alert the
+        /// user.</remarks>
         /// <param name="state">An optional state object that can be used to pass additional information to the timer event handler.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "This is OK here.")]
         private protected override async void CountdownTimer_Tick(object? state)

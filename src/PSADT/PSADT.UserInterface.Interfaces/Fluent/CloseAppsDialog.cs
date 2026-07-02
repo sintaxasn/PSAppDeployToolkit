@@ -67,8 +67,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             /// <summary>
             /// Retrieves the application icon as a BitmapSource from the specified executable file path.
             /// </summary>
-            /// <remarks>If the icon has been previously retrieved, it will be fetched from a cache to improve
-            /// performance. The method handles exceptions that may occur during the extraction process.</remarks>
+            /// <remarks>Cached icons are reused. Extraction failures fall back to the default application icon.</remarks>
             /// <param name="appFilePath">The path to the executable file from which to extract the application icon. This parameter cannot be null or
             /// empty.</param>
             /// <returns>A BitmapSource representing the application icon. If the icon cannot be extracted, a default application
@@ -282,9 +281,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the event that occurs when the list of processes to close is updated, refreshing the collection of
         /// applications to be closed.
         /// </summary>
-        /// <remarks>This method is invoked on the UI thread to ensure thread safety when updating the
-        /// user interface. It resets the collection of applications to close based on the latest process
-        /// information.</remarks>
+        /// <remarks>Marshalled onto the UI thread via <see cref="System.Windows.Threading.Dispatcher"/>.Invoke.</remarks>
         /// <param name="sender">The source of the event, typically the service that monitors running processes.</param>
         /// <param name="e">An object containing event data, including the updated list of processes to close.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "Standalone WPF STA thread; JoinableTaskFactory not applicable.")]
@@ -343,8 +340,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles changes to the collection of applications to close by updating the list of running processes
         /// accordingly.
         /// </summary>
-        /// <remarks>This method is invoked whenever the collection of applications to close is modified,
-        /// ensuring that the running processes are kept in sync with the current collection state.</remarks>
         /// <param name="sender">The source of the event, typically the collection that was modified.</param>
         /// <param name="e">An object that provides data about the type of change that occurred in the collection.</param>
         private void AppsToCloseCollection_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -412,9 +407,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the Loaded event for the FluentDialog, performing additional initialization and event handler setup
         /// after the base dialog has loaded.
         /// </summary>
-        /// <remarks>This method ensures that the running process service is properly initialized and
-        /// subscribes to process change notifications when the dialog is loaded. It is intended to be called as part of
-        /// the dialog's loading sequence and should not be invoked directly.</remarks>
         /// <param name="sender">The source of the Loaded event, typically the FluentDialog instance being initialized.</param>
         /// <param name="e">The event data associated with the Loaded event.</param>
         private protected override void FluentDialog_Loaded(object? sender, RoutedEventArgs e)
@@ -438,8 +430,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the click event for the left button in the dialog, setting the dialog result based on the button's
         /// name.
         /// </summary>
-        /// <remarks>This method sets the dialog result to either 'Close' or 'Continue' depending on the
-        /// button's name before invoking the base class's click handler.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected override void ButtonLeft_Click(object? sender, RoutedEventArgs e)
@@ -453,9 +443,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the click event for the right button by setting the dialog result to indicate that the action should
         /// be deferred and then closing the dialog.
         /// </summary>
-        /// <remarks>This method overrides the base implementation to customize the dialog result before
-        /// invoking the base method. Use this event handler to respond to user actions that require deferring the
-        /// current operation.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected override void ButtonRight_Click(object? sender, RoutedEventArgs e)
@@ -469,9 +456,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the timer tick event for the countdown, evaluating whether the countdown duration has elapsed and
         /// determining the appropriate dialog result based on the current application state.
         /// </summary>
-        /// <remarks>This method overrides the base timer tick behavior to implement custom logic for
-        /// handling countdown expiration in the dialog. It uses the Dispatcher to ensure that any UI updates, such as
-        /// setting the dialog result and closing the dialog, are performed on the main UI thread.</remarks>
         /// <param name="state">An optional state object associated with the timer tick event. This parameter can be used to provide
         /// additional context for the event handler, but may be null.</param>
         private protected override void CountdownTimer_Tick(object? state)
@@ -546,8 +530,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Indicates whether the close button should be hidden.
         /// </summary>
-        /// <remarks>This field determines if the close button is visible or not. It is intended for
-        /// internal use and should not be modified directly.</remarks>
         private readonly bool _hideCloseButton;
 
         /// <summary>
@@ -574,7 +556,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Represents the delegate used for logging operations with severity.
         /// </summary>
-        /// <remarks>This delegate is invoked to write log messages with optional severity.</remarks>
         private readonly Action<string, LogSeverity> _logAction;
 
         /// <summary>

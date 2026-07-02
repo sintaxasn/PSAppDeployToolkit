@@ -16,10 +16,7 @@ namespace PSADT.UserInterface.DialogOptions
         /// Initializes a new instance of the RestartDialogOptions class using the specified deployment type and a
         /// dictionary of configuration options.
         /// </summary>
-        /// <remarks>The options dictionary must contain the required keys for proper dialog
-        /// configuration. Missing or incorrectly typed values may result in runtime exceptions. Ensure that all
-        /// necessary options, such as 'AppTitle', 'Subtitle', and other dialog settings, are provided and of the
-        /// expected type.</remarks>
+        /// <remarks>Missing or incorrectly typed required keys throw at construction time.</remarks>
         /// <param name="deploymentType">The deployment type that determines the context in which the restart dialog is presented.</param>
         /// <param name="options">A dictionary containing configuration options for the dialog, such as titles, images, language, and behavior
         /// settings. Must not be null.</param>
@@ -77,7 +74,7 @@ namespace PSADT.UserInterface.DialogOptions
         /// is displayed.</param>
         /// <param name="countdownNoMinimizeDuration">The duration during which the countdown timer cannot be minimized. If <see langword="null"/>, the default
         /// behavior is used.</param>
-        /// <param name="shutdownReasonText">Represents the reason for shutdown, which can be optionally provided to give users more context about why a restart is necessary. If provided, this text can be displayed in the dialog to inform users about the specific reason for the restart, such as "System updates require a restart" or "A critical error occurred that requires a restart". If <see langword="null"/>, no specific shutdown reason is displayed.</param>
+        /// <param name="shutdownReasonText">The reason for the shutdown, optionally shown in the dialog. If <see langword="null"/>, no reason is displayed.</param>
         /// <param name="customMessageText">Custom text displayed in the dialog. If <see langword="null"/>, no custom message is displayed.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="strings"/> is <see langword="null"/>.</exception>
         private RestartDialogOptions(string appTitle, string subtitle, string appIconImage, string? appIconDarkImage, string appBannerImage, string? appTaskbarIconImage, bool dialogTopMost, CultureInfo language, int? fluentAccentColor, int? fluentAccentColorDark, DialogPosition? dialogPosition, bool? dialogAllowMove, bool? dialogAllowMinimize, TimeSpan? dialogExpiryDuration, TimeSpan? dialogPersistInterval, RestartDialogStrings strings, TimeSpan? countdownDuration, TimeSpan? countdownNoMinimizeDuration, string? shutdownReasonText, string? customMessageText) : base(appTitle, subtitle, appIconImage, appIconDarkImage, appBannerImage, appTaskbarIconImage, dialogTopMost, language, fluentAccentColor, fluentAccentColorDark, dialogPosition, dialogAllowMove, dialogAllowMinimize, dialogExpiryDuration, dialogPersistInterval)
@@ -113,7 +110,7 @@ namespace PSADT.UserInterface.DialogOptions
         public readonly TimeSpan? CountdownNoMinimizeDuration;
 
         /// <summary>
-        /// Represents the reason for shutdown, which can be optionally provided to give users more context about why a restart is necessary. If provided, this text can be displayed in the dialog to inform users about the specific reason for the restart, such as "System updates require a restart" or "A critical error occurred that requires a restart". If <see langword="null"/>, no specific shutdown reason is displayed.
+        /// The reason for the shutdown, optionally shown in the dialog. If <see langword="null"/>, no reason is displayed.
         /// </summary>
         [DataMember]
         public readonly string? ShutdownReasonText;

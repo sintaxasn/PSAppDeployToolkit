@@ -17,9 +17,7 @@ namespace PSADT.UserInterface.DialogOptions
         /// Initializes a new instance of the ListSelectionDialogOptions class using the specified configuration
         /// options.
         /// </summary>
-        /// <remarks>The options dictionary must not be null and should contain keys corresponding to the
-        /// dialog's configurable properties. If a key is missing, a default value may be applied for that option. Refer
-        /// to the documentation for the expected keys and value types.</remarks>
+        /// <remarks>Missing required keys throw; optional keys fall back to their documented defaults.</remarks>
         /// <param name="options">A dictionary containing key-value pairs that define the dialog's configuration, such as application title,
         /// subtitle, images, dialog behavior, and other settings. Keys should match the expected option names; missing
         /// keys may result in default values being used.</param>

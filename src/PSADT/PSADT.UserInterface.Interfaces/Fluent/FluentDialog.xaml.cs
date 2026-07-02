@@ -36,13 +36,10 @@ namespace PSADT.UserInterface.Interfaces.Fluent
     internal abstract partial class FluentDialog : FluenceWindow, IBaseDialog
     {
         /// <summary>
-        /// Initializes a new instance of the FluentDialog class with the specified dialog options, result, and optional
-        /// settings for custom messaging and countdown behavior.
+        /// Initializes a new FluentDialog with the given options, result, and optional custom message/countdown settings.
         /// </summary>
-        /// <remarks>This constructor is intended for use by derived dialog classes to provide flexible
-        /// configuration of dialog appearance and behavior. Most dialog features are initialized to be hidden by
-        /// default; derived classes should enable the features they require. The countdown timer and custom message are
-        /// only shown if their respective parameters are provided.</remarks>
+        /// <remarks>Most dialog features are hidden by default; derived classes enable what they need. The
+        /// countdown timer and custom message show only when their respective parameters are provided.</remarks>
         /// <param name="options">The options that configure the dialog's appearance, language, accent color, positioning, accessibility, and
         /// icon settings.</param>
         /// <param name="dialogResult">The result value to be returned when the dialog is closed, typically indicating the user's selection or
@@ -223,8 +220,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Handles the click event for the left button and closes the dialog.
         /// </summary>
-        /// <remarks>Override this method to customize the behavior when the left button is clicked. This
-        /// method is commonly used in dialog interfaces to respond to user actions.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected virtual void ButtonLeft_Click(object? sender, RoutedEventArgs e)
@@ -235,8 +230,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Handles the click event for the middle button and closes the dialog.
         /// </summary>
-        /// <remarks>Override this method in a derived class to implement custom behavior when the middle
-        /// button is clicked.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected virtual void ButtonMiddle_Click(object? sender, RoutedEventArgs e)
@@ -248,8 +241,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the Click event for the right button of the dialog, typically closing the dialog or performing a
         /// related action.
         /// </summary>
-        /// <remarks>Override this method in a derived class to implement custom behavior when the right
-        /// button is clicked.</remarks>
         /// <param name="sender">The source of the event, usually the right button that was clicked.</param>
         /// <param name="e">The event data associated with the button click.</param>
         private protected virtual void ButtonRight_Click(object? sender, RoutedEventArgs e)
@@ -261,9 +252,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Invoked when the window is about to close, allowing the close operation to be canceled based on the current
         /// state.
         /// </summary>
-        /// <remarks>Override this method to implement custom logic that determines whether the window can
-        /// be closed. If the window cannot be closed, set <see cref="CancelEventArgs.Cancel"/> to <see
-        /// langword="true"/> to cancel the operation.</remarks>
         /// <param name="e">A <see cref="CancelEventArgs"/> that contains the event data for the closing event. Set <see
         /// cref="CancelEventArgs.Cancel"/> to <see langword="true"/> to prevent the window from closing.</param>
         protected override void OnClosing(CancelEventArgs e)
@@ -275,8 +263,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the event that occurs when the window is closed, ensuring that resources are released and timers are
         /// stopped.
         /// </summary>
-        /// <remarks>This method overrides the base implementation to perform additional cleanup, such as
-        /// stopping active timers and disposing of resources, when the window is closed.</remarks>
         /// <param name="e">An object that contains the event data associated with the window closing event.</param>
         protected override void OnClosed(EventArgs e)
         {
@@ -352,7 +338,11 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             // Post-show concerns only: start the countdown and persist/expiry timers, signal the
             // client-server success flag the caller may be awaiting, and bring the realised window
-            // to the front.
+            // to the front. Initial keyboard focus and the screen-reader open announcement are handled
+            // exactly once in FluentDialog_ContentRendered, which fires after the window is revealed
+            // on-screen (the correct timing). They were previously ALSO performed here; on a machine
+            // where BringWindowToFront succeeds both paths ran, so a screen reader announced the whole
+            // dialog twice (and re-read the focused control), which is the double/triple narration.
             InitializeCountdown();
             _persistTimer?.Start();
             _expiryTimer?.Start();
@@ -363,25 +353,17 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
             catch
             {
-                // Best-effort: failing to raise the window must never abort dialog display.
+                // Best-effort: failing to raise the window must never abort dialog display. The trailing
+                // (unreachable) throw is deliberate: it satisfies CA1031 (a rethrow is present) while the
+                // preceding return makes swallow the actual behavior. Do not remove it.
                 return;
                 throw;
             }
-
-            // Accessibility: move keyboard focus to the dialog's primary control so a screen reader starts
-            // on actionable content, then announce the dialog's purpose for screen-reader users.
-            if (GetInitialFocusElement() is FrameworkElement focusTarget)
-            {
-                _ = focusTarget.Focus();
-                _ = Keyboard.Focus(focusTarget);
-            }
-            AnnounceNotification(GetOpenAnnouncement());
         }
 
         /// <summary>
-        /// Handles the SizeChanged event for the FluentDialog window, repositioning the window as needed.
+        /// Handles the SizeChanged event for the FluentDialog window, repositioning the window without animations.
         /// </summary>
-        /// <remarks>This method repositions the window without animations.</remarks>
         /// <param name="sender">The source of the event, typically the FluentDialog instance whose size has changed.</param>
         /// <param name="e">An object that contains the event data, including information about the new size of the window.</param>
         private void FluentDialog_SizeChanged(object? sender, SizeChangedEventArgs e)
@@ -394,9 +376,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles changes to system parameters that may affect window positioning, such as screen size or work area
         /// updates.
         /// </summary>
-        /// <remarks>This handler responds to changes in system properties like screen width, height, or
-        /// work area, ensuring the window remains correctly positioned when the display configuration
-        /// changes.</remarks>
         /// <param name="sender">The source of the event, typically the SystemParameters class.</param>
         /// <param name="e">An object that contains information about the property that changed, including its name.</param>
         private void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -409,10 +388,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Handles the timer tick event to restore the application window state.
+        /// Handles the expiry timer's tick by closing the dialog.
         /// </summary>
-        /// <remarks>This method is intended to be used as an event handler for a timer's Tick event,
-        /// ensuring the application window is restored at regular intervals.</remarks>
         /// <param name="sender">The source of the event, typically the timer that triggered the event.</param>
         /// <param name="e">An object that contains the event data.</param>
         private void ExpiryTimer_Tick(object? sender, EventArgs e)
@@ -432,10 +409,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Handles the timer tick event to restore the application window state.
+        /// Handles the persist timer's tick by restoring the window's position on screen.
         /// </summary>
-        /// <remarks>This method is intended to be used as an event handler for a timer's Tick event,
-        /// ensuring the application window is restored at regular intervals.</remarks>
         /// <param name="sender">The source of the event, typically the timer that triggered the event.</param>
         /// <param name="e">An object that contains the event data.</param>
         private void PersistTimer_Tick(object? sender, EventArgs e)
@@ -446,9 +421,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Handles a navigation request from a hyperlink by opening the specified URI in the default web browser.
         /// </summary>
-        /// <remarks>This method uses the system's default handler to open the URI, ensuring the link is
-        /// launched in the user's preferred web browser. The event is marked as handled to prevent further processing
-        /// by other handlers.</remarks>
         /// <param name="sender">The source of the event, typically the hyperlink that was clicked.</param>
         /// <param name="e">The event data containing information about the navigation request, including the target URI.</param>
         private static void Hyperlink_RequestNavigate(object? sender, RequestNavigateEventArgs e)
@@ -462,9 +434,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Applies hyperlink and text formatting to the specified message and updates the provided TextBlock with the
         /// formatted content.
         /// </summary>
-        /// <remarks>This method processes the message for formatting tags and applies the corresponding
-        /// styles, including hyperlinks, to the TextBlock. Nested and combined formatting tags are supported. The
-        /// method does not perform any action if the message is null or whitespace.</remarks>
+        /// <remarks>Supports nested and combined formatting tags. No-ops if the message is null or whitespace.</remarks>
         /// <param name="textBlock">The TextBlock control to which the formatted message will be applied. This control is cleared before new
         /// content is added.</param>
         /// <param name="message">The message string containing text and formatting tags to be processed. If the message is null or consists
@@ -1186,9 +1156,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// A read-only dictionary that caches dialog icons for different application themes.
         /// </summary>
-        /// <remarks>This dictionary maps <see cref="ApplicationTheme"/> values to their corresponding
-        /// <see cref="BitmapSource"/> icons. It is intended to optimize access to preloaded icons for dialogs, ensuring
-        /// consistent and efficient retrieval.</remarks>
         private readonly FrozenDictionary<ApplicationTheme, BitmapSource> _dialogBitmapCache;
 
         /// <summary>
@@ -1212,9 +1179,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// Releases the resources used by the dialog and optionally disposes of managed resources.
         /// </summary>
-        /// <remarks>This method is part of the standard dispose pattern. When disposing is true, event
-        /// handlers are detached and timers are stopped to prevent memory leaks. Call this method when the dialog is no
-        /// longer needed to ensure that all resources are properly released.</remarks>
+        /// <remarks>Standard dispose pattern: when disposing, detaches event handlers and stops timers.</remarks>
         /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         private protected virtual void Dispose(bool disposing)
         {
@@ -1474,7 +1439,9 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
             catch
             {
-                // Best-effort: RaiseNotificationEvent requires Windows 10 1709+; never abort the dialog over an announcement.
+                // Best-effort: RaiseNotificationEvent requires Windows 10 1709+; never abort the dialog over an
+                // announcement. The trailing (unreachable) throw is deliberate: it satisfies CA1031 (a rethrow
+                // is present) while the preceding return makes swallow the actual behavior. Do not remove it.
                 return;
                 throw;
             }
@@ -1555,6 +1522,12 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort accessibility announcement; must never abort dialog display.")]
         private void FluentDialog_ContentRendered(object? sender, EventArgs e)
         {
+            // One-shot: initial focus and the open announcement must happen exactly once. ContentRendered
+            // can fire again if content re-renders (e.g. the CloseApps list updating), so unsubscribe here
+            // to guarantee a second render cannot re-announce the whole dialog (the double-narration this
+            // handler was split out to avoid).
+            ContentRendered -= FluentDialog_ContentRendered;
+
             // ContentRendered fires on the UI thread; no dispatcher hop needed.
             try
             {
@@ -1565,7 +1538,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                     _ = Keyboard.Focus(initialFocusElement);
                 }
 
-                // Speak the composed open announcement through a dedicated, visually-inert assertive live
+                // Speak the composed open announcement through a dedicated, visually-inert polite live
                 // region so no visible text is overwritten. The announcer is created once and parked in the
                 // dialog's outermost panel (always on-screen once revealed); its accessible Name carries the
                 // full string. Degrades gracefully if no host panel is found.
@@ -1633,7 +1606,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// The visually-inert assertive live region used to announce the dialog opening for screen readers.
+        /// The visually-inert polite live region used to announce the dialog opening for screen readers.
         /// </summary>
         private Fluence.Wpf.Controls.TextBlock? _openAnnouncer;
 

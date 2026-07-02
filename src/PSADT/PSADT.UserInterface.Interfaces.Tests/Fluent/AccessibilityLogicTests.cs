@@ -112,7 +112,7 @@ namespace PSADT.UserInterface.Interfaces.Tests.Fluent
         [InlineData("Server 2.19041", "Server two point one nine zero four one")]          // build number read digit-by-digit
         [InlineData("No version here", "No version here")]                                 // nothing to change
         [InlineData("App 5", "App 5")]                                                     // lone integer is not a version token
-        public void NormalizeVersionForSpeech_SpeaksDottedVersionsSegmentByVersion(string raw, string expected)
+        public void NormalizeVersionForSpeech_SpeaksDottedVersionsSegmentBySegment(string raw, string expected)
         {
             Assert.Equal(expected, FluentDialog.NormalizeVersionForSpeech(raw));
         }

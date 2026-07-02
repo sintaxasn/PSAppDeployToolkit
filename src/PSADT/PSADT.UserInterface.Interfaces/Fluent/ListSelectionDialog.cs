@@ -90,9 +90,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the click event for the left button, setting the dialog result based on the selected item and the
         /// button's content.
         /// </summary>
-        /// <remarks>This method sets the dialog result to a new instance of ListSelectionDialogResult,
-        /// which includes the text of the button and the selected item from the ListSelectionComboBox. It then calls
-        /// the base class implementation to handle the window closure.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected override void ButtonLeft_Click(object? sender, RoutedEventArgs e)
@@ -106,9 +103,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the click event for the middle button, setting the dialog result based on the selected item and the
         /// button's content.
         /// </summary>
-        /// <remarks>This method sets the dialog result to a new instance of ListSelectionDialogResult,
-        /// which includes the button's text and the selected item from the combo box. It then calls the base class
-        /// implementation to handle any additional processing required for closing the dialog.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected override void ButtonMiddle_Click(object? sender, RoutedEventArgs e)
@@ -122,9 +116,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Handles the click event for the right button, setting the dialog result based on the selected item and the
         /// button's content.
         /// </summary>
-        /// <remarks>This method sets the dialog result to a new instance of ListSelectionDialogResult,
-        /// which includes the button's text and the selected item from the combo box. It then calls the base class
-        /// implementation to handle the window closure.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected override void ButtonRight_Click(object? sender, RoutedEventArgs e)

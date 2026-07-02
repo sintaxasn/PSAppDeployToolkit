@@ -16,9 +16,7 @@ namespace PSADT.UserInterface.DialogOptions
         /// Initializes a new instance of the CloseAppsDialogOptions class using the specified deployment type and
         /// configuration options.
         /// </summary>
-        /// <remarks>The options dictionary must include specific keys to fully configure the dialog. If
-        /// certain keys are missing, default values will be used for those settings. Ensure that all required options
-        /// are provided to achieve the desired dialog configuration.</remarks>
+        /// <remarks>Missing required keys throw; optional keys fall back to their documented defaults.</remarks>
         /// <param name="deploymentType">The type of deployment for the application, which determines the dialog's behavior and appearance.</param>
         /// <param name="options">A dictionary containing configuration options for the dialog, such as titles, images, localization settings,
         /// and behavioral flags. Must not be null.</param>
@@ -55,9 +53,8 @@ namespace PSADT.UserInterface.DialogOptions
         /// Initializes a new instance of the <see cref="CloseAppsDialogOptions"/> class with the specified dialog
         /// configuration options.
         /// </summary>
-        /// <remarks>This constructor is primarily used for deserialization purposes and allows
-        /// customization of various dialog properties, including appearance, behavior, and timing settings. It is
-        /// marked as private to restrict direct instantiation.</remarks>
+        /// <remarks>Used for deserialization; kept private to restrict direct construction to the public
+        /// factory constructor.</remarks>
         /// <param name="appTitle">The title of the application displayed in the dialog.</param>
         /// <param name="subtitle">The subtitle text displayed below the application title in the dialog.</param>
         /// <param name="appIconImage">The path or URI to the application's icon image used in the dialog.</param>
