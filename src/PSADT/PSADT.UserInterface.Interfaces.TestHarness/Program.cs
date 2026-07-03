@@ -82,12 +82,12 @@ namespace PSADT.UserInterface.TestHarness
 
             TimeSpan dialogExpiryDuration = TimeSpan.FromSeconds(580);
 
-            TimeSpan countdownDuration = TimeSpan.FromSeconds(580);
+            TimeSpan countdownDuration = TimeSpan.FromSeconds(100);
 
             const string customMessageText = "Read the [url=https://example.com]IT Security Policy[/url] for information on why you are receiving this update.\r\n";
 
             const uint deferralsRemaining = 99;
-            DateTime deferralDeadline = DateTime.Parse("2026-06-04T13:00:00", CultureInfo.InvariantCulture);
+            DateTime deferralDeadline = DateTime.Parse("2027-06-04T13:00:00", CultureInfo.InvariantCulture);
 
             const string progressMessageText = "Performing [accent]pre-flight checks[/accent]…";
             const string progressDetailMessageText = "Testing your [accent]system to ensure compatibility[/accent]. Please wait…";
