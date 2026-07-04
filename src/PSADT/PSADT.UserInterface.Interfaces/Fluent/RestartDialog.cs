@@ -17,7 +17,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             // Reset the dialog's title. It must be that of the string table in the options.
             shutdownReasonText = options.ShutdownReasonText;
-            _deferButtonDisabledFormat = options.Strings.DeferButtonDisabled;
             Title = options.Strings.Title;
 
             // Set up UI
@@ -49,22 +48,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private protected override FrameworkElement? GetInitialFocusElement()
         {
             return ButtonLeft;
-        }
-
-        /// <inheritdoc />
-        private protected override string? GetOpenAnnouncement()
-        {
-            // Ordered per the Restart screen-reader spec: app name + message + custom (base), countdown, the
-            // left (Restart Now) button, then the right (Restart Later / defer) button — read via the shared
-            // button rule (SR7), which announces 'The "Restart Later" button has been disabled' when disabled.
-            string? countdown = _countdownDuration.HasValue && CountdownStackPanel.Visibility == Visibility.Visible
-                ? $"{GetPlainText(CountdownHeadingTextBlock)}: {GetPlainText(CountdownValueTextBlock)}"
-                : null;
-            return JoinAnnouncement(
-                base.GetOpenAnnouncement(),
-                countdown,
-                GetButtonAnnouncement(ButtonLeft, _deferButtonDisabledFormat),
-                GetButtonAnnouncement(ButtonRight, _deferButtonDisabledFormat));
         }
 
         /// <summary>
@@ -120,11 +103,5 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// An optional string that specifies the reason for the shutdown, which will be logged in the system event log. If <see langword="null"/> or empty, no reason will be logged.
         /// </summary>
         private readonly string? shutdownReasonText;
-
-        /// <summary>
-        /// The localized "The \"{0}\" button has been disabled" format read when the defer (Restart Later)
-        /// button is disabled; {0} is substituted with the button's text (SR7).
-        /// </summary>
-        private readonly string _deferButtonDisabledFormat;
     }
 }

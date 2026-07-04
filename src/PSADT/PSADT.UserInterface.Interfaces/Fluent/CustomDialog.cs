@@ -96,24 +96,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// The localized "{0} has been disabled" format used when reading a visible but disabled button (SR7).
-        /// Custom dialogs carry no localized string table, so the default English wording is used; localized
-        /// derivations override this.
-        /// </summary>
-        private protected virtual string ButtonDisabledAnnouncementFormat => "\"{0}\" has been disabled";
-
-        /// <inheritdoc />
-        private protected override string? GetOpenAnnouncement()
-        {
-            // App name + message + custom message (base prefix), then each button per the button rule (SR7).
-            return JoinAnnouncement(
-                GetBaseOpenAnnouncement(),
-                GetButtonAnnouncement(ButtonLeft, ButtonDisabledAnnouncementFormat),
-                GetButtonAnnouncement(ButtonMiddle, ButtonDisabledAnnouncementFormat),
-                GetButtonAnnouncement(ButtonRight, ButtonDisabledAnnouncementFormat));
-        }
-
-        /// <summary>
         /// Handles the click event for the left button, updating the dialog result if it is still set to the default
         /// value.
         /// </summary>

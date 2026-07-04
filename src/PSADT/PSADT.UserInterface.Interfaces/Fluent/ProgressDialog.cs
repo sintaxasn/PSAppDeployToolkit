@@ -19,6 +19,10 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="options">Mandatory options needed to construct the window.</param>
         internal ProgressDialog(ProgressDialogOptions options) : base(options, null!)
         {
+            // The percent announcer must be in the visual tree before the first UpdateProgressImpl call
+            // so an initial determinate percentage can be announced.
+            AutomationProperties.SetLiveSetting(_percentAnnouncer, AutomationLiveSetting.Polite);
+            _ = ProgressStackPanel.Children.Add(_percentAnnouncer);
             UpdateProgressImpl(options.ProgressMessageText, options.ProgressDetailMessageText, options.ProgressPercentage);
             if (_dialogPosition != DialogPosition.Oobe || (!DeviceUtilities.IsOOBEComplete() && !_dialogAllowMove))
             {
@@ -26,11 +30,25 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
             ProgressStackPanel.Visibility = Visibility.Visible;
 
-            // The progress message is the natural place for a screen reader to begin reading when the
-            // dialog opens. Make it focusable for assistive technology without inserting it into the tab
-            // cycle (the progress dialog has no interactive controls to tab between).
-            MessageTextBlock.Focusable = true;
-            System.Windows.Input.KeyboardNavigation.SetIsTabStop(MessageTextBlock, isTabStop: false);
+            // A progress dialog reads only the app title, the message, and the progress value: the
+            // custom message and the detail line are excluded from the UI Automation tree, and progress
+            // updates are announced in short form (see UpdateProgressImpl).
+            _screenReaderSuppressedElements.Add(CustomMessageTextBlock);
+            _screenReaderSuppressedElements.Add(ProgressMessageDetailTextBlock);
+
+            // Initial keyboard focus goes to the app title, whose accessible name never changes: focus
+            // must land INSIDE the window for screen readers to honor its live-region events (the percent
+            // announcer), but the previously focused message element was re-announced by the reader every
+            // time its text changed, which for a caller updating the message each second drowned out the
+            // terse percent announcements.
+            AppTitleTextBlock.Focusable = true;
+            System.Windows.Input.KeyboardNavigation.SetIsTabStop(AppTitleTextBlock, isTabStop: false);
+        }
+
+        /// <inheritdoc />
+        private protected override FrameworkElement? GetInitialFocusElement()
+        {
+            return AppTitleTextBlock;
         }
 
         /// <summary>
@@ -64,23 +82,20 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             if (progressMessage is not null && !string.IsNullOrWhiteSpace(progressMessage))
             {
                 FormatMessageWithHyperlinks(MessageTextBlock, progressMessage);
-                AutomationProperties.SetName(MessageTextBlock, progressMessage);
-                if (!string.Equals(progressMessage, _lastAnnouncedMessage, StringComparison.Ordinal))
-                {
-                    _lastAnnouncedMessage = progressMessage;
-                    AnnounceLiveRegionChanged(MessageTextBlock);
-                }
+
+                // Rendered plain text, not the raw string: formatting tags such as [accent] must never be
+                // read aloud. Message changes are deliberately not announced: a caller updating the message
+                // every second restarts speech each time, so the listener hears the message prefix over and
+                // over and the percent never gets airtime. The terse percent below is the only per-update
+                // announcement; the message itself is read when the dialog opens.
+                AutomationProperties.SetName(MessageTextBlock, GetPlainText(MessageTextBlock));
             }
 
             if (progressMessageDetail is not null && !string.IsNullOrWhiteSpace(progressMessageDetail))
             {
+                // Visual update only: the detail line is excluded from the UI Automation tree and its
+                // changes are deliberately not announced (progress announcements are the terse percent).
                 FormatMessageWithHyperlinks(ProgressMessageDetailTextBlock, progressMessageDetail);
-                AutomationProperties.SetName(ProgressMessageDetailTextBlock, progressMessageDetail);
-                if (!string.Equals(progressMessageDetail, _lastAnnouncedDetail, StringComparison.Ordinal))
-                {
-                    _lastAnnouncedDetail = progressMessageDetail;
-                    AnnounceLiveRegionChanged(ProgressMessageDetailTextBlock);
-                }
             }
 
             if (percentComplete is not null)
@@ -89,8 +104,22 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 ProgressBar.ProgressMode = ProgressBarMode.StepProgress;
                 ProgressBar.Value = percentComplete.Value;
 
-                // Update accessibility properties
-                AutomationProperties.SetName(ProgressBar, $"{percentComplete.Value.ToString("F0", CultureInfo.InvariantCulture)}%");
+                // Announce only the first update after 0%, 25%, 50% and 75% (e.g. "10%", "30%", "50%",
+                // "80%" for a caller stepping by tens), through a dedicated invisible live region whose
+                // content changes exactly at those points. The bar itself is deliberately NOT a live
+                // region and carries no authored name: its native RangeValue pattern supplies the current
+                // value when a screen reader navigates to it, and a live bar gets announced by the reader
+                // on every name/value update regardless of our own events.
+                int roundedPercent = (int)Math.Round(percentComplete.Value, MidpointRounding.AwayFromZero);
+                int bucket = GetProgressAnnouncementBucket(roundedPercent);
+                if (bucket > _lastAnnouncedProgressBucket)
+                {
+                    _lastAnnouncedProgressBucket = bucket;
+                    string spokenPercent = $"{roundedPercent.ToString(CultureInfo.InvariantCulture)}%";
+                    _percentAnnouncer.Text = spokenPercent;
+                    AutomationProperties.SetName(_percentAnnouncer, spokenPercent);
+                    AnnounceLiveRegionChanged(_percentAnnouncer);
+                }
             }
             else
             {
@@ -99,34 +128,36 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
         }
 
-        /// <inheritdoc />
-        private protected override string? GetOpenAnnouncement()
+        /// <summary>
+        /// Maps a whole-number percentage to its announcement bucket: -1 for 0% (nothing to announce),
+        /// then one bucket per quarter (above 0%, at/after 25%, 50% and 75%). An announcement fires only
+        /// when the bucket increases, i.e. at the first update after each quarter boundary. Pure function
+        /// for unit testing.
+        /// </summary>
+        /// <param name="percent">The whole-number progress percentage.</param>
+        /// <returns>The announcement bucket for the percentage.</returns>
+        internal static int GetProgressAnnouncementBucket(int percent)
         {
-            // Ordered per the Progress screen-reader spec: app name, the current percentage (when the bar is
-            // determinate), the message, the custom message, then the detail line.
-            string? percent = ProgressBar.ProgressMode == ProgressBarMode.StepProgress
-                ? $"{ProgressBar.Value.ToString("F0", CultureInfo.InvariantCulture)}%"
-                : null;
-            string? message = MessageTextStackPanel.Visibility == Visibility.Visible ? GetPlainText(MessageTextBlock) : null;
-            string? custom = CustomMessageTextBlock.Visibility == Visibility.Visible ? GetPlainText(CustomMessageTextBlock) : null;
-            string? detail = GetPlainText(ProgressMessageDetailTextBlock);
-            return JoinAnnouncement(GetAppNameAnnouncement(), percent, message, custom, detail);
-        }
-
-        /// <inheritdoc />
-        private protected override FrameworkElement? GetInitialFocusElement()
-        {
-            return MessageTextBlock;
+            return percent >= 75 ? 3 : percent >= 50 ? 2 : percent >= 25 ? 1 : percent > 0 ? 0 : -1;
         }
 
         /// <summary>
-        /// The last progress message announced to assistive technology (dedupe guard).
+        /// The highest progress announcement bucket spoken so far (see <see cref="GetProgressAnnouncementBucket"/>).
         /// </summary>
-        private string? _lastAnnouncedMessage;
+        private int _lastAnnouncedProgressBucket = -1;
 
         /// <summary>
-        /// The last progress detail message announced to assistive technology (dedupe guard).
+        /// The visually-inert polite live region that speaks the quarter-bucket progress announcements.
+        /// Kept separate from the progress bar so the only live element in the dialog is one whose
+        /// content changes exactly at the announcement points.
         /// </summary>
-        private string? _lastAnnouncedDetail;
+        private readonly System.Windows.Controls.TextBlock _percentAnnouncer = new()
+        {
+            Width = 1,
+            Height = 1,
+            Opacity = 0,
+            Focusable = false,
+            IsHitTestVisible = false,
+        };
     }
 }

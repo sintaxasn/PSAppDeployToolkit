@@ -15,6 +15,7 @@ using System.Windows.Input;
 using System.Windows.Documents;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Threading;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Threading;
@@ -82,6 +83,11 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             Title = options.AppTitle;
             AppTitleTextBlock.Text = options.AppTitle;
             SubtitleTextBlock.Text = options.Subtitle;
+
+            // The subtitle is visual branding only; it is excluded from the UI Automation tree so a
+            // screen reader's read-out of the dialog goes straight from the app title to the message.
+            _screenReaderSuppressedElements.Add(SubtitleTextBlock);
+
 
             // Set remaining properties from the options
             if (options.DialogPosition is not null)
@@ -273,11 +279,46 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <inheritdoc />
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+
+            // Suppress the caption minimize button from the UI Automation tree. It sits last in the tree
+            // (the title-bar grid is z-ordered above the client area), so a screen reader otherwise
+            // trails "Minimize button" at the very end of the dialog read-out; marking it IsOffscreen
+            // proved insufficient to stop that. It is not keyboard-focusable, so removing it from the
+            // tree leaves pointer activation unaffected.
+            if (GetTemplateChild("PART_MinimizeButton") is System.Windows.Controls.Button minimizeButton)
+            {
+                _screenReaderSuppressedElements.Add(minimizeButton);
+            }
+        }
+
+        /// <inheritdoc />
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            return new FluentDialogAutomationPeer(this);
+        }
+
+        /// <inheritdoc />
         protected override void OnSourceInitialized(EventArgs e)
         {
             // FluenceWindow.OnSourceInitialized applies the window shell (chrome, opaque/backdrop
             // background, frame) before the first paint.
             base.OnSourceInitialized(e);
+
+            // Speech-normalized accessible names for the window and the title text block, set here (not
+            // in the constructor, which must neither leak 'this' nor write static state) and before the
+            // window is shown, hence before any activation announcement. The raw title otherwise voices
+            // like a date ("2.1" as "February first", SR4). Only the first dialog the process shows
+            // announces the full title; every subsequent dialog announces the short vendor/title form
+            // (no version or language) so repeated dialog openings stay brief. The names are independent
+            // of Title, so taskbar and Alt-Tab text are unchanged.
+            string speechFriendlyTitle = Interlocked.Exchange(ref _fullSpeechTitleUsed, 1) == 0
+                ? NormalizeVersionForSpeech(Title)
+                : ShortenTitleForSpeech(Title);
+            AutomationProperties.SetName(this, speechFriendlyTitle);
+            AutomationProperties.SetName(AppTitleTextBlock, speechFriendlyTitle);
 
             // Configure all content-dependent layout and position the window BEFORE the first paint
             // so the first composed frame is already settled - no visible jump from a default
@@ -338,11 +379,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             // Post-show concerns only: start the countdown and persist/expiry timers, signal the
             // client-server success flag the caller may be awaiting, and bring the realised window
-            // to the front. Initial keyboard focus and the screen-reader open announcement are handled
-            // exactly once in FluentDialog_ContentRendered, which fires after the window is revealed
-            // on-screen (the correct timing). They were previously ALSO performed here; on a machine
-            // where BringWindowToFront succeeds both paths ran, so a screen reader announced the whole
-            // dialog twice (and re-read the focused control), which is the double/triple narration.
+            // to the front. Initial keyboard focus is handled exactly once in
+            // FluentDialog_ContentRendered, which fires after the window is revealed on-screen.
             InitializeCountdown();
             _persistTimer?.Start();
             _expiryTimer?.Start();
@@ -1002,16 +1040,27 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Format the remaining time as hh:mm:ss
             CountdownValueTextBlock.Text = $"{((_countdownRemainingTime.Days * 24) + _countdownRemainingTime.Hours).ToString(CultureInfo.InvariantCulture)}h {_countdownRemainingTime.Minutes.ToString(CultureInfo.InvariantCulture)}m {_countdownRemainingTime.Seconds.ToString(CultureInfo.InvariantCulture)}s";
 
-            // Localized accessible name: "<heading>: <visible value>" (heading text is already localized
-            // per dialog, e.g. CloseApps "Automatic start countdown", Restart "Time remaining").
-            AutomationProperties.SetName(CountdownValueTextBlock, $"{GetPlainText(CountdownHeadingTextBlock)}: {CountdownValueTextBlock.Text}");
+            // The value's accessible name tracks the visible text via the XAML Name binding. The localized
+            // heading TextBlock immediately precedes the value in the reading order, so prefixing the
+            // heading into the name here would make a screen reader speak the heading twice in a row.
 
             // Balanced announcement policy: speak at thresholds only, never every second.
             CountdownAnnounceDecision decision = DecideCountdownAnnouncement(_countdownRemainingTime, _countdownWarningDuration, _countdownWarningAnnounced, _countdownFinalMinuteAnnounced);
+            bool thresholdCrossed = (decision.WarningAnnounced && !_countdownWarningAnnounced) || (decision.FinalMinuteAnnounced && !_countdownFinalMinuteAnnounced);
             _countdownWarningAnnounced = decision.WarningAnnounced;
             _countdownFinalMinuteAnnounced = decision.FinalMinuteAnnounced;
             if (decision.Announce)
             {
+                // Threshold crossings prefix the localized countdown heading for context; the spoken value
+                // is the visible clock text ("0h 2m 0s"), which speech engines expand and localize
+                // natively ("zero hours, two minutes..."), so no dedicated localized unit strings are
+                // needed. The final-ten-seconds ticks speak just the number ("9", "8", ...) because they
+                // fire every second. SetCurrentValue keeps the XAML Name<-Text binding alive, so the next
+                // tick's text change restores the visible value as the on-demand accessible name.
+                string announcement = thresholdCrossed
+                    ? $"{GetPlainText(CountdownHeadingTextBlock)}: {CountdownValueTextBlock.Text}"
+                    : ((int)Math.Ceiling(_countdownRemainingTime.TotalSeconds)).ToString(CultureInfo.CurrentCulture);
+                CountdownValueTextBlock.SetCurrentValue(AutomationProperties.NameProperty, announcement);
                 AnnounceLiveRegionChanged(CountdownValueTextBlock);
             }
 
@@ -1309,6 +1358,30 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// </summary>
         private static readonly Regex VersionTokenRegex = new(@"[vV]?\d+(?:\.\d+)+", RegexOptions.CultureInvariant);
 
+        /// <summary>
+        /// Shortens an app title to its vendor/product portion for speech: everything from the first
+        /// version token onward (the version itself plus trailing qualifiers such as language or
+        /// architecture) is dropped, e.g. "Adobe Creative Suite 2.1.45 EN" becomes "Adobe Creative Suite".
+        /// Falls back to the full speech-normalized title when no version token is present or when
+        /// nothing meaningful precedes it. Pure function for unit testing.
+        /// </summary>
+        /// <param name="title">The raw app title.</param>
+        /// <returns>The short spoken form of the title.</returns>
+        internal static string ShortenTitleForSpeech(string? title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return string.Empty;
+            }
+            Match match = VersionTokenRegex.Match(title);
+            if (!match.Success)
+            {
+                return NormalizeVersionForSpeech(title);
+            }
+            string prefix = title![..match.Index].Trim();
+            return prefix.Length > 0 ? prefix : NormalizeVersionForSpeech(title);
+        }
+
         /// <summary>Speaks a whole version token by joining its spoken segments with " point ".</summary>
         /// <param name="token">The dotted version token, e.g. <c>14.04.03</c>.</param>
         /// <returns>The spoken form, e.g. "fourteen point zero four point zero three".</returns>
@@ -1356,39 +1429,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Builds a screen-reader announcement for a button per the button-reading rule (SR7): a visible enabled
-        /// button announces its access-key-stripped name; a visible disabled button announces the localized
-        /// "has been disabled" wording; a hidden button announces nothing. Pure function for unit testing.
-        /// </summary>
-        /// <param name="isVisible">Whether the button is visible.</param>
-        /// <param name="isEnabled">Whether the button is enabled.</param>
-        /// <param name="name">The button's text, which may contain an access-key marker.</param>
-        /// <param name="disabledTemplate">The localized "{0} has been disabled" format string.</param>
-        /// <returns>The announcement text, or <see langword="null"/> when nothing should be read.</returns>
-        internal static string? BuildButtonAnnouncement(bool isVisible, bool isEnabled, string? name, string disabledTemplate)
-        {
-            if (!isVisible)
-            {
-                return null;
-            }
-            string cleaned = StripAccessKeyMarker(name ?? string.Empty);
-            return isEnabled ? cleaned : string.Format(CultureInfo.CurrentCulture, disabledTemplate, cleaned);
-        }
-
-        /// <summary>
-        /// Reads a live button per the button-reading rule (SR7), using its accessible name (already stripped of
-        /// the access-key marker by <see cref="SetButtonContentWithAccelerator"/>) and the localized disabled
-        /// wording. Returns <see langword="null"/> when the button is hidden, so it contributes nothing (SR9).
-        /// </summary>
-        /// <param name="button">The button to read.</param>
-        /// <param name="disabledFormat">The localized "{0} has been disabled" format string.</param>
-        /// <returns>The announcement for the button, or <see langword="null"/> to read nothing.</returns>
-        private protected static string? GetButtonAnnouncement(Fluence.Wpf.Controls.Button button, string disabledFormat)
-        {
-            return BuildButtonAnnouncement(button.Visibility == Visibility.Visible, button.IsEnabled, AutomationProperties.GetName(button), disabledFormat);
-        }
-
-        /// <summary>
         /// Raises a UI Automation LiveRegionChanged event so a screen reader announces the element's updated
         /// content. The element must have AutomationProperties.LiveSetting set in XAML. No-op without a peer/listeners.
         /// </summary>
@@ -1404,47 +1444,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 : null;
             peer ??= UIElementAutomationPeer.CreatePeerForElement(element);
             peer?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
-        }
-
-        /// <summary>
-        /// Raises a transient UI Automation notification so a screen reader speaks <paramref name="message"/>
-        /// without moving keyboard focus. Best-effort: ignored on platforms/AT that don't support it (Win10 1709+).
-        /// </summary>
-        /// <param name="message">The text to announce. Null or whitespace is silently ignored.</param>
-        private protected void AnnounceNotification(string? message)
-        {
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                return;
-            }
-            AutomationPeer peer = UIElementAutomationPeer.FromElement(this) ?? UIElementAutomationPeer.CreatePeerForElement(this);
-            try
-            {
-                // RaiseNotificationEvent and its enum types (AutomationNotificationKind / AutomationNotificationProcessing)
-                // are present in the .NET Framework 4.7.2+ runtime (WCU RS3+) but were not shipped in the net472
-                // reference assemblies, so we invoke via reflection. Best-effort: never abort over an announcement.
-                System.Reflection.MethodInfo? raiseMethod = peer.GetType().GetMethod("RaiseNotificationEvent");
-                if (raiseMethod is null)
-                {
-                    return;
-                }
-
-                // Derive enum types from the method's own parameters — guaranteed loaded because they are
-                // parameter types of the already-resolved method on the already-loaded peer type.
-                // parameters: [0] AutomationNotificationKind, [1] AutomationNotificationProcessing, [2] string, [3] string
-                System.Reflection.ParameterInfo[] parameters = raiseMethod.GetParameters();
-                object kindOther = Enum.Parse(parameters[0].ParameterType, "Other");
-                object procImportantAll = Enum.Parse(parameters[1].ParameterType, "ImportantAll");
-                _ = raiseMethod.Invoke(peer, [kindOther, procImportantAll, message, "PSADTDialogAnnouncement"]);
-            }
-            catch
-            {
-                // Best-effort: RaiseNotificationEvent requires Windows 10 1709+; never abort the dialog over an
-                // announcement. The trailing (unreachable) throw is deliberate: it satisfies CA1031 (a rethrow
-                // is present) while the preceding return makes swallow the actual behavior. Do not remove it.
-                return;
-                throw;
-            }
         }
 
         /// <summary>
@@ -1466,66 +1465,20 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// The application name announced first to a screen reader (SR3), with any version token rewritten so
-        /// it is spoken segment-by-segment rather than as a date (SR4). Returns <see langword="null"/> when no
-        /// app title is set.
-        /// </summary>
-        /// <returns>The normalized app-name announcement, or <see langword="null"/>.</returns>
-        private protected string? GetAppNameAnnouncement()
-        {
-            string name = NormalizeVersionForSpeech(AppTitleTextBlock.Text).Trim();
-            return name.Length > 0 ? name : null;
-        }
-
-        /// <summary>
-        /// Joins announcement segments in order, dropping empty ones and separating the rest with ". " so a
-        /// screen reader pauses between them (e.g. the brief pause after the app name, SR3).
-        /// </summary>
-        /// <param name="parts">The ordered announcement segments; null/empty entries are skipped.</param>
-        /// <returns>The combined announcement, or <see langword="null"/> when there is nothing to read.</returns>
-        private protected static string? JoinAnnouncement(params string?[] parts)
-        {
-            string combined = string.Join(". ", parts.Where(static p => !string.IsNullOrWhiteSpace(p)).Select(static p => p!.Trim()));
-            return combined.Length > 0 ? combined : null;
-        }
-
-        /// <summary>
-        /// The common announcement prefix shared by every dialog: the application name first (SR3/SR4), then
-        /// the primary message, then the optional custom message (SR5). Dialogs build their full ordered
-        /// announcement on top of this so leaves can control exactly where their content (and buttons) appear.
-        /// </summary>
-        /// <returns>The app-name/message/custom prefix, or <see langword="null"/> when all are empty.</returns>
-        private protected string? GetBaseOpenAnnouncement()
-        {
-            string? message = MessageTextStackPanel.Visibility == Visibility.Visible ? GetPlainText(MessageTextBlock) : null;
-            string? custom = CustomMessageTextBlock.Visibility == Visibility.Visible ? GetPlainText(CustomMessageTextBlock) : null;
-            return JoinAnnouncement(GetAppNameAnnouncement(), message, custom);
-        }
-
-        /// <summary>
-        /// A spoken summary announced via UI Automation when the dialog opens. Defaults to the shared
-        /// app-name/message/custom prefix; dialogs override to insert their ordered content (lists, countdown,
-        /// deferrals, buttons) per the brief.
-        /// </summary>
-        /// <returns>The ordered open announcement, or <see langword="null"/> when there is nothing to read.</returns>
-        private protected virtual string? GetOpenAnnouncement()
-        {
-            return GetBaseOpenAnnouncement();
-        }
-
-        /// <summary>
-        /// Handles the ContentRendered event for the dialog, performing post-render initialization
-        /// including activating the window, setting initial focus, and announcing the dialog for accessibility.
+        /// Handles the ContentRendered event for the dialog, activating the window and setting initial
+        /// keyboard focus. No synthetic open announcement is made: screen readers read the activated
+        /// dialog's contents from the UI Automation tree themselves, so a composed announcement (the
+        /// previous hidden live-region TextBlock) was heard as a full duplicate of that natural read.
+        /// The accessible names throughout the dialog are curated instead so the natural read is correct.
         /// </summary>
         /// <param name="sender">The source of the event, typically the dialog instance.</param>
         /// <param name="e">The event data associated with the ContentRendered event.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort accessibility announcement; must never abort dialog display.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort focus/activation; must never abort dialog display.")]
         private void FluentDialog_ContentRendered(object? sender, EventArgs e)
         {
-            // One-shot: initial focus and the open announcement must happen exactly once. ContentRendered
-            // can fire again if content re-renders (e.g. the CloseApps list updating), so unsubscribe here
-            // to guarantee a second render cannot re-announce the whole dialog (the double-narration this
-            // handler was split out to avoid).
+            // One-shot: initial focus must happen exactly once. ContentRendered can fire again if content
+            // re-renders (e.g. the CloseApps list updating), so unsubscribe here to guarantee a second
+            // render cannot re-run activation/focus.
             ContentRendered -= FluentDialog_ContentRendered;
 
             // ContentRendered fires on the UI thread; no dispatcher hop needed.
@@ -1537,78 +1490,47 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                     _ = initialFocusElement.Focus();
                     _ = Keyboard.Focus(initialFocusElement);
                 }
-
-                // Speak the composed open announcement through a dedicated, visually-inert polite live
-                // region so no visible text is overwritten. The announcer is created once and parked in the
-                // dialog's outermost panel (always on-screen once revealed); its accessible Name carries the
-                // full string. Degrades gracefully if no host panel is found.
-                string? announcement = GetOpenAnnouncement();
-                if (string.IsNullOrWhiteSpace(announcement))
-                {
-                    return;
-                }
-
-                Fluence.Wpf.Controls.TextBlock? openAnnouncer = GetOrCreateOpenAnnouncer();
-                if (openAnnouncer is null)
-                {
-                    return;
-                }
-
-                AutomationProperties.SetName(openAnnouncer, announcement!);
-                openAnnouncer.Text = announcement!;
-                AnnounceLiveRegionChanged(openAnnouncer);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex); // Best-effort: accessibility announcements are never critical to dialog functionality.
+                Debug.WriteLine(ex); // Best-effort: activation/focus is never critical to dialog functionality.
             }
         }
 
         /// <summary>
-        /// Gets or creates the open announcer TextBlock for accessibility announcements.
+        /// Elements excluded from the UI Automation tree by <see cref="FluentDialogAutomationPeer"/> so a
+        /// screen reader's read-out of the dialog skips them: the subtitle (visual branding), the caption
+        /// minimize button (mouse-only chrome trailing the read-out), and per-dialog additions such as the
+        /// progress dialog's custom/detail messages. None are keyboard-focusable, so removal costs nothing.
         /// </summary>
-        /// <returns>The open announcer TextBlock, or null if no suitable host panel is found.</returns>
-        private Fluence.Wpf.Controls.TextBlock? GetOrCreateOpenAnnouncer()
+        private protected readonly HashSet<UIElement> _screenReaderSuppressedElements = [];
+
+        /// <summary>
+        /// Non-zero once a dialog in this process has used the full speech-normalized title. Later
+        /// dialogs announce only the short vendor/title form (no version or language) so a deployment's
+        /// dialog sequence does not repeat the full title at every window. Updated via
+        /// <see cref="Interlocked"/> from <see cref="OnSourceInitialized"/>.
+        /// </summary>
+        private static int _fullSpeechTitleUsed;
+
+        /// <summary>
+        /// A <see cref="WindowAutomationPeer"/> that omits presentation-only elements from the automation
+        /// tree: everything in <see cref="_screenReaderSuppressedElements"/> plus every separator (WPF
+        /// separators report IsEnabled false, so a screen reader interjects "disabled" between content
+        /// sections when reading the dialog). None of the removed elements are keyboard-focusable, so
+        /// removal costs no keyboard or screen-reader function.
+        /// </summary>
+        /// <param name="owner">The owning dialog window.</param>
+        private sealed class FluentDialogAutomationPeer(FluentDialog owner) : WindowAutomationPeer(owner)
         {
-            if (_openAnnouncer is not null)
+            /// <inheritdoc />
+            protected override List<AutomationPeer> GetChildrenCore()
             {
-                return _openAnnouncer;
+                List<AutomationPeer> children = base.GetChildrenCore() ?? [];
+                _ = children.RemoveAll(peer => peer is FrameworkElementAutomationPeer frameworkElementPeer && (frameworkElementPeer.Owner is System.Windows.Controls.Separator || owner._screenReaderSuppressedElements.Contains(frameworkElementPeer.Owner)));
+                return children;
             }
-
-            DependencyObject? node = MessageTextBlock;
-            Panel? host = null;
-            while (node is not null)
-            {
-                if (node is Panel panel)
-                {
-                    host = panel;
-                }
-                node = VisualTreeHelper.GetParent(node);
-            }
-
-            if (host is null)
-            {
-                return null;
-            }
-
-            _openAnnouncer = new Fluence.Wpf.Controls.TextBlock
-            {
-                Width = 1,
-                Height = 1,
-                Opacity = 0,
-                Focusable = false,
-                IsHitTestVisible = false,
-            };
-            AutomationProperties.SetLiveSetting(_openAnnouncer, AutomationLiveSetting.Polite);
-            _ = host.Children.Add(_openAnnouncer);
-
-            return _openAnnouncer;
         }
-
-        /// <summary>
-        /// The visually-inert polite live region used to announce the dialog opening for screen readers.
-        /// </summary>
-        private Fluence.Wpf.Controls.TextBlock? _openAnnouncer;
 
         private void CloseAppsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

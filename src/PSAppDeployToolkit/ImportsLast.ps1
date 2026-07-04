@@ -264,7 +264,6 @@ try
                                             ListSelectionPrompt = @{
                                                 # Default message displayed next to the list selection dropdown.
                                                 ListSelectionMessage = 'Select an item:'
-                                                ButtonDisabledFormat = 'The "{0}" button has been disabled.'
                                             }
 
                                             ProgressPrompt = @{
@@ -293,7 +292,6 @@ try
                                             RestartPrompt = @{
                                                 # Button text for allowing the user to restart later.
                                                 ButtonRestartLater = 'Minimize'
-                                                DeferButtonDisabled = 'The "{0}" button has been disabled.'
 
                                                 # Button text for when wanting to restart the device now.
                                                 ButtonRestartNow = 'Restart Now'
@@ -427,9 +425,6 @@ try
 
                                                     # This is a phrase used to describe the process of deferring a deployment.
                                                     ButtonRightText = 'Defer'
-                                                    AppsToCloseListTitle = 'Applications to close'
-                                                    ButtonDisabledFormat = 'The "{0}" button has been disabled.'
-                                                    AppClosedFormat = '{0} has been closed'
 
                                                     # The subtitle underneath the Install Title, e.g. Company Name.
                                                     Subtitle = @{
@@ -501,8 +496,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'اختر عنصرًا:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'تم تعطيل الزر "{0}".'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -523,8 +516,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'تصغير'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'تم تعطيل الزر "{0}".'
                                                 ButtonRestartNow = 'إعادة التشغيل الآن'
                                                 Message = @{
                                                     Install = 'لكي يكتمل التثبيت، يجب إعادة تشغيل الكمبيوتر.'
@@ -602,10 +593,6 @@ try
                                                         Uninstall = 'إلغاء التثبيت'
                                                     }
                                                     ButtonRightText = 'تأجيل'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'التطبيقات المراد إغلاقها'
-                                                    ButtonDisabledFormat = 'تم تعطيل الزر "{0}".'
-                                                    AppClosedFormat = 'تم إغلاق {0}'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - تثبيت التطبيق'
                                                         Repair = '{Toolkit\CompanyName} - إصلاح التطبيق'
@@ -673,8 +660,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Изберете елемент:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Бутонът "{0}" е деактивиран.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -695,8 +680,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Минимизирай'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Бутонът "{0}" е деактивиран.'
                                                 ButtonRestartNow = 'Рестартирай сега'
                                                 Message = @{
                                                     Install = 'За да може инсталацията да завърши, е нужно да рестартирате Вашия компютър.'
@@ -774,10 +757,6 @@ try
                                                         Uninstall = 'Деинсталирай'
                                                     }
                                                     ButtonRightText = 'Отложи'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Приложения за затваряне'
-                                                    ButtonDisabledFormat = 'Бутонът "{0}" е деактивиран.'
-                                                    AppClosedFormat = '{0} е затворено'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Инсталация на приложение'
                                                         Repair = '{Toolkit\CompanyName} - Поправка на приложение'
@@ -845,8 +824,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Vyberte položku:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Tlačítko "{0}" bylo zakázáno.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -867,8 +844,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimalizovat'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Tlačítko "{0}" bylo zakázáno.'
                                                 ButtonRestartNow = 'Restartovat nyní'
                                                 Message = @{
                                                     Install = 'Aby se instalace dokončila, musíte restartovat počítač.'
@@ -946,10 +921,6 @@ try
                                                         Uninstall = 'Odinstalovat'
                                                     }
                                                     ButtonRightText = 'Odložit'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Aplikace k zavření'
-                                                    ButtonDisabledFormat = 'Tlačítko "{0}" bylo zakázáno.'
-                                                    AppClosedFormat = '{0} bylo zavřeno'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Instalace Aplikace'
                                                         Repair = '{Toolkit\CompanyName} - Oprava Aplikace'
@@ -1017,8 +988,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Vælg et element:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Knappen "{0}" er blevet deaktiveret.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -1039,8 +1008,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimér'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Knappen "{0}" er blevet deaktiveret.'
                                                 ButtonRestartNow = 'Genstart nu'
                                                 Message = @{
                                                     Install = 'For at installationen kan gennemføres, skal du genstarte din computer.'
@@ -1118,10 +1085,6 @@ try
                                                         Uninstall = 'Afinstaller'
                                                     }
                                                     ButtonRightText = 'Udskyd'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Programmer, der skal lukkes'
-                                                    ButtonDisabledFormat = 'Knappen "{0}" er blevet deaktiveret.'
-                                                    AppClosedFormat = '{0} er blevet lukket'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Installation af App'
                                                         Repair = '{Toolkit\CompanyName} - Reparation af App'
@@ -1189,8 +1152,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Element auswählen:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Die Schaltfläche "{0}" wurde deaktiviert.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -1211,8 +1172,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimieren'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Die Schaltfläche "{0}" wurde deaktiviert.'
                                                 ButtonRestartNow = 'Jetzt neu starten'
                                                 Message = @{
                                                     Install = 'Damit die Installation abgeschlossen werden kann, müssen Sie Ihren Computer neu starten.'
@@ -1290,10 +1249,6 @@ try
                                                         Uninstall = 'Deinstallieren'
                                                     }
                                                     ButtonRightText = 'Verschieben'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Zu schließende Anwendungen'
-                                                    ButtonDisabledFormat = 'Die Schaltfläche "{0}" wurde deaktiviert.'
-                                                    AppClosedFormat = '{0} wurde geschlossen'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Installation der Anwendung'
                                                         Repair = '{Toolkit\CompanyName} - Reparatur der Anwendung'
@@ -1361,8 +1316,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Επιλέξτε ένα στοιχείο:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Το κουμπί "{0}" έχει απενεργοποιηθεί.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -1383,8 +1336,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Ελαχιστοποίηση'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Το κουμπί "{0}" έχει απενεργοποιηθεί.'
                                                 ButtonRestartNow = 'Επανεκκίνηση τώρα'
                                                 Message = @{
                                                     Install = 'Προκειμένου να ολοκληρωθεί η εγκατάσταση, πρέπει να επανεκκινήσετε τον υπολογιστή σας.'
@@ -1462,10 +1413,6 @@ try
                                                         Uninstall = 'Απεγκατάσταση'
                                                     }
                                                     ButtonRightText = 'Αναβολή'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Εφαρμογές προς κλείσιμο'
-                                                    ButtonDisabledFormat = 'Το κουμπί "{0}" έχει απενεργοποιηθεί.'
-                                                    AppClosedFormat = 'Η {0} έχει κλείσει'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Εγκατάσταση εφαρμογών'
                                                         Repair = '{Toolkit\CompanyName} - Επισκευή εφαρμογής'
@@ -1533,8 +1480,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Seleccione un elemento:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'El botón "{0}" se ha deshabilitado.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -1555,8 +1500,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimizar'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'El botón "{0}" se ha deshabilitado.'
                                                 ButtonRestartNow = 'Reiniciar ahora'
                                                 Message = @{
                                                     Install = 'Para que la instalación se complete, debe reiniciar su ordenador.'
@@ -1634,10 +1577,6 @@ try
                                                         Uninstall = 'Desinstalar'
                                                     }
                                                     ButtonRightText = 'Aplazar'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Aplicaciones que se cerrarán'
-                                                    ButtonDisabledFormat = 'El botón "{0}" se ha deshabilitado.'
-                                                    AppClosedFormat = '{0} se ha cerrado'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Instalación de la aplicación'
                                                         Repair = '{Toolkit\CompanyName} - Reparación de la aplicación'
@@ -1705,8 +1644,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Valitse kohde:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Painike "{0}" on poistettu käytöstä.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -1727,8 +1664,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimoi'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Painike "{0}" on poistettu käytöstä.'
                                                 ButtonRestartNow = 'Käynnistä uudelleen nyt'
                                                 Message = @{
                                                     Install = 'Jotta asennus voidaan suorittaa loppuun, sinun on käynnistettävä tietokoneesi uudelleen.'
@@ -1806,10 +1741,6 @@ try
                                                         Uninstall = 'Poista Asennus'
                                                     }
                                                     ButtonRightText = 'Lykkää'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Suljettavat sovellukset'
-                                                    ButtonDisabledFormat = 'Painike "{0}" on poistettu käytöstä.'
-                                                    AppClosedFormat = '{0} on suljettu'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Sovelluksen Asennus'
                                                         Repair = '{Toolkit\CompanyName} - Sovelluksen Korjaus'
@@ -1877,8 +1808,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Sélectionnez un élément :'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Le bouton "{0}" a été désactivé.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -1899,8 +1828,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Réduire'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Le bouton "{0}" a été désactivé.'
                                                 ButtonRestartNow = 'Redémarrer maintenant'
                                                 Message = @{
                                                     Install = "Pour que l'installation soit terminée, vous devez redémarrer votre ordinateur."
@@ -1978,10 +1905,6 @@ try
                                                         Uninstall = 'Désinstaller'
                                                     }
                                                     ButtonRightText = 'Différer'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Applications à fermer'
-                                                    ButtonDisabledFormat = 'Le bouton "{0}" a été désactivé.'
-                                                    AppClosedFormat = '{0} a été fermé'
                                                     Subtitle = @{
                                                         Install = "{Toolkit\CompanyName} - Installation de l'application"
                                                         Repair = "{Toolkit\CompanyName} - Réparation de l'application"
@@ -2049,8 +1972,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = ':בחר פריט'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'הלחצן "{0}" הושבת.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -2071,8 +1992,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'לְצַמְצֵם'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'הלחצן "{0}" הושבת.'
                                                 ButtonRestartNow = 'הפעל מחדש עכשיו'
                                                 Message = @{
                                                     Install = 'על מנת שההתקנה תסתיים, עליך להפעיל מחדש את המחשב.'
@@ -2150,10 +2069,6 @@ try
                                                         Uninstall = 'הסר את ההתקנה'
                                                     }
                                                     ButtonRightText = 'לִדחוֹת'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'יישומים לסגירה'
-                                                    ButtonDisabledFormat = 'הלחצן "{0}" הושבת.'
-                                                    AppClosedFormat = '{0} נסגר'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - התקנת אפליקציה'
                                                         Repair = '{Toolkit\CompanyName} - תיקון אפליקציות'
@@ -2221,8 +2136,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Válasszon egy elemet:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'A(z) "{0}" le lett tiltva.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -2243,8 +2156,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimalizálás'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'A(z) "{0}" gomb le lett tiltva.'
                                                 ButtonRestartNow = 'Újraindítás most'
                                                 Message = @{
                                                     Install = 'A telepítés befejezéséhez újra kell indítania a számítógépet.'
@@ -2322,10 +2233,6 @@ try
                                                         Uninstall = 'Eltávolítás'
                                                     }
                                                     ButtonRightText = 'Halasztás'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Bezárandó alkalmazások'
-                                                    ButtonDisabledFormat = 'A(z) "{0}" le lett tiltva.'
-                                                    AppClosedFormat = 'A(z) {0} be lett zárva'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Alkalmazás Telepítése'
                                                         Repair = '{Toolkit\CompanyName} - Alkalmazás Javítása'
@@ -2393,8 +2300,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Seleziona un elemento:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Il pulsante "{0}" è stato disabilitato.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -2415,8 +2320,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Riduci a icona.'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Il pulsante "{0}" è stato disabilitato.'
                                                 ButtonRestartNow = 'Riavvia ora.'
                                                 Message = @{
                                                     Install = "Per completare l'installazione, deve riavviare il computer."
@@ -2494,10 +2397,6 @@ try
                                                         Uninstall = 'Disinstalla'
                                                     }
                                                     ButtonRightText = 'Rimandare'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Applicazioni da chiudere'
-                                                    ButtonDisabledFormat = 'Il pulsante "{0}" è stato disabilitato.'
-                                                    AppClosedFormat = '{0} è stato chiuso'
                                                     Subtitle = @{
                                                         Install = "{Toolkit\CompanyName} - Installazione di un'applicazione."
                                                         Repair = "{Toolkit\CompanyName} - Riparazione dell'applicazione."
@@ -2565,8 +2464,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = '項目を選択してください:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = '「{0}」ボタンは無効になりました。'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -2587,8 +2484,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = '最小化'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = '「{0}」ボタンは無効になりました。'
                                                 ButtonRestartNow = '今すぐ再起動'
                                                 Message = @{
                                                     Install = 'インストールを完了するには、コンピュータを再起動する必要があります。'
@@ -2666,10 +2561,6 @@ try
                                                         Uninstall = 'アンインストール'
                                                     }
                                                     ButtonRightText = '延期'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = '閉じるアプリケーション'
-                                                    ButtonDisabledFormat = '「{0}」ボタンは無効になりました。'
-                                                    AppClosedFormat = '{0} は閉じられました'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - アプリのインストール'
                                                         Repair = '{Toolkit\CompanyName} - アプリケーションの修復'
@@ -2737,8 +2628,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = '항목을 선택하세요:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = '"{0}"이(가) 비활성화되었습니다.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -2759,8 +2648,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = '최소화'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = '"{0}" 버튼이 비활성화되었습니다.'
                                                 ButtonRestartNow = '지금 다시 시작'
                                                 Message = @{
                                                     Install = '설치를 완료하려면 컴퓨터를 다시 시작해야 합니다.'
@@ -2838,10 +2725,6 @@ try
                                                         Uninstall = '제거'
                                                     }
                                                     ButtonRightText = '연기'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = '닫을 응용 프로그램'
-                                                    ButtonDisabledFormat = '"{0}"이(가) 비활성화되었습니다.'
-                                                    AppClosedFormat = '{0}이(가) 닫혔습니다'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - 앱 설치'
                                                         Repair = '{Toolkit\CompanyName} - 앱 복구'
@@ -2909,8 +2792,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Izvēlieties vienumu:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Poga "{0}" tika atspējota.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -2931,8 +2812,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimizēt'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Poga "{0}" tika atspējota.'
                                                 ButtonRestartNow = 'Restartēt tagad'
                                                 Message = @{
                                                     Install = 'Lai instalēšana tiktu pabeigta, dators ir jārestartē.'
@@ -3010,10 +2889,6 @@ try
                                                         Uninstall = 'Atinstalēt'
                                                     }
                                                     ButtonRightText = 'Atlikt'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Aizverama­s lietojumprogrammas'
-                                                    ButtonDisabledFormat = 'Poga "{0}" tika atspējota.'
-                                                    AppClosedFormat = '{0} tika aizvērts'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Lietotņu Instalēšana'
                                                         Repair = '{Toolkit\CompanyName} - Lietotņu Labošana'
@@ -3081,8 +2956,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Velg et element:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Knappen "{0}" er deaktivert.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -3103,8 +2976,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimer'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Knappen "{0}" er deaktivert.'
                                                 ButtonRestartNow = 'Start på nytt nå'
                                                 Message = @{
                                                     Install = 'For at installasjonen skal fullføres, må du starte datamaskinen på nytt.'
@@ -3182,10 +3053,6 @@ try
                                                         Uninstall = 'Avinstaller'
                                                     }
                                                     ButtonRightText = 'Utsett'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Programmer som skal lukkes'
-                                                    ButtonDisabledFormat = 'Knappen "{0}" er deaktivert.'
-                                                    AppClosedFormat = '{0} er lukket'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Appinstallasjon'
                                                         Repair = '{Toolkit\CompanyName} - Appreparasjon'
@@ -3253,8 +3120,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Selecteer een item:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'De knop "{0}" is uitgeschakeld.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -3275,8 +3140,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimaliseren'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'De knop "{0}" is uitgeschakeld.'
                                                 ButtonRestartNow = 'Nu opnieuw opstarten'
                                                 Message = @{
                                                     Install = 'Om de installatie te voltooien, moet u uw computer opnieuw opstarten.'
@@ -3354,10 +3217,6 @@ try
                                                         Uninstall = 'De-installeren'
                                                     }
                                                     ButtonRightText = 'Uitstellen'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Toepassingen om te sluiten'
-                                                    ButtonDisabledFormat = 'De knop "{0}" is uitgeschakeld.'
-                                                    AppClosedFormat = '{0} is gesloten'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - App Installatie'
                                                         Repair = '{Toolkit\CompanyName} - App Reparatie'
@@ -3425,8 +3284,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Wybierz element:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Przycisk „{0}” został wyłączony.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -3447,8 +3304,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimalizuj'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Przycisk "{0}" został wyłączony.'
                                                 ButtonRestartNow = 'Uruchom ponownie teraz'
                                                 Message = @{
                                                     Install = 'Aby zakończyć instalację, należy ponownie uruchomić komputer.'
@@ -3526,10 +3381,6 @@ try
                                                         Uninstall = 'Odinstaluj'
                                                     }
                                                     ButtonRightText = 'Odroczyć'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Aplikacje do zamknięcia'
-                                                    ButtonDisabledFormat = 'Przycisk "{0}" został wyłączony.'
-                                                    AppClosedFormat = '{0} zostało zamknięte'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Instalacja Aplikacji'
                                                         Repair = '{Toolkit\CompanyName} - Naprawa Aplikacji'
@@ -3597,8 +3448,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Selecione um item:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'O botão "{0}" foi desativado.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -3619,8 +3468,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimizar'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'O botão "{0}" foi desativado.'
                                                 ButtonRestartNow = 'Reiniciar agora'
                                                 Message = @{
                                                     Install = 'Para que a instalação seja concluída, tem de reiniciar o computador.'
@@ -3698,10 +3545,6 @@ try
                                                         Uninstall = 'Desinstalar'
                                                     }
                                                     ButtonRightText = 'Deferir'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Aplicações a fechar'
-                                                    ButtonDisabledFormat = 'O botão "{0}" foi desativado.'
-                                                    AppClosedFormat = '{0} foi fechado'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Instalação da Aplicação'
                                                         Repair = '{Toolkit\CompanyName} - Reparação da Aplicação'
@@ -3769,8 +3612,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Selecione um item:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'O botão "{0}" foi desabilitado.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -3791,8 +3632,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimizar'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'O botão "{0}" foi desabilitado.'
                                                 ButtonRestartNow = 'Reiniciar Agora'
                                                 Message = @{
                                                     Install = 'Para que a instalação seja concluída, é preciso reiniciar o computador.'
@@ -3870,10 +3709,6 @@ try
                                                         Uninstall = 'Desinstalar'
                                                     }
                                                     ButtonRightText = 'Adiar'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Aplicativos a fechar'
-                                                    ButtonDisabledFormat = 'O botão "{0}" foi desabilitado.'
-                                                    AppClosedFormat = '{0} foi fechado'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Instalação do Aplicativo'
                                                         Repair = '{Toolkit\CompanyName} - Reparo do Aplicativo'
@@ -3941,8 +3776,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Выберите элемент:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Кнопка «{0}» отключена.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -3963,8 +3796,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Минимизировать'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Кнопка "{0}" отключена.'
                                                 ButtonRestartNow = 'Перезапустить сейчас'
                                                 Message = @{
                                                     Install = 'Чтобы установка была завершена, Вы должны перезагрузить компьютер.'
@@ -4042,10 +3873,6 @@ try
                                                         Uninstall = 'Удалить'
                                                     }
                                                     ButtonRightText = 'Отложить'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Приложения для закрытия'
-                                                    ButtonDisabledFormat = 'Кнопка "{0}" отключена.'
-                                                    AppClosedFormat = '{0} закрыто'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Установка приложений'
                                                         Repair = '{Toolkit\CompanyName} - Восстановление приложений'
@@ -4113,8 +3940,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Vyberte položku:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Tlačidlo "{0}" bolo zakázané.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -4135,8 +3960,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimalizovať'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Tlačidlo "{0}" bolo zakázané.'
                                                 ButtonRestartNow = 'Reštartovať Teraz'
                                                 Message = @{
                                                     Install = 'Aby sa inštalácia dokončila, musíte reštartovať počítač.'
@@ -4214,10 +4037,6 @@ try
                                                         Uninstall = 'Odinštalovať'
                                                     }
                                                     ButtonRightText = 'Odložiť'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Aplikácie na zatvorenie'
-                                                    ButtonDisabledFormat = 'Tlačidlo "{0}" bolo zakázané.'
-                                                    AppClosedFormat = '{0} bolo zatvorené'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Inštalácia Aplikácie'
                                                         Repair = '{Toolkit\CompanyName} - Oprava Aplikácií'
@@ -4285,8 +4104,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Välj ett objekt:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = 'Knappen "{0}" har inaktiverats.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -4307,8 +4124,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Minimera'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = 'Knappen "{0}" har inaktiverats.'
                                                 ButtonRestartNow = 'Starta om nu'
                                                 Message = @{
                                                     Install = 'För att installationen ska kunna slutföras måste du starta om datorn.'
@@ -4386,10 +4201,6 @@ try
                                                         Uninstall = 'Avinstallera'
                                                     }
                                                     ButtonRightText = 'Skjut upp'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Program att stänga'
-                                                    ButtonDisabledFormat = 'Knappen "{0}" har inaktiverats.'
-                                                    AppClosedFormat = '{0} har stängts'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Installation av App'
                                                         Repair = '{Toolkit\CompanyName} - Reparation av App'
@@ -4457,8 +4268,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = 'Bir öğe seçin:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = '"{0}" devre dışı bırakıldı.'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -4479,8 +4288,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = 'Küçült'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = '"{0}" düğmesi devre dışı bırakıldı.'
                                                 ButtonRestartNow = 'Şimdi Yeniden Başlat'
                                                 Message = @{
                                                     Install = 'Yüklemenin tamamlanması için bilgisayarınızı yeniden başlatmanız gerekir.'
@@ -4558,10 +4365,6 @@ try
                                                         Uninstall = 'Kaldır'
                                                     }
                                                     ButtonRightText = 'Ertele'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = 'Kapatılacak uygulamalar'
-                                                    ButtonDisabledFormat = 'Tuş "{0}" devre dışı bırakıldı.'
-                                                    AppClosedFormat = '{0} kapatıldı'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - Uygulama Yükleme'
                                                         Repair = '{Toolkit\CompanyName} - Uygulama Onarımı'
@@ -4629,8 +4432,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = '选择一个项目:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = '“{0}”已被禁用。'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -4651,8 +4452,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = '最小化'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = '"{0}" 按钮已被禁用。'
                                                 ButtonRestartNow = '立即重启'
                                                 Message = @{
                                                     Install = '为了完成安装，您必须重启计算机。'
@@ -4730,10 +4529,6 @@ try
                                                         Uninstall = '卸载'
                                                     }
                                                     ButtonRightText = '延迟'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = '要关闭的应用程序'
-                                                    ButtonDisabledFormat = '“{0}”已被禁用。'
-                                                    AppClosedFormat = '{0} 已关闭'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - 应用程序安装'
                                                         Repair = '{Toolkit\CompanyName} - 应用程序修复'
@@ -4801,8 +4596,6 @@ try
                                             }
                                             ListSelectionPrompt = @{
                                                 ListSelectionMessage = '選擇一個項目:'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                ButtonDisabledFormat = '"{0}" 按鈕已被停用。'
                                             }
                                             ProgressPrompt = @{
                                                 Message = @{
@@ -4823,8 +4616,6 @@ try
                                             }
                                             RestartPrompt = @{
                                                 ButtonRestartLater = '最小化'
-                                                # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                DeferButtonDisabled = '"{0}" 按鈕已被停用。'
                                                 ButtonRestartNow = '現在重新啟動'
                                                 Message = @{
                                                     Install = '為了完成安裝，您必須重新啟動電腦。'
@@ -4902,10 +4693,6 @@ try
                                                         Uninstall = '解除安裝'
                                                     }
                                                     ButtonRightText = '延遲'
-                                                    # NOTE: machine-translated accessibility strings, pending native-speaker review
-                                                    AppsToCloseListTitle = '要關閉的應用程式'
-                                                    ButtonDisabledFormat = '「{0}」已被停用。'
-                                                    AppClosedFormat = '{0} 已關閉'
                                                     Subtitle = @{
                                                         Install = '{Toolkit\CompanyName} - 應用程式安裝'
                                                         Repair = '{Toolkit\CompanyName} - 應用程式維修'

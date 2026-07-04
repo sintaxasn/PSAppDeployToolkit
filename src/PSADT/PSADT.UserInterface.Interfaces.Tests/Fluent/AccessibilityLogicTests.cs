@@ -118,22 +118,57 @@ namespace PSADT.UserInterface.Interfaces.Tests.Fluent
         }
 
         /// <summary>
-        /// Verifies that <see cref="FluentDialog.BuildButtonAnnouncement"/> implements the button-reading rule
-        /// (SR7): a visible enabled button reads its access-key-stripped name; a visible disabled button reads
-        /// the localized "has been disabled" wording; a hidden button reads nothing (null).
+        /// Verifies that <see cref="FluentDialog.ShortenTitleForSpeech"/> reduces an app title to its
+        /// vendor/product portion by dropping everything from the first version token onward (version,
+        /// language, architecture), falling back to the full speech-normalized title when there is no
+        /// version token or nothing meaningful precedes it. Subsequent dialogs in a deployment announce
+        /// this short form so the full title is only heard once.
         /// </summary>
-        /// <param name="isVisible">Whether the button is visible.</param>
-        /// <param name="isEnabled">Whether the button is enabled.</param>
-        /// <param name="name">The button's raw text (may contain an access-key marker).</param>
-        /// <param name="expected">The expected announcement, or null for "read nothing".</param>
+        /// <param name="raw">The raw app title.</param>
+        /// <param name="expected">The expected short spoken form.</param>
         [Theory]
-        [InlineData(true, true, "Restart _Now", "Restart Now")]                            // visible + enabled => name (marker stripped)
-        [InlineData(true, false, "_Defer", "\"Defer\" has been disabled")]                 // visible + disabled => disabled wording
-        [InlineData(false, true, "Continue", null)]                                        // hidden => nothing
-        [InlineData(false, false, "Defer", null)]                                          // hidden (disabled) => nothing
-        public void BuildButtonAnnouncement_FollowsButtonReadingRule(bool isVisible, bool isEnabled, string name, string? expected)
+        [InlineData("Adobe Creative Suite 2.1.45 EN", "Adobe Creative Suite")]  // version + language dropped
+        [InlineData("7-Zip v21.07 x64", "7-Zip")]                               // v-prefixed version + architecture dropped
+        [InlineData("No Version Product", "No Version Product")]                // no version token => unchanged
+        [InlineData("2.1.45 EN", "two point one point forty five EN")]          // nothing before version => full normalized title
+        public void ShortenTitleForSpeech_DropsVersionAndTrailingQualifiers(string raw, string expected)
         {
-            Assert.Equal(expected, FluentDialog.BuildButtonAnnouncement(isVisible, isEnabled, name, "\"{0}\" has been disabled"));
+            Assert.Equal(expected, FluentDialog.ShortenTitleForSpeech(raw));
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="ProgressDialog.GetProgressAnnouncementBucket"/> buckets percentages by
+        /// quarter so an announcement fires only at the first update after 0%, 25%, 50% and 75% (a spoken
+        /// announcement occurs when the bucket increases over the previously announced bucket).
+        /// </summary>
+        /// <param name="percent">The whole-number progress percentage.</param>
+        /// <param name="expectedBucket">The expected announcement bucket.</param>
+        [Theory]
+        [InlineData(0, -1)]     // nothing to announce at 0%
+        [InlineData(1, 0)]      // first value after 0%
+        [InlineData(24, 0)]
+        [InlineData(25, 1)]     // first value at/after 25%
+        [InlineData(49, 1)]
+        [InlineData(50, 2)]     // first value at/after 50%
+        [InlineData(74, 2)]
+        [InlineData(75, 3)]     // first value at/after 75%
+        [InlineData(100, 3)]
+        public void GetProgressAnnouncementBucket_BucketsByQuarter(int percent, int expectedBucket)
+        {
+            Assert.Equal(expectedBucket, ProgressDialog.GetProgressAnnouncementBucket(percent));
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="CloseAppsDialog.AppToClose"/> overrides ToString to return the friendly
+        /// description. WPF's ItemAutomationPeer falls back to Item.ToString() for a data-bound list item's
+        /// UI Automation Name, so without the override a screen reader reads the record-generated property
+        /// dump ("AppToClose { Name = ..., Icon = ... }") for every row of the applications-to-close list.
+        /// </summary>
+        [Fact]
+        public void AppToCloseToStringIsOverriddenForAccessibleName()
+        {
+            System.Reflection.MethodInfo toString = typeof(CloseAppsDialog.AppToClose).GetMethod(nameof(ToString), System.Type.EmptyTypes);
+            Assert.Equal(typeof(CloseAppsDialog.AppToClose), toString.DeclaringType);
         }
     }
 }

@@ -65,6 +65,18 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             public BitmapSource Icon { get; }
 
             /// <summary>
+            /// Returns the friendly description of the application. WPF's ItemAutomationPeer falls back to
+            /// Item.ToString() for a data-bound list item's UI Automation Name, so without this override a
+            /// screen reader reads the record-generated property dump ("AppToClose { Name = ..., Icon = ... }")
+            /// for every row.
+            /// </summary>
+            /// <returns>The application's friendly description.</returns>
+            public override string ToString()
+            {
+                return Description;
+            }
+
+            /// <summary>
             /// Retrieves the application icon as a BitmapSource from the specified executable file path.
             /// </summary>
             /// <remarks>Cached icons are reused. Extraction failures fall back to the default application icon.</remarks>
@@ -139,9 +151,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             _deferralDeadline = options.DeferralDeadline;
             _forcedCountdown = options.ForcedCountdown;
             _hideCloseButton = options.HideCloseButton;
-            _buttonDisabledFormat = options.Strings.Fluent.ButtonDisabledFormat;
-            _appsToCloseListTitle = options.Strings.Fluent.AppsToCloseListTitle;
-            _appClosedFormat = options.Strings.Fluent.AppClosedFormat;
 
             // Set up UI
             FormatMessageWithHyperlinks(MessageTextBlock, _closeAppsNoProcessesMessageText);
@@ -177,9 +186,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             UpdateRunningProcesses();
             UpdateDeferralValues();
             _logAction = state.LogAction;
-
-            // Snapshot the initial app set so SR8 can announce each application that closes while open.
-            _announcedApps = [.. AppsToCloseCollection.Select(static a => a.Description)];
         }
 
         /// <summary>
@@ -295,14 +301,16 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// </summary>
         private void UpdateRunningProcesses()
         {
-            // Update the UI based on the changes in the collection.
-            AutomationProperties.SetName(CloseAppsListView, $"Applications to Close: {AppsToCloseCollection.Count} items");
+            // Update the UI based on the changes in the collection. The list carries no accessible name
+            // by design: a screen reader announces its native control type ("list view", localized by the
+            // reader itself) and the item count, and the dialog message directly above already explains
+            // what the list contains.
             UpdateRowDefinition();
             if (AppsToCloseCollection.Count > 0)
             {
                 _logAction?.Invoke($"The running processes have changed. Updating the apps to close: ['{string.Join("', '", AppsToCloseCollection.Select(static a => a.Description))}']...", LogSeverity.Info);
                 FormatMessageWithHyperlinks(MessageTextBlock, _closeAppsMessageText);
-                AutomationProperties.SetName(MessageTextBlock, _closeAppsMessageText);
+                AutomationProperties.SetName(MessageTextBlock, GetPlainText(MessageTextBlock));
                 CloseAppsStackPanel.Visibility = Visibility.Visible;
                 if (!_hideCloseButton)
                 {
@@ -321,7 +329,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 _logAction?.Invoke("Previously detected running processes are no longer running.", LogSeverity.Info);
                 FormatMessageWithHyperlinks(MessageTextBlock, _closeAppsNoProcessesMessageText);
-                AutomationProperties.SetName(MessageTextBlock, _closeAppsNoProcessesMessageText);
+                AutomationProperties.SetName(MessageTextBlock, GetPlainText(MessageTextBlock));
                 SetButtonContentWithAccelerator(ButtonLeft, _buttonLeftNoProcessesText);
                 CloseAppsStackPanel.Visibility = Visibility.Collapsed;
                 ButtonLeft.IsEnabled = true;
@@ -344,17 +352,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="e">An object that provides data about the type of change that occurred in the collection.</param>
         private void AppsToCloseCollection_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            // SR8: once the dialog is shown, announce each previously listed application that is no longer
-            // present (i.e. has been closed) while the dialog is open.
-            if (IsLoaded)
-            {
-                HashSet<string> current = [.. AppsToCloseCollection.Select(static a => a.Description)];
-                foreach (string closed in _announcedApps.Where(d => !current.Contains(d)))
-                {
-                    AnnounceNotification(string.Format(CultureInfo.CurrentCulture, _appClosedFormat, closed));
-                }
-                _announcedApps = current;
-            }
             UpdateRunningProcesses();
         }
 
@@ -362,45 +359,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         private protected override FrameworkElement? GetInitialFocusElement()
         {
             return ButtonLeft;
-        }
-
-        /// <summary>
-        /// Formats the applications-to-close list for screen-reader announcement, either by friendly display
-        /// name or by process (executable) name.
-        /// </summary>
-        /// <param name="byProcessName">When <see langword="true"/>, reads the process (executable) name; otherwise the friendly display name.</param>
-        /// <returns>The comma-separated list of application names in announcement order.</returns>
-        private string FormatAppList(bool byProcessName)
-        {
-            return string.Join(", ", AppsToCloseCollection.Select(a => byProcessName ? a.Name : a.Description));
-        }
-
-        /// <inheritdoc />
-        private protected override string? GetOpenAnnouncement()
-        {
-            // Ordered per the CloseApps screen-reader spec: app name + message + custom message (from the
-            // base), then the applications-to-close list (title, then items by friendly name), the countdown,
-            // the deferral values, and finally the buttons (SR7). SR9: nothing else is read.
-            bool hasApps = AppsToCloseCollection.Count > 0;
-            string? listTitle = hasApps ? _appsToCloseListTitle : null;
-
-            // Read the applications by friendly (display) name. The executable-name variant is preserved as a
-            // live, switchable code path (FormatAppList(byProcessName: true)) rather than commented-out code,
-            // honouring the spec's intent while satisfying the project's no-dead-code analyzer.
-            string? appList = hasApps ? FormatAppList(byProcessName: false) : null;
-
-            string? countdown = _countdownDuration.HasValue && CountdownStackPanel.Visibility == Visibility.Visible
-                ? $"{GetPlainText(CountdownHeadingTextBlock)}: {GetPlainText(CountdownValueTextBlock)}"
-                : null;
-            string? deferRemaining = DeferRemainingStackPanel.Visibility == Visibility.Visible
-                ? $"{GetPlainText(DeferRemainingHeadingTextBlock)}: {GetPlainText(DeferRemainingValueTextBlock)}"
-                : null;
-            string? deferDeadline = DeferDeadlineStackPanel.Visibility == Visibility.Visible
-                ? $"{GetPlainText(DeferDeadlineHeadingTextBlock)}: {GetPlainText(DeferDeadlineValueTextBlock)}"
-                : null;
-            string? buttonLeft = GetButtonAnnouncement(ButtonLeft, _buttonDisabledFormat);
-            string? buttonRight = GetButtonAnnouncement(ButtonRight, _buttonDisabledFormat);
-            return JoinAnnouncement(base.GetOpenAnnouncement(), listTitle, appList, countdown, deferRemaining, deferDeadline, buttonLeft, buttonRight);
         }
 
         /// <summary>
@@ -531,27 +489,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Indicates whether the close button should be hidden.
         /// </summary>
         private readonly bool _hideCloseButton;
-
-        /// <summary>
-        /// The localized "{0} has been disabled" format used when reading a visible but disabled button (SR7).
-        /// </summary>
-        private readonly string _buttonDisabledFormat;
-
-        /// <summary>
-        /// The localized title announced to a screen reader before the list of applications to close.
-        /// </summary>
-        private readonly string _appsToCloseListTitle;
-
-        /// <summary>
-        /// The localized "{0} has been closed" format announced when a listed application closes (SR8).
-        /// </summary>
-        private readonly string _appClosedFormat;
-
-        /// <summary>
-        /// The set of application names currently announced as pending closure, used to detect which
-        /// applications close while the dialog is open (SR8).
-        /// </summary>
-        private HashSet<string> _announcedApps;
 
         /// <summary>
         /// Represents the delegate used for logging operations with severity.

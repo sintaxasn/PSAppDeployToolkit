@@ -68,15 +68,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             return _secureInput ? InputBoxPassword : InputBoxText;
         }
 
-        /// <inheritdoc />
-        private protected override string? GetOpenAnnouncement()
-        {
-            // The input dialog reads only the app name, message and custom message; focus then moves to the
-            // input field (GetInitialFocusElement). No buttons are read (SR9), so the CustomDialog button
-            // announcement is intentionally not used here.
-            return GetBaseOpenAnnouncement();
-        }
-
         /// <summary>
         /// Updates the continue button's enabled state when the text input changes.
         /// </summary>

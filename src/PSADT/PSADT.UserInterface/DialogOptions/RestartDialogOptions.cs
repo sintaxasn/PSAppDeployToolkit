@@ -145,8 +145,7 @@ namespace PSADT.UserInterface.DialogOptions
                 (string?)strings["MessageRestart"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'MessageRestart' is missing."),
                 (string?)strings["TimeRemaining"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'TimeRemaining' is missing."),
                 (string?)strings["ButtonRestartNow"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonRestartNow' is missing."),
-                (string?)strings["ButtonRestartLater"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonRestartLater' is missing."),
-                (string?)strings["DeferButtonDisabled"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'DeferButtonDisabled' is missing."))
+                (string?)strings["ButtonRestartLater"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonRestartLater' is missing."))
             {
             }
 
@@ -163,9 +162,8 @@ namespace PSADT.UserInterface.DialogOptions
             /// <param name="timeRemaining">The string representing the remaining time before the restart. Cannot be <see langword="null"/>.</param>
             /// <param name="buttonRestartNow">The label for the "Restart Now" button. Cannot be <see langword="null"/>.</param>
             /// <param name="buttonRestartLater">The label for the "Restart Later" button. Cannot be <see langword="null"/>.</param>
-            /// <param name="deferButtonDisabled">The screen-reader "The \"{0}\" button has been disabled" format read when the defer (Restart Later) button is disabled; {0} is the button's text (SR7).</param>
             /// <exception cref="ArgumentNullException">Thrown if any of the parameters are <see langword="null"/>.</exception>
-            private RestartDialogStrings(string title, string message, string messageTime, string messageRestart, string timeRemaining, string buttonRestartNow, string buttonRestartLater, string deferButtonDisabled)
+            private RestartDialogStrings(string title, string message, string messageTime, string messageRestart, string timeRemaining, string buttonRestartNow, string buttonRestartLater)
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(title);
                 ArgumentException.ThrowIfNullOrWhiteSpace(message);
@@ -174,7 +172,6 @@ namespace PSADT.UserInterface.DialogOptions
                 ArgumentException.ThrowIfNullOrWhiteSpace(timeRemaining);
                 ArgumentException.ThrowIfNullOrWhiteSpace(buttonRestartNow);
                 ArgumentException.ThrowIfNullOrWhiteSpace(buttonRestartLater);
-                ArgumentException.ThrowIfNullOrWhiteSpace(deferButtonDisabled);
                 Title = title;
                 Message = message;
                 MessageTime = messageTime;
@@ -182,7 +179,6 @@ namespace PSADT.UserInterface.DialogOptions
                 TimeRemaining = timeRemaining;
                 ButtonRestartNow = buttonRestartNow;
                 ButtonRestartLater = buttonRestartLater;
-                DeferButtonDisabled = deferButtonDisabled;
             }
 
             /// <summary>
@@ -226,13 +222,6 @@ namespace PSADT.UserInterface.DialogOptions
             /// </summary>
             [DataMember]
             public readonly string ButtonRestartLater;
-
-            /// <summary>
-            /// Screen-reader "The \"{0}\" button has been disabled" format read when the defer (Restart Later)
-            /// button is disabled; {0} is substituted with the button's text (SR7).
-            /// </summary>
-            [DataMember]
-            public readonly string DeferButtonDisabled;
         }
     }
 }

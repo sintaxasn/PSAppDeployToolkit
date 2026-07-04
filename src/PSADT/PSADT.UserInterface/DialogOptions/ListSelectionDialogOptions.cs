@@ -139,8 +139,7 @@ namespace PSADT.UserInterface.DialogOptions
             /// <param name="strings">An IDictionary containing string resources. The entry with the key 'ListSelectionMessage' is used to
             /// provide the message for the dialog.</param>
             internal ListSelectionDialogStrings(IDictionary strings) : this(
-                (string?)(strings ?? throw new ArgumentNullException(nameof(strings)))["ListSelectionMessage"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ListSelectionMessage' is missing."),
-                (string?)strings["ButtonDisabledFormat"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonDisabledFormat' is missing."))
+                (string?)(strings ?? throw new ArgumentNullException(nameof(strings)))["ListSelectionMessage"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ListSelectionMessage' is missing."))
             {
             }
 
@@ -148,13 +147,10 @@ namespace PSADT.UserInterface.DialogOptions
             /// Initializes a new instance of the <see cref="ListSelectionDialogStrings"/> class with the specified strings.
             /// </summary>
             /// <param name="listSelectionMessage">The heading text displayed next to the list selection dropdown.</param>
-            /// <param name="buttonDisabledFormat">The screen-reader "{0} has been disabled" format announced for a visible but disabled button (SR7).</param>
-            private ListSelectionDialogStrings(string listSelectionMessage, string buttonDisabledFormat)
+            private ListSelectionDialogStrings(string listSelectionMessage)
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(listSelectionMessage);
-                ArgumentException.ThrowIfNullOrWhiteSpace(buttonDisabledFormat);
                 ListSelectionMessage = listSelectionMessage;
-                ButtonDisabledFormat = buttonDisabledFormat;
             }
 
             /// <summary>
@@ -162,12 +158,6 @@ namespace PSADT.UserInterface.DialogOptions
             /// </summary>
             [DataMember]
             public readonly string ListSelectionMessage;
-
-            /// <summary>
-            /// Screen-reader "{0} has been disabled" format announced for a visible but disabled button (SR7).
-            /// </summary>
-            [DataMember]
-            public readonly string ButtonDisabledFormat;
         }
     }
 }
