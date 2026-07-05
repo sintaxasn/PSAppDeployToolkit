@@ -1,10 +1,10 @@
-﻿Fluence.Wpf ships as a standard .NET Framework 4.7.2 assembly. Windows PowerShell 5.1
-(built into every Windows installation) can load that assembly at runtime and create a
-fully themed Fluent window from a single script file, with no project of your own to
-compile.
+﻿## Fluence.Wpf from PowerShell
 
-The four scripts in `Fluence.Wpf.Demo.PowerShell/` are the canonical, runnable examples
-this guide is based on. Every snippet below comes directly from those scripts.
+Fluence.Wpf ships as a standard .NET assembly, so Windows PowerShell 5.1 (built into every
+Windows installation) can load it with `Add-Type` and build a fully themed Fluent window from
+a single script file, with no C# project of your own to compile. This guide covers that direct
+path; the four runnable scripts in `Fluence.Wpf.Demo.PowerShell/` are the canonical examples,
+and every snippet below comes directly from them.
 
 ---
 

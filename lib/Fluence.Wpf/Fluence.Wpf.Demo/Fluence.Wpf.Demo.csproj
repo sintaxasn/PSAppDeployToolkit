@@ -6,8 +6,8 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Fluence.Wpf.Demo</RootNamespace>
     <AssemblyName>Fluence.Wpf.Demo</AssemblyName>
+    <ApplicationIcon>..\assets\Fluence_Icon_Light.ico</ApplicationIcon>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <ApplicationIcon>Resources\Fluence.ico</ApplicationIcon>
     <NoWarn>$(NoWarn);CS1591;IDE0330;VSTHRD001</NoWarn>
   </PropertyGroup>
 
@@ -21,13 +21,12 @@
       <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
     </Page>
     <Resource Include="Resources\ControlImages\*.png" />
-    <Resource Include="Resources\Fluence.ico" />
     <Resource Include="Resources\Fluence_Lockup_SideBySide_*.png" />
     <Resource Include="Resources\SegoeFluentIcons.tsv" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="Meziantou.Polyfill" Version="1.0.152">
+    <PackageReference Include="Meziantou.Polyfill" Version="1.0.156">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

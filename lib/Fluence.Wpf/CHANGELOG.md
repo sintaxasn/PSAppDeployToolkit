@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `net8.0-windows` target added to `Fluence.Wpf` to enable PowerShell 7 (.NET 8) in-process consumption alongside the existing `net472` and `net10.0-windows10.0.26100.0` targets.
+- `FluenceWindow` now defaults its `Icon` to the Fluence brand icon embedded in `Fluence.Wpf.dll`, so every window (the gallery and MVVM demos, and the PowerShell demo scripts) shows the Fluence icon in its title bar and taskbar with no caller setup. A consumer-assigned `Icon` still overrides the default. The brand icon now ships as resolution-independent vector `DrawingImage` resources (`FluenceIconBrandDrawingImage`, `FluenceIconLightDrawingImage`, `FluenceIconDarkDrawingImage` in `Themes/Icons/FluenceIcons.xaml`, merged into `Generic.xaml`); the window and taskbar icon itself is the square, no-background brand mark embedded as a 256x256 PNG (`Themes/Icons/Fluence_Icon_NoBackground_256.png`), which the Win32 HICON renders crisply without the aspect distortion a non-square source would introduce. Dropping the embedded multi-resolution `Fluence.ico` slims `Fluence.Wpf.dll` by roughly 540 KB (about 40% of the binary). The gallery home page shows the large brand vector as its hero.
+- `FluenceWindow.DefaultIcon` is now a public static property exposing the embedded square Fluence brand icon (a `BitmapSource`), so a consumer can apply the same Win32-HICON-compatible mark to its own windows; a vector `DrawingImage` does not reliably drive a taskbar HICON.
+- `InfoBar.GetSeverityGlyph(InfoBarSeverity)` and `InfoBar.GetSeverityBrushKey(InfoBarSeverity)` - public helpers returning the canonical Segoe Fluent glyph and theme brush key for each severity, so a consumer can render the severity icon outside an InfoBar without hardcoding codepoints.
+
+### Changed
+
+- Demo: the gallery Menus page is now found when searching "dialog" or "message" (its ContentDialog sample lives there), and the PowerShell `03-ControlsTour.ps1` demo script tours common Fluence controls (Button, ToggleSwitch, CheckBox, RadioButton, TextBox, NumberBox) inside scrolling `Card` panels.
+- `Fluence.Wpf` NuGet `PackageIcon` repointed from the retired `Fluence_Logo_128.png` to `Fluence_Icon_Light_128.png`. The demo executables set their Windows `ApplicationIcon` to `assets/Fluence_Icon_Light.ico`, so the `.exe` shows the Fluence brand mark in Explorer and on a pre-launch taskbar pin; the runtime window and title-bar icon come from the `FluenceWindow` embedded square brand icon.
+
+### Removed
+
+- `assets/Fluence.ico`, now superseded by the embedded brand icons (vector `DrawingImage` resources and the window-icon PNG).
+
+### Fixed
+
+- `FluenceWindow`: the default brand icon now degrades to no icon on any load or render failure. `CreateDefaultIcon` runs in a static field initializer and previously caught only `IOException`, so any other failure (a missing or renamed resource key, or a COM, GPU, or memory failure loading or decoding the embedded icon under a headless or session-0 host such as PSADT running as SYSTEM) faulted the `FluenceWindow` type with a `TypeInitializationException` and broke every window construction in the process.
+- Gallery demo: re-enabling the window icon on the Settings page restores the embedded brand icon (`FluenceWindow.DefaultIcon`, so the Win32 taskbar HICON renders) instead of assigning the raw vector `DrawingImage`.
+
 ## [0.8.7-preview] - 2026-06-23
 
 ### Fixed
