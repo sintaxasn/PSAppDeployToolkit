@@ -21,7 +21,10 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - uses: actions/cache@v5
+      - name: Check text policy (UTF-8 BOM, LF, banned APIs, hard-coded hex, em/en dashes)
+        run: pwsh .claude/hooks/post-tool-util.ps1 -CheckAll
+
+      - uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
@@ -30,12 +33,6 @@ jobs:
 
       - name: Restore
         run: dotnet restore Fluence.Wpf.sln
-
-      - name: Restore .NET tools
-        run: dotnet tool restore
-
-      - name: Check XAML formatting
-        run: pwsh .claude/hooks/Format-Xaml.ps1 -Check
 
       - name: Build solution (Release)
         run: dotnet build Fluence.Wpf.sln -c Release --no-restore -v minimal
@@ -57,15 +54,19 @@ jobs:
           path: TestResults/
           retention-days: 14
 
-      # - name: Generate SBOM (.NET 10.x)
-      #   uses: anchore/sbom-action@v0
-      #   with:
-      #     path: Fluence.Wpf/bin/Release/net10.0-windows10.0.26100.0/
+      # SBOM + artifact publishing run only after both test lanes pass: a failed test fails the
+      # job, so these success-gated steps are skipped.
+      - name: Generate SBOM (.NET 10)
+        uses: anchore/sbom-action@v0
+        with:
+          path: Fluence.Wpf/bin/Release/net10.0-windows10.0.26100.0/
+          artifact-name: fluence-wpf-sbom-dotnet10.spdx.json
 
-      # - name: Generate SBOM (.NET Framework 4.7.2)
-      #   uses: anchore/sbom-action@v0
-      #   with:
-      #     path: Fluence.Wpf/bin/Release/net472/
+      - name: Generate SBOM (.NET Framework 4.7.2)
+        uses: anchore/sbom-action@v0
+        with:
+          path: Fluence.Wpf/bin/Release/net472/
+          artifact-name: fluence-wpf-sbom-dotnet472.spdx.json
 
       - name: Upload library artifacts (.NET 10.x)
         uses: actions/upload-artifact@v7

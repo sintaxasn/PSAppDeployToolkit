@@ -27,6 +27,7 @@
  */
 
 using Fluence.Wpf.Controls;
+using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 
@@ -83,13 +84,34 @@ namespace Fluence.Wpf.Automation
         /// <inheritdoc />
         public virtual double LargeChange => NumberBox.LargeChange;
 
-        /// <inheritdoc />
-        public virtual bool IsReadOnly => !NumberBox.IsEnabled;
+        /// <summary>
+        /// Always <see langword="false"/>. <see cref="NumberBox"/> has no read-only mode;
+        /// disabled state is conveyed via <see cref="System.Windows.UIElement.IsEnabled"/>,
+        /// not <see cref="IRangeValueProvider.IsReadOnly"/>.
+        /// </summary>
+        public virtual bool IsReadOnly => false;
 
         /// <inheritdoc />
+        /// <exception cref="ElementNotEnabledException">The control is disabled.</exception>
         public virtual void SetValue(double value)
         {
+            if (!IsEnabled())
+            {
+                throw new ElementNotEnabledException();
+            }
+
             NumberBox.Value = value;
+        }
+
+        /// <summary>
+        /// Raises the <see cref="RangeValuePatternIdentifiers.ValueProperty"/> property-changed event
+        /// so UI Automation clients (Narrator) observe the current value instead of a stale one.
+        /// </summary>
+        /// <param name="oldValue">The previous value.</param>
+        /// <param name="newValue">The new value.</param>
+        internal virtual void RaiseValueChanged(double oldValue, double newValue)
+        {
+            RaisePropertyChangedEvent(RangeValuePatternIdentifiers.ValueProperty, oldValue, newValue);
         }
 
         /// <summary>
