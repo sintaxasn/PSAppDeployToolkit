@@ -99,6 +99,9 @@ function Get-ADTApplication
 
     .LINK
         https://psappdeploytoolkit.com/docs/reference/functions/Get-ADTApplication
+
+    .LINK
+        https://github.com/PSAppDeployToolkit/PSAppDeployToolkit/blob/main/src/PSAppDeployToolkit/Public/Get-ADTApplication.ps1
     #>
 
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'ProductCode', Justification = "This parameter is used within delegates that PSScriptAnalyzer has no visibility of. See https://github.com/PowerShell/PSScriptAnalyzer/issues/1472 for more details.")]
@@ -175,7 +178,7 @@ function Get-ADTApplication
 
         # Define compiled regex for use throughout main loop.
         $updatesAndHotFixesRegex = [System.Text.RegularExpressions.Regex]::new('((?i)kb\d+|(Cumulative|Security) Update|Hotfix)', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::Compiled)
-        $msiUpgradeCodeLookupTable = Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UpgradeCodes\* | Get-ItemProperty | & {
+        $msiUpgradeCodeLookupTable = Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UpgradeCodes\* -ErrorAction Ignore | Get-ItemProperty | & {
             begin
             {
                 # Open lookup table dictionary for returning at the end.

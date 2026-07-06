@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using PSADT.Interop;
-using PSADT.Interop.Extensions;
 using PSADT.Interop.Utilities;
 using Windows.Win32;
 
@@ -86,7 +85,7 @@ namespace PSADT.Utilities
         /// <param name="section">The section name</param>
         /// <returns>OrderedDictionary of key/value pairs in the section</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified section does not exist in the INI file.</exception>
-        /// <exception cref="InvalidDataException">Thrown if the INI file is malformed or if there is an error reading the section.</exception>"
+        /// <exception cref="InvalidDataException">Thrown if the INI file is malformed or if there is an error reading the section.</exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S2302:\"nameof\" should be used", Justification = "This is a false positive.")]
         public static OrderedDictionary? GetSection(string filepath, string section)
         {
@@ -103,7 +102,7 @@ namespace PSADT.Utilities
             {
                 res = NativeMethods.GetPrivateProfileSection(section, buffer, filepath);
             }
-            catch (Exception ex) when (ex.Message is not null)
+            catch (Exception ex)
             {
                 throw new InvalidDataException($"Failed to get section [{section}] from the INI file.", ex);
             }
@@ -116,7 +115,7 @@ namespace PSADT.Utilities
                     continue;
                 }
 
-                int separatorIndex = entry.IndexOf('=', StringComparison.OrdinalIgnoreCase);
+                int separatorIndex = entry.IndexOf('=', StringComparison.Ordinal);
                 if (separatorIndex <= 0)
                 {
                     continue;
@@ -141,12 +140,12 @@ namespace PSADT.Utilities
         /// </summary>
         /// <param name="filepath">Path to the INI file</param>
         /// <returns>Array of section names</returns>
-        /// <exception cref="InvalidDataException">Thrown if the INI file is malformed or if there is an error reading the section names.</exception>"
+        /// <exception cref="InvalidDataException">Thrown if the INI file is malformed or if there is an error reading the section names.</exception>
         private static ReadOnlyCollection<string> GetSectionNames(string filepath)
         {
             Span<char> buffer = new char[65536]; uint len = NativeMethods.GetPrivateProfileSectionNames(buffer, filepath);
             string[] sections = buffer[..(int)len].ToString().Split(['\0'], StringSplitOptions.RemoveEmptyEntries);
-            return sections.Length == 0 ? throw new InvalidDataException("No sections found in the INI file.") : new(sections);
+            return sections.Length is 0 ? throw new InvalidDataException("No sections found in the INI file.") : new(sections);
         }
 
         /// <summary>
@@ -156,6 +155,7 @@ namespace PSADT.Utilities
         /// <param name="section">The section name</param>
         /// <param name="content">INI content to write</param>
         /// <exception cref="ArgumentException">Thrown if the content contains invalid keys or values.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0107:Do not use object.ToString", Justification = "Don't have a choice here.")]
         public static void WriteSection(string filepath, string section, IDictionary? content)
         {
             if (content is null)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Management.Automation;
+using PSAppDeployToolkit.Utilities;
 
 namespace PSAppDeployToolkit.Attributes
 {
@@ -18,10 +19,11 @@ namespace PSAppDeployToolkit.Attributes
         /// Initializes a new instance of the TimeSpanTransformationAttribute class using the specified culture
         /// information.
         /// </summary>
-        /// <param name="cultureInfo">The CultureInfo to use for parsing and formatting time span values. Cannot be null.</param>
-        public TimeSpanTransformationAttribute(CultureInfo cultureInfo) : this()
+        /// <param name="formatProvider">The IFormatProvider to use for parsing and formatting time span values. Cannot be null.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0170:Type cannot be used as an attribute argument", Justification = "https://www.youtube.com/watch?v=IpF9O0R873I")]
+        public TimeSpanTransformationAttribute(IFormatProvider formatProvider) : this()
         {
-            CultureInfo = cultureInfo;
+            FormatProvider = formatProvider;
         }
 
         /// <summary>
@@ -33,13 +35,9 @@ namespace PSAppDeployToolkit.Attributes
         /// <exception cref="ArgumentNullException">Thrown when the input value is null.</exception>
         /// <exception cref="ArgumentException">Thrown when the input value cannot be transformed into a TimeSpan.</exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0015:Specify the parameter name in ArgumentException", Justification = "We don't want a paramter name on these exceptions.")]
-        public override object Transform(EngineIntrinsics engineIntrinsics, object inputData)
+        public override object Transform(EngineIntrinsics engineIntrinsics, object? inputData)
         {
-            while (inputData is PSObject psObject)
-            {
-                inputData = psObject.BaseObject;
-            }
-            if (inputData is null)
+            if (!PowerShellUtilities.TryGetBaseObject(inputData, out inputData))
             {
                 throw new ArgumentNullException(paramName: null, "Cannot transform null to TimeSpan.");
             }
@@ -49,7 +47,7 @@ namespace PSAppDeployToolkit.Attributes
             }
             if (inputData is string valueAsString)
             {
-                if (TimeSpan.TryParse(valueAsString, CultureInfo, out TimeSpan parsedTimeSpan))
+                if (TimeSpan.TryParse(valueAsString, FormatProvider, out TimeSpan parsedTimeSpan))
                 {
                     return parsedTimeSpan;
                 }
@@ -81,35 +79,65 @@ namespace PSAppDeployToolkit.Attributes
             switch (inputData)
             {
                 case sbyte value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case byte value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case short value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case ushort value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case int value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case uint value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case long value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case ulong value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case float value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case double value:
-                    seconds = value;
-                    return true;
+                    {
+                        seconds = value;
+                        return true;
+                    }
+
                 case decimal value:
                     try
                     {
@@ -121,15 +149,18 @@ namespace PSAppDeployToolkit.Attributes
                         seconds = default;
                         return false;
                     }
+
                 default:
-                    seconds = default;
-                    return false;
+                    {
+                        seconds = default;
+                        return false;
+                    }
             }
         }
 
         /// <summary>
-        /// Represents the culture-specific information associated with the current context.
+        /// Represents the format provider associated with the current context.
         /// </summary>
-        public CultureInfo CultureInfo { get; } = CultureInfo.CurrentCulture;
+        public IFormatProvider FormatProvider { get; } = CultureInfo.CurrentCulture;
     }
 }

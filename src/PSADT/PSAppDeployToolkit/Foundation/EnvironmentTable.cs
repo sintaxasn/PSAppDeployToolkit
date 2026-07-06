@@ -34,7 +34,7 @@ namespace PSAppDeployToolkit.Foundation
     /// useful for deployment automation, diagnostics, and scripts that need to adapt their behavior based on the
     /// current environment. All properties are read-only and reflect the state of the environment at the time the
     /// instance is created.</remarks>
-    public sealed record EnvironmentTable
+    public sealed record class EnvironmentTable
     {
         /// <summary>
         /// Initializes a new instance of the EnvironmentTable class, providing access to various environment-related
@@ -47,6 +47,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <param name="psVersionTable">A hashtable containing version information for the PowerShell environment. This parameter cannot be null.</param>
         /// <param name="psVersion">The version of PowerShell being used, represented as a Version object.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="cmdlet"/> or <paramref name="psVersionTable"/> is null.</exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "This is a false positive, we're directly consuming the ValueTask.")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "There's no async support during construction.")]
         public EnvironmentTable(PSCmdlet cmdlet, Hashtable psVersionTable, Version psVersion)
         {
@@ -69,7 +70,7 @@ namespace PSAppDeployToolkit.Foundation
 
             // Domain membership.
             DomainStatus domainStatus = DeviceUtilities.GetDomainStatus();
-            if (IsMachinePartOfDomain = domainStatus.JoinStatus == NETSETUP_JOIN_STATUS.NetSetupDomainName)
+            if (IsMachinePartOfDomain = domainStatus.JoinStatus is NETSETUP_JOIN_STATUS.NetSetupDomainName)
             {
                 // Set the domain name.
                 if (domainStatus.DomainOrWorkgroupName is string domainName)
@@ -104,7 +105,7 @@ namespace PSAppDeployToolkit.Foundation
                 {
                     EnvLogonServer = (string?)Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Group Policy\\History", "DCName", defaultValue: null);
                 }
-                if (EnvLogonServer?.StartsWith('\\') == true)
+                if (EnvLogonServer?.StartsWith('\\') is true)
                 {
                     EnvLogonServer = EnvLogonServer.TrimStart('\\');
                 }
@@ -779,7 +780,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <remarks>This property returns <see langword="true"/> if the environment's operating system is
         /// identified as a server version based on its product type. Use this property to distinguish between server
         /// and client operating systems when conditional logic is required.</remarks>
-        public bool IsServerOS => EnvOSProductType == 3;
+        public bool IsServerOS => EnvOSProductType is 3;
 
         /// <summary>
         /// Gets a value indicating whether the operating system is configured as a domain controller.
@@ -787,7 +788,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <remarks>This property determines if the current operating system is functioning as a domain
         /// controller by evaluating its product type. Use this property to check for domain controller-specific
         /// behavior or requirements in your application.</remarks>
-        public bool IsDomainControllerOS => EnvOSProductType == 2;
+        public bool IsDomainControllerOS => EnvOSProductType is 2;
 
         /// <summary>
         /// Gets a value indicating whether the operating system is a workstation edition.
@@ -795,7 +796,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <remarks>This property can be used to distinguish between workstation and server operating
         /// system environments. It is useful for scenarios where application behavior should differ based on the OS
         /// type.</remarks>
-        public bool IsWorkstationOS => EnvOSProductType == 1;
+        public bool IsWorkstationOS => EnvOSProductType is 1;
 
         /// <summary>
         /// Gets a value indicating whether the current environment is a terminal server.
@@ -874,7 +875,7 @@ namespace PSAppDeployToolkit.Foundation
         /// useful for diagnostics and performance tuning.</remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "This needs to be an instance member.")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0041:Make method static (deprecated, use CA1822 instead)", Justification = "This needs to be an instance member.")]
-        public string? EnvHardwareType => _envHardwareType;
+        public string EnvHardwareType => _envHardwareType;
 
         /// <summary>
         /// Gets the environment PowerShell version information as a hashtable.
@@ -1048,7 +1049,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <remarks>This property provides a way to access the well-known SID for the local system
         /// account, which is often used in security contexts. The returned NTAccount can be used for identity-related
         /// operations within the system.</remarks>
-        public NTAccount LocalSystemNTAccount { get; } = (NTAccount)AccountUtilities.GetWellKnownSid(WellKnownSidType.LocalSystemSid).Translate(typeof(NTAccount));
+        public NTAccount LocalSystemNTAccount { get; } = (NTAccount)new SecurityIdentifier(WellKnownSidType.LocalSystemSid, domainSid: null).Translate(typeof(NTAccount));
 
         /// <summary>
         /// Gets the NTAccount that represents the built-in local users group on the current machine.
@@ -1056,7 +1057,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <remarks>This property retrieves the well-known security identifier (SID) for the built-in
         /// users group and translates it to an NTAccount. It is useful for managing permissions and access control for
         /// all local users.</remarks>
-        public NTAccount LocalUsersGroup { get; } = (NTAccount)AccountUtilities.GetWellKnownSid(WellKnownSidType.BuiltinUsersSid).Translate(typeof(NTAccount));
+        public NTAccount LocalUsersGroup { get; } = (NTAccount)new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, domainSid: null).Translate(typeof(NTAccount));
 
         /// <summary>
         /// Gets the local administrators group account for the current machine.
@@ -1064,7 +1065,7 @@ namespace PSAppDeployToolkit.Foundation
         /// <remarks>This property retrieves the well-known local administrators group by translating the
         /// built-in administrators security identifier (SID) to an NTAccount. It is useful for managing permissions and
         /// access control related to local administrative tasks.</remarks>
-        public NTAccount LocalAdministratorsGroup { get; } = (NTAccount)AccountUtilities.GetWellKnownSid(WellKnownSidType.BuiltinAdministratorsSid).Translate(typeof(NTAccount));
+        public NTAccount LocalAdministratorsGroup { get; } = (NTAccount)new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, domainSid: null).Translate(typeof(NTAccount));
 
         /// <summary>
         /// Gets a value indicating whether the current account is a session zero account, which includes local system,
@@ -1157,21 +1158,19 @@ namespace PSAppDeployToolkit.Foundation
         /// </summary>
         /// <remarks>This property provides information about the hardware configuration, which can be
         /// useful for diagnostics and performance tuning.</remarks>
-        private static readonly string? _envHardwareType = HardwareInfo.SystemInformation.Manufacturer is string manufacturer && HardwareInfo.SystemInformation.SerialNumber is string serialNumber && HardwareInfo.SystemInformation.ProductName is string productName && HardwareInfo.SystemInformation.Version is string version
-            ? version.Contains("VRTUAL", StringComparison.Ordinal) || (manufacturer.Contains("Microsoft", StringComparison.Ordinal) && !productName.Contains("Surface", StringComparison.Ordinal))
-                ? "Virtual:Hyper-V"
-                : version.Contains("A M I", StringComparison.Ordinal)
-                ? "Virtual:Virtual PC"
-                : version.Contains("Xen", StringComparison.Ordinal)
-                ? "Virtual:Xen"
-                : serialNumber.Contains("VMware", StringComparison.Ordinal) || manufacturer.Contains("VMware", StringComparison.Ordinal)
-                ? "Virtual:VMware"
-                : serialNumber.Contains("Parallels", StringComparison.Ordinal) || manufacturer.Contains("Parallels", StringComparison.Ordinal)
-                ? "Virtual:Parallels"
-                : productName.Contains("Virtual", StringComparison.Ordinal)
-                ? "Virtual"
-                : "Physical"
-            : null;
+        private static readonly string _envHardwareType = HardwareInfo.SystemInformation.Version?.Contains("VRTUAL", StringComparison.Ordinal) is true || (HardwareInfo.SystemInformation.Manufacturer?.Contains("Microsoft", StringComparison.Ordinal) is true && HardwareInfo.SystemInformation.ProductName?.Contains("Surface", StringComparison.Ordinal) is not true)
+            ? "Virtual:Hyper-V"
+            : HardwareInfo.SystemInformation.Version?.Contains("A M I", StringComparison.Ordinal) is true
+            ? "Virtual:Virtual PC"
+            : HardwareInfo.SystemInformation.Version?.Contains("Xen", StringComparison.Ordinal) is true
+            ? "Virtual:Xen"
+            : HardwareInfo.SystemInformation.SerialNumber?.Contains("VMware", StringComparison.Ordinal) is true || HardwareInfo.SystemInformation.Manufacturer?.Contains("VMware", StringComparison.Ordinal) is true
+            ? "Virtual:VMware"
+            : HardwareInfo.SystemInformation.SerialNumber?.Contains("Parallels", StringComparison.Ordinal) is true || HardwareInfo.SystemInformation.Manufacturer?.Contains("Parallels", StringComparison.Ordinal) is true
+            ? "Virtual:Parallels"
+            : HardwareInfo.SystemInformation.ProductName?.Contains("Virtual", StringComparison.Ordinal) is true
+            ? "Virtual"
+            : "Physical";
 
         /// <summary>
         /// Gets a read-only collection of characters that are invalid in file names.

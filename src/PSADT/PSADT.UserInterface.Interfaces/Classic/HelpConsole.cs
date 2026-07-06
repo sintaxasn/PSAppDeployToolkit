@@ -16,9 +16,10 @@ namespace PSADT.UserInterface.Interfaces.Classic
         /// <summary>
         /// Initializes a new instance of the <see cref="HelpConsole"/> class.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0191:Do not use the null-forgiving operator", Justification = "This is necessary here.")]
         internal HelpConsole() : this(null!)
         {
-            if (LicenseManager.UsageMode == LicenseUsageMode.Runtime)
+            if (LicenseManager.UsageMode is LicenseUsageMode.Runtime)
             {
                 throw new NotSupportedException("This constructor cannot be used in runtime mode.");
             }
@@ -45,11 +46,11 @@ namespace PSADT.UserInterface.Interfaces.Classic
                 comboBox.Items.Clear(); comboBox.Items.AddRange([.. options.ModuleHelpMap.Keys]);
                 comboBox.SelectedIndexChanged += (sender, e) =>
                 {
-                    listBox.Items.Clear(); object[] functions = [.. options.ModuleHelpMap[(string)(comboBox.SelectedItem ?? throw new InvalidOperationException("The selected combobox item was null."))].Keys]; listBox.Items.AddRange(functions);
+                    listBox.Items.Clear(); object[] functions = [.. options.ModuleHelpMap[(string?)comboBox.SelectedItem ?? throw new InvalidOperationException("The selected combobox item was null.")].Keys]; listBox.Items.AddRange(functions);
                 };
                 listBox.SelectedIndexChanged += (sender, e) =>
                 {
-                    richTextBox.Clear(); richTextBox.Text = options.ModuleHelpMap[(string)(comboBox.SelectedItem ?? throw new InvalidOperationException("The selected combobox item was null."))][(string)(listBox.SelectedItem ?? throw new InvalidOperationException("The selected listbox item was null."))];
+                    richTextBox.Clear(); richTextBox.Text = options.ModuleHelpMap[(string?)comboBox.SelectedItem ?? throw new InvalidOperationException("The selected combobox item was null.")][(string?)listBox.SelectedItem ?? throw new InvalidOperationException("The selected listbox item was null.")];
                 };
 
                 // Set the initial selected index of the ComboBox to the first item, if available.

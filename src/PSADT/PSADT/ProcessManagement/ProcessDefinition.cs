@@ -10,7 +10,7 @@ namespace PSADT.ProcessManagement
     /// Represents basic information about a process.
     /// </summary>
     [DataContract]
-    public sealed record ProcessDefinition
+    public sealed record class ProcessDefinition
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessDefinition"/> struct.
@@ -20,21 +20,14 @@ namespace PSADT.ProcessManagement
         {
             // Set name property first and foremost.
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            if (WildcardOnlyRegex.IsMatch(name))
+            {
+                throw new ArgumentException("The process name cannot be only wildcard characters.", nameof(name));
+            }
             Name = name;
 
             // Set all calculated fields based on the name.
-            if (NameIsFullyQualifiedPath())
-            {
-                ProcessName = Path.GetFileNameWithoutExtension(Name);
-            }
-            if (Name.Contains('*', StringComparison.OrdinalIgnoreCase))
-            {
-                NameRegex = new($"^{Regex.Escape(Name).Replace("\\*", ".*", StringComparison.OrdinalIgnoreCase)}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                if (ProcessName is not null)
-                {
-                    ProcessNameRegex = new($"^{Regex.Escape(ProcessName).Replace("\\*", ".*", StringComparison.OrdinalIgnoreCase)}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                }
-            }
+            SetCalculatedFields();
         }
 
         /// <summary>
@@ -60,6 +53,35 @@ namespace PSADT.ProcessManagement
         /// <param name="properties">The hashtable with a process's name, and optionally a description.</param>
         public ProcessDefinition(IDictionary properties) : this((string?)(properties ?? throw new ArgumentNullException(nameof(properties)))["Name"] ?? throw new ArgumentNullException(nameof(properties), "The specified key 'Name' is missing."), (string?)properties["Description"])
         {
+        }
+
+        /// <summary>
+        /// Sets all calculated fields based on the name.
+        /// </summary>
+        private void SetCalculatedFields()
+        {
+            if (NameIsFullyQualifiedPath())
+            {
+                ProcessName = Path.GetFileNameWithoutExtension(Name);
+            }
+            if (Name.Contains('*', StringComparison.Ordinal))
+            {
+                NameRegex = new($"^{Regex.Escape(Name).Replace("\\*", ".*", StringComparison.Ordinal)}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                if (ProcessName is not null)
+                {
+                    ProcessNameRegex = new($"^{Regex.Escape(ProcessName).Replace("\\*", ".*", StringComparison.Ordinal)}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets all calculated fields after deserialization.
+        /// </summary>
+        /// <param name="context">The deserialization context.</param>
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            SetCalculatedFields();
         }
 
         /// <summary>
@@ -106,7 +128,7 @@ namespace PSADT.ProcessManagement
         /// Gets the process name without the path component, if the process definition's name is a fully qualified path.
         /// </summary>
         [IgnoreDataMember]
-        private readonly string? ProcessName;
+        private string? ProcessName;
 
         /// <summary>
         /// Gets the description of the process.
@@ -118,12 +140,18 @@ namespace PSADT.ProcessManagement
         /// Gets the regular expression for the process name, if the name contains wildcard characters.
         /// </summary>
         [IgnoreDataMember]
-        private readonly Regex? NameRegex;
+        private Regex? NameRegex;
 
         /// <summary>
         /// Gets the regular expression for the process name without the path component, if the process definition's name is a fully qualified path and contains wildcard characters.
         /// </summary>
         [IgnoreDataMember]
-        private readonly Regex? ProcessNameRegex;
+        private Regex? ProcessNameRegex;
+
+        /// <summary>
+        /// Gets the regular expression to determine if the process definition's name is a wildcard character only, which is not allowed for process definitions and can be used to validate input when creating process definitions from external sources.
+        /// </summary>
+        [IgnoreDataMember]
+        private static readonly Regex WildcardOnlyRegex = new(@"^\*+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     }
 }

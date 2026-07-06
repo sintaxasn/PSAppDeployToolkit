@@ -19,6 +19,9 @@ function Invoke-ADTRegSvr32
     .PARAMETER Action
         Specify whether to register or unregister the DLL.
 
+    .PARAMETER AsUser
+        Specifies that the DLL should be registered for the current user only by calling its DllInstall entry point with the 'user' argument (regsvr32.exe /n /i:user). If this function is running under the SYSTEM account, regsvr32.exe is executed in the context of the currently logged on user. Note that the DLL must support per-user registration via a DllInstall export for this to work.
+
     .INPUTS
         None
 
@@ -39,6 +42,11 @@ function Invoke-ADTRegSvr32
 
         Unregisters the specified DLL file.
 
+    .EXAMPLE
+        Invoke-ADTRegSvr32 -FilePath "C:\Test\DcTLSFileToDMSComp.dll" -Action 'Register' -AsUser
+
+        Registers the specified DLL file for the currently logged on user only.
+
     .NOTES
         An active ADT session is NOT required to use this function.
 
@@ -51,6 +59,9 @@ function Invoke-ADTRegSvr32
 
     .LINK
         https://psappdeploytoolkit.com/docs/reference/functions/Invoke-ADTRegSvr32
+
+    .LINK
+        https://github.com/PSAppDeployToolkit/PSAppDeployToolkit/blob/main/src/PSAppDeployToolkit/Public/Invoke-ADTRegSvr32.ps1
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
@@ -69,7 +80,10 @@ function Invoke-ADTRegSvr32
 
         [Parameter(Mandatory = $true)]
         [ValidateSet('Register', 'Unregister')]
-        [System.String]$Action
+        [System.String]$Action,
+
+        [Parameter(Mandatory = $false)]
+        [System.Management.Automation.SwitchParameter]$AsUser
     )
 
     begin
@@ -80,12 +94,12 @@ function Invoke-ADTRegSvr32
         {
             Register
             {
-                "/s `"$FilePath`""
+                "/s$(if ($AsUser) { ' /n /i:user' }) `"$FilePath`""
                 break
             }
             Unregister
             {
-                "/s /u `"$FilePath`""
+                "/s /u$(if ($AsUser) { ' /n /i:user' }) `"$FilePath`""
                 break
             }
         }
@@ -150,8 +164,16 @@ function Invoke-ADTRegSvr32
                     throw (New-ADTErrorRecord @naerParams)
                 }
 
-                # Register the DLL file and measure the success.
-                Start-ADTProcess -FilePath $RegSvr32Path -ArgumentList $ActionParameters -CreateNoWindow -SuccessExitCodes 0
+                # Register the DLL file and measure the success. Per-user registration writes to the
+                # user's HKCU hive, so when running as SYSTEM, execute as the logged on user instead.
+                if ($AsUser)
+                {
+                    Start-ADTProcessAsUser -FilePath $RegSvr32Path -ArgumentList $ActionParameters -CreateNoWindow -SuccessExitCodes 0
+                }
+                else
+                {
+                    Start-ADTProcess -FilePath $RegSvr32Path -ArgumentList $ActionParameters -CreateNoWindow -SuccessExitCodes 0
+                }
             }
             catch
             {

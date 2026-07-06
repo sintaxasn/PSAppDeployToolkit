@@ -36,7 +36,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 SetButtonContentWithAccelerator(ButtonLeft, options.ButtonLeftText);
                 ButtonLeft.Visibility = Visibility.Visible;
-                if (options.DefaultButton == DialogDefaultButton.Left)
+                if (options.DefaultButton is DialogDefaultButton.Left)
                 {
                     SetDefaultButton(ButtonLeft);
                     SetAccentButton(ButtonLeft);
@@ -46,7 +46,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 SetButtonContentWithAccelerator(ButtonMiddle, options.ButtonMiddleText);
                 ButtonMiddle.Visibility = Visibility.Visible;
-                if (options.DefaultButton == DialogDefaultButton.Middle)
+                if (options.DefaultButton is DialogDefaultButton.Middle)
                 {
                     SetDefaultButton(ButtonMiddle);
                     SetAccentButton(ButtonMiddle);
@@ -56,7 +56,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             {
                 SetButtonContentWithAccelerator(ButtonRight, options.ButtonRightText);
                 ButtonRight.Visibility = Visibility.Visible;
-                if (options.DefaultButton == DialogDefaultButton.Right)
+                if (options.DefaultButton is DialogDefaultButton.Right)
                 {
                     SetDefaultButton(ButtonRight);
                     SetAccentButton(ButtonRight);
@@ -67,15 +67,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // first visible (primary) button, Esc activates the last visible (typically cancel) button.
             // The single-button case is already handled by the base UpdateButtonLayout.
             System.Collections.Generic.List<Fluence.Wpf.Controls.Button> visibleButtons = [];
-            if (ButtonLeft.Visibility == Visibility.Visible)
+            if (ButtonLeft.Visibility is Visibility.Visible)
             {
                 visibleButtons.Add(ButtonLeft);
             }
-            if (ButtonMiddle.Visibility == Visibility.Visible)
+            if (ButtonMiddle.Visibility is Visibility.Visible)
             {
                 visibleButtons.Add(ButtonMiddle);
             }
-            if (ButtonRight.Visibility == Visibility.Visible)
+            if (ButtonRight.Visibility is Visibility.Visible)
             {
                 visibleButtons.Add(ButtonRight);
             }
@@ -89,9 +89,9 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <inheritdoc />
         private protected override FrameworkElement? GetInitialFocusElement()
         {
-            return ButtonLeft.Visibility == Visibility.Visible ? ButtonLeft
-                : ButtonMiddle.Visibility == Visibility.Visible ? ButtonMiddle
-                : ButtonRight.Visibility == Visibility.Visible ? ButtonRight
+            return ButtonLeft.Visibility is Visibility.Visible ? ButtonLeft
+                : ButtonMiddle.Visibility is Visibility.Visible ? ButtonMiddle
+                : ButtonRight.Visibility is Visibility.Visible ? ButtonRight
                 : null;
         }
 
@@ -108,7 +108,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Only set DialogResult if it hasn't been set by a derived class (still has default "Timeout" value).
             if (CustomDialogResult.DefaultResult.Equals(DialogResult))
             {
-                DialogResult = new CustomDialogResult(((AccessText)ButtonLeft.Content).Text.Replace(oldValue: "_", newValue: null, StringComparison.OrdinalIgnoreCase));
+                DialogResult = new CustomDialogResult(((AccessText)ButtonLeft.Content).Text.Replace("_", newValue: null, StringComparison.Ordinal));
             }
             base.ButtonLeft_Click(sender, e);
         }
@@ -126,7 +126,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Only set DialogResult if it hasn't been set by a derived class (still has default "Timeout" value).
             if (CustomDialogResult.DefaultResult.Equals(DialogResult))
             {
-                DialogResult = new CustomDialogResult(((AccessText)ButtonMiddle.Content).Text.Replace(oldValue: "_", newValue: null, StringComparison.OrdinalIgnoreCase));
+                DialogResult = new CustomDialogResult(((AccessText)ButtonMiddle.Content).Text.Replace("_", newValue: null, StringComparison.Ordinal));
             }
             base.ButtonMiddle_Click(sender, e);
         }
@@ -144,7 +144,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Only set DialogResult if it hasn't been set by a derived class (still has default "Timeout" value).
             if (CustomDialogResult.DefaultResult.Equals(DialogResult))
             {
-                DialogResult = new CustomDialogResult(((AccessText)ButtonRight.Content).Text.Replace(oldValue: "_", newValue: null, StringComparison.OrdinalIgnoreCase));
+                DialogResult = new CustomDialogResult(((AccessText)ButtonRight.Content).Text.Replace("_", newValue: null, StringComparison.Ordinal));
             }
             base.ButtonRight_Click(sender, e);
         }

@@ -43,7 +43,9 @@ namespace PSADT.ProcessManagement
         public static IReadOnlyList<string> CommandLineToArgumentList(string commandLine, bool strict = false)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
-            return strict ? CommandLineToArgumentListStrict(commandLine.AsSpan()) : CommandLineToArgumentListEnhanced(commandLine.AsSpan());
+            return !strict
+                ? CommandLineToArgumentListEnhanced(commandLine)
+                : CommandLineToArgumentListStrict(commandLine);
         }
 
         /// <summary>
@@ -122,7 +124,11 @@ namespace PSADT.ProcessManagement
                 {
                     break;
                 }
-                if (IsKeyValueArgument(commandLine, position))
+                if (TryParseColonSeparatedQuotedValueArgument(commandLine, ref position, out string colonSeparatedArgument))
+                {
+                    arguments.Add(colonSeparatedArgument);
+                }
+                else if (IsKeyValueArgument(commandLine, position))
                 {
                     arguments.Add(ParseKeyValueArgument(commandLine, ref position));
                 }
@@ -140,6 +146,105 @@ namespace PSADT.ProcessManagement
                 }
             }
             return arguments.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Attempts to parse a colon-separated argument with a quoted value while preserving embedded quotes in the value.
+        /// </summary>
+        /// <param name="commandLine">The command line span.</param>
+        /// <param name="position">The current position (updated as parsing progresses).</param>
+        /// <param name="argument">The parsed argument if the pattern matches, otherwise empty.</param>
+        /// <returns>True if the current position starts a name:"value" argument, otherwise false.</returns>
+        private static bool TryParseColonSeparatedQuotedValueArgument(ReadOnlySpan<char> commandLine, ref int position, out string argument)
+        {
+            argument = string.Empty;
+            if (position >= commandLine.Length || commandLine[position] == '"')
+            {
+                return false;
+            }
+
+            int separatorPos = -1;
+            for (int i = position; i < commandLine.Length && !IsWhitespace(commandLine[i]); i++)
+            {
+                if (commandLine[i] == ':' && i > position && i + 1 < commandLine.Length && commandLine[i + 1] == '"')
+                {
+                    separatorPos = i;
+                    break;
+                }
+            }
+            if (separatorPos < 0)
+            {
+                return false;
+            }
+
+            StringBuilder result = new();
+            while (position < separatorPos)
+            {
+                _ = result.Append(commandLine[position++]);
+            }
+
+            _ = result.Append(commandLine[position++]);
+            position++;
+            while (position < commandLine.Length)
+            {
+                char c = commandLine[position];
+                if (c == '\\')
+                {
+                    int backslashStart = position;
+                    while (position < commandLine.Length && commandLine[position] == '\\')
+                    {
+                        position++;
+                    }
+                    int backslashCount = position - backslashStart;
+                    if (position < commandLine.Length && commandLine[position] == '"')
+                    {
+                        _ = result.Append('\\', Math.DivRem(backslashCount, 2, out int remainder));
+                        if (remainder is not 0)
+                        {
+                            _ = result.Append('"');
+                            position++;
+                        }
+                        continue;
+                    }
+                    _ = result.Append('\\', backslashCount);
+                }
+                else if (c == '"')
+                {
+                    if (position + 1 < commandLine.Length && commandLine[position + 1] == '"')
+                    {
+                        _ = result.Append('"');
+                        position += 2;
+                        continue;
+                    }
+
+                    int nextPosition = position + 1;
+                    if (nextPosition >= commandLine.Length)
+                    {
+                        position++;
+                        break;
+                    }
+                    if (IsWhitespace(commandLine[nextPosition]))
+                    {
+                        int nextArgumentPosition = nextPosition;
+                        SkipWhitespace(commandLine, ref nextArgumentPosition);
+                        if (nextArgumentPosition >= commandLine.Length || IsStartOfNewArgument(commandLine, nextArgumentPosition))
+                        {
+                            position++;
+                            break;
+                        }
+                    }
+
+                    _ = result.Append(c);
+                    position++;
+                }
+                else
+                {
+                    _ = result.Append(c);
+                    position++;
+                }
+            }
+            argument = result.ToString();
+            return true;
         }
 
         /// <summary>
@@ -206,9 +311,9 @@ namespace PSADT.ProcessManagement
                     bool isNested = quoteDepth > 0 && position > 0 && IsWhitespace(commandLine[position - 1]);
                     _ = result.Append(c);
                     position++;
-                    quoteDepth += isNested ? 1 : (quoteDepth == 0 ? 1 : -1);
+                    quoteDepth += isNested ? 1 : (quoteDepth is 0 ? 1 : -1);
 
-                    if (quoteDepth == 0)
+                    if (quoteDepth is 0)
                     {
                         break;
                     }
@@ -330,12 +435,12 @@ namespace PSADT.ProcessManagement
                     }
                     else
                     {
-                        StringBuilder valueBuilder = new();
+                        int valueStartPosition = position;
                         while (position < commandLine.Length && !IsWhitespace(commandLine[position]))
                         {
-                            _ = valueBuilder.Append(commandLine[position++]);
+                            position++;
                         }
-                        value = valueBuilder.ToString();
+                        value = commandLine[valueStartPosition..position].ToString();
                     }
                     _ = result.Append(ConvertPosixPathToWindows(value));
                 }
@@ -372,20 +477,13 @@ namespace PSADT.ProcessManagement
                     break;
                 }
 
-                // Record the start position of this token.
-                tokenPositions.Add(position);
-
-                // Parse the current token (non-whitespace characters).
-                StringBuilder tokenBuilder = new();
+                int tokenStartPosition = position;
                 while (position < commandLine.Length && !IsWhitespace(commandLine[position]))
                 {
-                    _ = tokenBuilder.Append(commandLine[position]);
                     position++;
                 }
-                if (tokenBuilder.Length > 0)
-                {
-                    tokens.Add(tokenBuilder.ToString());
-                }
+                tokenPositions.Add(tokenStartPosition);
+                tokens.Add(commandLine[tokenStartPosition..position].ToString());
             }
 
             // Find the optimal breakpoint for the path. If we found a breakpoint, adjust the position to point to the start of the next argument.
@@ -419,11 +517,11 @@ namespace PSADT.ProcessManagement
         private static (string Path, int TokenCount) FindOptimalPathFromTokens(List<string> tokens)
         {
             // Verify the supplied tokens before proceeding.
-            if (tokens.Count == 0)
+            if (tokens.Count is 0)
             {
                 return (string.Empty, 0);
             }
-            if (tokens.Count == 1)
+            if (tokens.Count is 1)
             {
                 return (tokens[0], 1);
             }
@@ -455,7 +553,7 @@ namespace PSADT.ProcessManagement
                 if (token.Length > 0)
                 {
                     char lastChar = token[^1];
-                    if (lastChar is ';' or '|' or '&' or '<' or '>' or '^')
+                    if (IsCommandSeparator(lastChar))
                     {
                         // This token contains a command separator, so the path ends here.
                         return (string.Join(' ', tokens.Take(i + 1)), i + 1);
@@ -465,7 +563,7 @@ namespace PSADT.ProcessManagement
 
             // PRIORITY 3: For UNC paths without executable extensions, apply conservative rules.
             string combinedPath = string.Join(' ', tokens);
-            if (combinedPath.StartsWith("\\\\", StringComparison.OrdinalIgnoreCase))
+            if (combinedPath.StartsWith("\\\\", StringComparison.Ordinal))
             {
                 // If a token ends with a backslash, it's likely a directory. The path ends here.
                 for (int i = 0; i < tokens.Count - 1; i++)
@@ -483,10 +581,7 @@ namespace PSADT.ProcessManagement
                     // Allow \\server\share\folder before being strict.
                     for (int i = 3; i < tokens.Count; i++)
                     {
-                        string token = tokens[i];
-
-                        if (token.Contains(';', StringComparison.OrdinalIgnoreCase) || token.Contains('|', StringComparison.OrdinalIgnoreCase) || token.Contains('&', StringComparison.OrdinalIgnoreCase) ||
-                            token.Contains('<', StringComparison.OrdinalIgnoreCase) || token.Contains('>', StringComparison.OrdinalIgnoreCase) || token.Contains('^', StringComparison.OrdinalIgnoreCase))
+                        if (tokens[i].Any(static c => IsCommandSeparator(c)))
                         {
                             return (string.Join(' ', tokens.Take(i)), i);
                         }
@@ -495,7 +590,7 @@ namespace PSADT.ProcessManagement
                     // Only apply the "penultimate token" rule if there are no obvious arguments.
                     // Check if the last token could reasonably be part of a path.
                     string lastToken = tokens[^1];
-                    if (!lastToken.StartsWith('/') && !lastToken.StartsWith('-') && !lastToken.Contains('=', StringComparison.OrdinalIgnoreCase) && !lastToken.StartsWith('{'))
+                    if (!lastToken.StartsWith('/') && !lastToken.StartsWith('-') && !lastToken.Contains('=', StringComparison.Ordinal) && !lastToken.StartsWith('{'))
                     {
                         return (string.Join(' ', tokens.Take(tokens.Count - 1)), tokens.Count - 1);
                     }
@@ -559,7 +654,7 @@ namespace PSADT.ProcessManagement
         /// <returns>True if it looks like an argument.</returns>
         private static bool IsArgumentLike(string part)
         {
-            return !string.IsNullOrWhiteSpace(part) && part[0] is char first && (((first is '/' or '-') && part.Length > 1) || part.Contains('=', StringComparison.OrdinalIgnoreCase) || (first == '{' && part.EndsWith('}')));
+            return !string.IsNullOrWhiteSpace(part) && part[0] is char first && (((first is '/' or '-') && part.Length > 1) || part.Contains('=', StringComparison.Ordinal) || (first == '{' && part.EndsWith('}')));
         }
 
         /// <summary>
@@ -595,7 +690,7 @@ namespace PSADT.ProcessManagement
                         // 2n backslashes + quote -> n backslashes, and the quote is a delimiter.
                         // 2n+1 backslashes + quote -> n backslashes + a literal quote.
                         _ = argument.Append('\\', Math.DivRem(backslashCount, 2, out int remainder));
-                        if (remainder != 0)
+                        if (remainder is not 0)
                         {
                             _ = argument.Append('"'); // Escaped quote.
                         }
@@ -641,13 +736,7 @@ namespace PSADT.ProcessManagement
         /// <returns>The converted Windows path, or the original path if it doesn't match the pattern.</returns>
         private static string ConvertPosixPathToWindows(string path)
         {
-            if (path.Length >= 3 && path[0] == '/' && char.IsLetter(path[1]) && path[2] == '/')
-            {
-                // This looks like a POSIX-style path, e.g., /C/Program Files/app.exe
-                // Convert it to a Windows-style path, e.g., C:\Program Files\app.exe
-                return $"{path[1]}:\\{path[3..].Replace('/', '\\')}";
-            }
-            return path;
+            return path.Length >= 3 && path[0] == '/' && char.IsLetter(path[1]) && path[2] == '/' ? $"{path[1]}:\\{path[3..].Replace('/', '\\')}" : path;
         }
 
         /// <summary>
@@ -671,8 +760,27 @@ namespace PSADT.ProcessManagement
         /// <returns>True if the character is whitespace, false otherwise.</returns>
         private static bool IsWhitespace(char c)
         {
-            // Windows command line parsing considers space and tab as whitespace.
             return c is ' ' or '\t';
+        }
+
+        /// <summary>
+        /// Determines whether a character is a command separator.
+        /// </summary>
+        /// <param name="c">The character to check.</param>
+        /// <returns>True if the character is a command separator, false otherwise.</returns>
+        private static bool IsCommandSeparator(char c)
+        {
+            return c is ';' or '|' or '&' or '<' or '>' or '^';
+        }
+
+        /// <summary>
+        /// Determines whether a string contains characters that require command-line quoting.
+        /// </summary>
+        /// <param name="value">The string to check.</param>
+        /// <returns>True if the string contains whitespace or quote characters, false otherwise.</returns>
+        private static bool ContainsWhitespaceOrQuote(string value)
+        {
+            return value.Any(static c => IsWhitespace(c) || c == '"');
         }
 
         /// <summary>
@@ -696,7 +804,7 @@ namespace PSADT.ProcessManagement
             }
 
             // Check if the argument is a key-value pair.
-            int equalsPos = argument.IndexOf('=', StringComparison.OrdinalIgnoreCase);
+            int equalsPos = argument.IndexOf('=', StringComparison.Ordinal);
             if (equalsPos > 0 && equalsPos < argument.Length - 1)
             {
                 // Return the argument irrespective of whether it's quoted or not to support
@@ -704,15 +812,116 @@ namespace PSADT.ProcessManagement
                 return argument;
             }
 
+            // Check for PowerShell-style flag:value patterns (e.g., -Key:value with spaces).
+            if (TryEscapeFlagWithSeparatedValue(argument, out string escaped))
+            {
+                return escaped;
+            }
+
             // Check for flag+path pattern (e.g., -sfx_oC:\Path\To\Output).
             // This handles cases like 7-Zip's -sfx_o"C:\Path" where the path is attached to the flag.
-            if (TryEscapeFlagWithAttachedPath(argument, out string escaped))
+            if (TryEscapeFlagWithAttachedPath(argument, out escaped))
+            {
+                return escaped;
+            }
+
+            // Check for non-flag name:value patterns produced by tokenized PowerShell hashtable keys with spaces.
+            if (TryEscapeSeparatedValue(argument, 0, out escaped))
             {
                 return escaped;
             }
 
             // For all other cases, use the standard strict escaping.
             return EscapeArgumentStrict(argument);
+        }
+
+        /// <summary>
+        /// Attempts to escape an argument that follows the pattern of a flag with a value separated by a colon.
+        /// </summary>
+        /// <param name="argument">The argument to check and potentially escape.</param>
+        /// <param name="escaped">The escaped argument if the pattern matches, otherwise empty.</param>
+        /// <returns>True if the argument matched the flag:value pattern and was escaped, false otherwise.</returns>
+        /// <remarks>
+        /// This handles PowerShell-style scenarios like -Key:value with spaces, where only the value portion should
+        /// be quoted, e.g. -Key:"value with spaces" rather than "-Key:value with spaces".
+        /// </remarks>
+        private static bool TryEscapeFlagWithSeparatedValue(string argument, out string escaped)
+        {
+            // Must start with - or /.
+            escaped = string.Empty;
+            return argument.Length >= 4 && argument[0] is '-' or '/' && TryEscapeSeparatedValue(argument, 1, out escaped);
+        }
+
+        /// <summary>
+        /// Attempts to escape an argument that follows the pattern of a name with a value separated by a colon.
+        /// </summary>
+        /// <param name="argument">The argument to check and potentially escape.</param>
+        /// <param name="searchStart">The position to start searching for the colon separator.</param>
+        /// <param name="escaped">The escaped argument if the pattern matches, otherwise empty.</param>
+        /// <returns>True if the argument matched the name:value pattern and was escaped, false otherwise.</returns>
+        private static bool TryEscapeSeparatedValue(string argument, int searchStart, out string escaped)
+        {
+            escaped = string.Empty;
+            int separatorPos = argument.AsSpan(searchStart).IndexOf(':');
+            if (separatorPos >= 0)
+            {
+                separatorPos += searchStart;
+            }
+            if (separatorPos <= searchStart || separatorPos == argument.Length - 1)
+            {
+                return false;
+            }
+            if (char.IsLetter(argument[separatorPos - 1]) && argument[separatorPos + 1] is '\\' or '/')
+            {
+                return false;
+            }
+            if (separatorPos + 2 < argument.Length && argument[separatorPos + 1] == '/' && argument[separatorPos + 2] == '/')
+            {
+                return false;
+            }
+
+            int equalsPos = argument.AsSpan(searchStart).IndexOf('=');
+            if (equalsPos >= 0)
+            {
+                equalsPos += searchStart;
+            }
+            if (equalsPos > 0 && equalsPos < separatorPos)
+            {
+                return false;
+            }
+
+            string namePart = argument[..(separatorPos + 1)];
+            string valuePart = argument[(separatorPos + 1)..];
+            if (valuePart.Length > 1 && valuePart[0] == '"' && valuePart[^1] == '"')
+            {
+                escaped = argument;
+                return true;
+            }
+
+            if (!ContainsWhitespaceOrQuote(valuePart))
+            {
+                return false;
+            }
+
+            escaped = namePart + EscapeColonSeparatedValue(valuePart);
+            return true;
+        }
+
+        /// <summary>
+        /// Escapes a colon-separated value for PowerShell-style argument reconstruction.
+        /// </summary>
+        /// <param name="value">The value portion of the colon-separated argument.</param>
+        /// <returns>The escaped value.</returns>
+        private static string EscapeColonSeparatedValue(string value)
+        {
+            StringBuilder sb = new();
+            _ = sb.Append('"').Append(value);
+            for (int i = value.Length - 1; i >= 0 && value[i] == '\\'; i--)
+            {
+                _ = sb.Append('\\');
+            }
+            _ = sb.Append('"');
+            return sb.ToString();
         }
 
         /// <summary>
@@ -779,7 +988,7 @@ namespace PSADT.ProcessManagement
             }
 
             // Only apply special handling if the value needs quoting (contains spaces or quotes).
-            if (!valuePart.Any(static c => IsWhitespace(c) || c == '"'))
+            if (!ContainsWhitespaceOrQuote(valuePart))
             {
                 return false;
             }
@@ -804,7 +1013,7 @@ namespace PSADT.ProcessManagement
             }
 
             // The argument must be quoted if it contains a space, tab, a quote, or is empty.
-            bool needsQuoting = argument.Length == 0 || argument.Any(static c => IsWhitespace(c) || c == '"');
+            bool needsQuoting = argument.Length is 0 || ContainsWhitespaceOrQuote(argument);
             if (!needsQuoting)
             {
                 return argument;

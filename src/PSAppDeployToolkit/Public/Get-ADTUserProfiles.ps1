@@ -89,6 +89,9 @@ function Get-ADTUserProfiles
 
     .LINK
         https://psappdeploytoolkit.com/docs/reference/functions/Get-ADTUserProfiles
+
+    .LINK
+        https://github.com/PSAppDeployToolkit/PSAppDeployToolkit/blob/main/src/PSAppDeployToolkit/Public/Get-ADTUserProfiles.ps1
     #>
 
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'ExcludeNTAccount', Justification = "This parameter is used within delegates that PSScriptAnalyzer has no visibility of. See https://github.com/PowerShell/PSScriptAnalyzer/issues/1472 for more details.")]
@@ -304,7 +307,7 @@ function Get-ADTUserProfiles
                     # Establish base profile.
                     $userProfile = [PSADT.AccountManagement.UserProfileInfo]::new(
                         'Default',
-                        [PSADT.AccountManagement.AccountUtilities]::GetWellKnownSid([System.Security.Principal.WellKnownSidType]::NullSid),
+                        [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::NullSid, $null),
                         $defaultUserProfilePath
                     )
 

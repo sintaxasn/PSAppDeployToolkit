@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="Meziantou.Polyfill" Version="1.0.152">
+    <PackageReference Include="Meziantou.Polyfill" Version="1.0.157">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -51,6 +51,8 @@
       M:System.Int32.TryParse|
       M:System.IO.Path.IsPathFullyQualified|
       M:System.IO.Path.Join|
+      M:System.IO.StreamReader.ReadLineAsync|
+      M:System.Nullable.GetValueRefOrDefaultRef|
       M:System.ObjectDisposedException.Throw|
       M:System.String.Contains|
       M:System.String.EndsWith|
@@ -59,6 +61,7 @@
       M:System.String.Join|
       M:System.String.Replace|
       M:System.String.StartsWith|
+      M:System.StringComparer.FromComparison|
       M:System.Text.Encoding.GetString|
       M:System.Threading.CancellationTokenSource.CancelAsync|
       M:System.Threading.Tasks.Task.WaitAsync|

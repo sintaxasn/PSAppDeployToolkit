@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
@@ -52,6 +53,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// dialog.</param>
         /// <param name="countdownStopwatch">An optional Stopwatch instance used to track the countdown duration. If not provided, a new Stopwatch is
         /// created.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly", Justification = "This is a false positive, we're directly consuming the ValueTask.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Synchronous wait is necessary for constructor initialization.")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0056:Do not call overridable members in constructor", Justification = "This is OK here.")]
         private protected FluentDialog(BaseDialogOptions options, IDialogResult dialogResult, string? customMessageText = null, TimeSpan? countdownDuration = null, TimeSpan? countdownWarningDuration = null, Stopwatch? countdownStopwatch = null)
         {
@@ -67,7 +70,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Set up everything related to the dialog accent.
             Color? accentColorDark = options.FluentAccentColorDark is not null ? IntToColor(options.FluentAccentColorDark.Value) : null;
             Color? accentColor = options.FluentAccentColor is not null ? IntToColor(options.FluentAccentColor.Value) : null;
-            _dialogAccentCache = FrozenDictionary.ToFrozenDictionary(new Dictionary<ApplicationTheme, Color?>
+            _dialogAccentCache = new(new Dictionary<ApplicationTheme, Color?>
             {
                 { ApplicationTheme.Light, accentColor },
                 { ApplicationTheme.Dark, accentColorDark ?? accentColor },
@@ -124,7 +127,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             _countdownDuration = countdownDuration;
             _countdownWarningDuration = countdownWarningDuration;
             _countdownStopwatch = countdownStopwatch ?? new();
-            CountdownStackPanel.Visibility = _countdownDuration.HasValue ? Visibility.Visible : Visibility.Collapsed;
+            CountdownStackPanel.Visibility = _countdownDuration is not null ? Visibility.Visible : Visibility.Collapsed;
 
             // Pre-format the custom message if we have one
             if (_customMessageText is not null && !string.IsNullOrWhiteSpace(_customMessageText))
@@ -155,16 +158,16 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // Set up the app's tray icon if an override has been specified.
             if (options.AppTaskbarIconImage is not null)
             {
-                Icon = _appTaskbarIcon = GetIcon(options.AppTaskbarIconImage);
+                Icon = _appTaskbarIcon = GetIconAsync(options.AppTaskbarIconImage).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             // Set up everything related to the dialog icon.
-            _dialogBitmapCache = FrozenDictionary.ToFrozenDictionary(new Dictionary<ApplicationTheme, BitmapSource>
+            _dialogBitmapCache = new(new Dictionary<ApplicationTheme, BitmapSource>
             {
-                { ApplicationTheme.Light, GetIcon(options.AppIconImage) },
-                { ApplicationTheme.Dark, GetIcon(options.AppIconDarkImage ?? options.AppIconImage) },
-                { ApplicationTheme.HighContrast, GetIcon(options.AppIconDarkImage ?? options.AppIconImage) },
-                { ApplicationTheme.Auto, GetIcon(options.AppIconImage) },
+                { ApplicationTheme.Light, GetIconAsync(options.AppIconImage).ConfigureAwait(false).GetAwaiter().GetResult() },
+                { ApplicationTheme.Dark, GetIconAsync(options.AppIconDarkImage ?? options.AppIconImage).ConfigureAwait(false).GetAwaiter().GetResult() },
+                { ApplicationTheme.HighContrast, GetIconAsync(options.AppIconDarkImage ?? options.AppIconImage).ConfigureAwait(false).GetAwaiter().GetResult() },
+                { ApplicationTheme.Auto, GetIconAsync(options.AppIconImage).ConfigureAwait(false).GetAwaiter().GetResult() },
 
             });
 
@@ -314,7 +317,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             // announces the full title; every subsequent dialog announces the short vendor/title form
             // (no version or language) so repeated dialog openings stay brief. The names are independent
             // of Title, so taskbar and Alt-Tab text are unchanged.
-            string speechFriendlyTitle = Interlocked.Exchange(ref _fullSpeechTitleUsed, 1) == 0
+            string speechFriendlyTitle = Interlocked.Exchange(ref _fullSpeechTitleUsed, 1) is 0
                 ? NormalizeVersionForSpeech(Title)
                 : ShortenTitleForSpeech(Title);
             AutomationProperties.SetName(this, speechFriendlyTitle);
@@ -634,7 +637,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             // Ensure the URL has a scheme for Process.Start
             string navigateUrl = url;
-            if (!navigateUrl.Contains("://", StringComparison.OrdinalIgnoreCase) && !navigateUrl.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) && (navigateUrl.StartsWith("www.", StringComparison.OrdinalIgnoreCase) || navigateUrl.StartsWith("ftp.", StringComparison.OrdinalIgnoreCase)))
+            if (!navigateUrl.Contains("://", StringComparison.Ordinal) && !navigateUrl.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) && (navigateUrl.StartsWith("www.", StringComparison.OrdinalIgnoreCase) || navigateUrl.StartsWith("ftp.", StringComparison.OrdinalIgnoreCase)))
             {
                 navigateUrl = "http://" + navigateUrl;
             }
@@ -766,13 +769,13 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="dialogIconPath">The absolute file path to the icon. This can be a path to an .ico file or another image format.</param>
         /// <returns>A <see cref="BitmapSource"/> representing the icon. If the icon is an .ico file, the highest resolution
         /// frame is returned.</returns>
-        private static BitmapSource GetIcon(string dialogIconPath)
+        private static async ValueTask<BitmapSource> GetIconAsync(string dialogIconPath)
         {
             // Try to get from cache first.
             if (!_dialogIconCache.TryGetValue(dialogIconPath, out BitmapSource? bitmapSource))
             {
                 using Stream stream = MiscUtilities.GetBase64StringBytes(dialogIconPath) is not byte[] bytes ? new FileStream(dialogIconPath, FileMode.Open, FileAccess.Read, FileShare.Read) : new MemoryStream(bytes, writable: false);
-                if (!DrawingUtilities.IsStreamAnIcon(stream))
+                if (!await DrawingUtilities.IsStreamAnIconAsync(stream).ConfigureAwait(false))
                 {
                     BitmapImage bitmapImage = new();
                     bitmapImage.BeginInit();
@@ -849,68 +852,88 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             switch (_dialogPosition)
             {
                 case DialogPosition.TopLeft:
-                    // Align to top left corner
-                    left = workingArea.Left;
-                    top = workingArea.Top;
-                    break;
+                    {
+                        // Align to top left corner
+                        left = workingArea.Left;
+                        top = workingArea.Top;
+                        break;
+                    }
 
                 case DialogPosition.Top:
-                    // Center horizontally, align to top
-                    left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
-                    top = workingArea.Top;
-                    break;
+                    {
+                        // Center horizontally, align to top
+                        left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
+                        top = workingArea.Top;
+                        break;
+                    }
 
                 case DialogPosition.TopRight:
-                    // Align to top right corner
-                    left = workingArea.Left + (workingArea.Width - ActualWidth);
-                    top = workingArea.Top;
-                    break;
+                    {
+                        // Align to top right corner
+                        left = workingArea.Left + (workingArea.Width - ActualWidth);
+                        top = workingArea.Top;
+                        break;
+                    }
 
                 case DialogPosition.TopCenter:
-                    // Center horizontally, align to top but not to the top of the screen
-                    left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
-                    top = workingArea.Top + ((workingArea.Height - ActualHeight) * (1.0 / 6.0));
-                    break;
+                    {
+                        // Center horizontally, align to top but not to the top of the screen
+                        left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
+                        top = workingArea.Top + ((workingArea.Height - ActualHeight) * (1.0 / 6.0));
+                        break;
+                    }
 
                 case DialogPosition.Center:
-                    // Center horizontally and vertically
-                    left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
-                    top = workingArea.Top + ((workingArea.Height - ActualHeight) / 2);
-                    break;
+                    {
+                        // Center horizontally and vertically
+                        left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
+                        top = workingArea.Top + ((workingArea.Height - ActualHeight) / 2);
+                        break;
+                    }
 
                 case DialogPosition.BottomLeft:
-                    // Align to bottom left corner
-                    left = workingArea.Left;
-                    top = workingArea.Top + (workingArea.Height - ActualHeight);
-                    break;
+                    {
+                        // Align to bottom left corner
+                        left = workingArea.Left;
+                        top = workingArea.Top + (workingArea.Height - ActualHeight);
+                        break;
+                    }
 
                 case DialogPosition.Bottom:
-                    // Center horizontally, align to bottom
-                    left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
-                    top = workingArea.Top + (workingArea.Height - ActualHeight);
-                    break;
+                    {
+                        // Center horizontally, align to bottom
+                        left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
+                        top = workingArea.Top + (workingArea.Height - ActualHeight);
+                        break;
+                    }
 
                 case DialogPosition.BottomCenter:
-                    // Center horizontally, align to bottom but not to the bottom of the screen
-                    left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
-                    top = workingArea.Top + ((workingArea.Height - ActualHeight) * (5.0 / 6.0));
-                    break;
+                    {
+                        // Center horizontally, align to bottom but not to the bottom of the screen
+                        left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2);
+                        top = workingArea.Top + ((workingArea.Height - ActualHeight) * (5.0 / 6.0));
+                        break;
+                    }
 
                 case DialogPosition.Oobe:
-                    // Center vertically on full screen (compensating for non-existent taskbar in OOBE)
-                    // Calculate taskbar offset: difference between full screen and working area
-                    double taskbarOffset = SystemParameters.PrimaryScreenHeight - workingArea.Height - workingArea.Top;
-                    left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2) - (ActualWidth * 0.6);
-                    top = workingArea.Top + ((workingArea.Height - ActualHeight) / 2) + (taskbarOffset / 2);
-                    break;
+                    {
+                        // Center vertically on full screen (compensating for non-existent taskbar in OOBE)
+                        // Calculate taskbar offset: difference between full screen and working area
+                        double taskbarOffset = SystemParameters.PrimaryScreenHeight - workingArea.Height - workingArea.Top;
+                        left = workingArea.Left + ((workingArea.Width - ActualWidth) / 2) - (ActualWidth * 0.6);
+                        top = workingArea.Top + ((workingArea.Height - ActualHeight) / 2) + (taskbarOffset / 2);
+                        break;
+                    }
 
                 case DialogPosition.BottomRight:
                 case DialogPosition.Default:
                 default:
-                    // Align to bottom right (original behavior)
-                    left = workingArea.Left + (workingArea.Width - ActualWidth);
-                    top = workingArea.Top + (workingArea.Height - ActualHeight);
-                    break;
+                    {
+                        // Align to bottom right (original behavior)
+                        left = workingArea.Left + (workingArea.Width - ActualWidth);
+                        top = workingArea.Top + (workingArea.Height - ActualHeight);
+                        break;
+                    }
             }
 
             // Ensure the window is within the screen bounds.
@@ -923,8 +946,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
 
             // Adjust for workArea offset.
             string dialogPosName = _dialogPosition.ToString();
-            left -= _dialogPosition == DialogPosition.Default || dialogPosName.EndsWith("Right", StringComparison.Ordinal) ? 18 : dialogPosName.EndsWith("Left", StringComparison.Ordinal) ? -18 : 0;
-            top -= _dialogPosition == DialogPosition.Default || dialogPosName.StartsWith("Bottom", StringComparison.Ordinal) ? 14 : dialogPosName.StartsWith("Top", StringComparison.Ordinal) ? -14 : 0;
+            left -= _dialogPosition is DialogPosition.Default || dialogPosName.EndsWith("Right", StringComparison.Ordinal) ? 18 : dialogPosName.EndsWith("Left", StringComparison.Ordinal) ? -18 : 0;
+            top -= _dialogPosition is DialogPosition.Default || dialogPosName.StartsWith("Bottom", StringComparison.Ordinal) ? 14 : dialogPosName.StartsWith("Top", StringComparison.Ordinal) ? -14 : 0;
 
             // Set positions in DIPs.
             Left = _startingLeft = left;
@@ -949,15 +972,15 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         {
             // Build a list of visible buttons in the order they appear.
             List<UIElement> visibleButtons = [];
-            if (ButtonLeft.Visibility == Visibility.Visible)
+            if (ButtonLeft.Visibility is Visibility.Visible)
             {
                 visibleButtons.Add(ButtonLeft);
             }
-            if (ButtonMiddle.Visibility == Visibility.Visible)
+            if (ButtonMiddle.Visibility is Visibility.Visible)
             {
                 visibleButtons.Add(ButtonMiddle);
             }
-            if (ButtonRight.Visibility == Visibility.Visible)
+            if (ButtonRight.Visibility is Visibility.Visible)
             {
                 visibleButtons.Add(ButtonRight);
             }
@@ -966,7 +989,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             ActionButtons.ColumnDefinitions.Clear();
 
             // Return early if there's no buttons.
-            if (visibleButtons.Count == 0)
+            if (visibleButtons.Count is 0)
             {
                 return;
             }
@@ -981,7 +1004,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                     ActionButtons.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
                     Grid.SetColumn(visibleButtons[i], i);
                     Fluence.Wpf.Controls.Button button = (Fluence.Wpf.Controls.Button)visibleButtons[i];
-                    button.Margin = i == 0 ? new(0, 0, 4, 0) : i == visibleButtons.Count - 1 ? new(4, 0, 0, 0) : new(4, 0, 4, 0);
+                    button.Margin = i is 0 ? new(0, 0, 4, 0) : i == visibleButtons.Count - 1 ? new(4, 0, 0, 0) : new(4, 0, 4, 0);
                 }
             }
             else
@@ -1071,7 +1094,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 CountdownValueTextBlock.FontWeight = FontWeights.ExtraBold;
 
             }
-            else if (_countdownWarningDuration.HasValue && _countdownRemainingTime <= _countdownWarningDuration.Value)
+            else if (_countdownWarningDuration is not null && _countdownRemainingTime <= _countdownWarningDuration.Value)
             {
                 CountdownValueTextBlock.SetResourceReference(ForegroundProperty, "SystemFillColorCautionBrush");
                 CountdownValueTextBlock.FontWeight = FontWeights.ExtraBold;
@@ -1205,7 +1228,10 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// A read-only dictionary that caches dialog icons for different application themes.
         /// </summary>
-        private readonly FrozenDictionary<ApplicationTheme, BitmapSource> _dialogBitmapCache;
+        /// <remarks>This dictionary maps <see cref="ApplicationTheme"/> values to their corresponding
+        /// <see cref="BitmapSource"/> icons. It is intended to optimize access to preloaded icons for dialogs, ensuring
+        /// consistent and efficient retrieval.</remarks>
+        private readonly ReadOnlyDictionary<ApplicationTheme, BitmapSource> _dialogBitmapCache;
 
         /// <summary>
         /// Dialog icon cache for improved performance.
@@ -1215,50 +1241,38 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <summary>
         /// A read-only dictionary that caches accent colors for different application themes.
         /// </summary>
-        private readonly FrozenDictionary<ApplicationTheme, Color?> _dialogAccentCache;
+        private readonly ReadOnlyDictionary<ApplicationTheme, Color?> _dialogAccentCache;
 
         /// <summary>
-        /// Dispose managed resources.
+        /// Releases the managed resources used by the dialog.
         /// </summary>
-        public void Dispose()
+        /// <remarks>Event handlers are detached and timers are stopped to prevent memory leaks.</remarks>
+        public virtual void Dispose()
         {
-            Dispose(disposing: true);
-        }
-
-        /// <summary>
-        /// Releases the resources used by the dialog and optionally disposes of managed resources.
-        /// </summary>
-        /// <remarks>Standard dispose pattern: when disposing, detaches event handlers and stops timers.</remarks>
-        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
-        private protected virtual void Dispose(bool disposing)
-        {
+            // Remove event handlers.
             if (Disposed)
             {
                 return;
             }
-            if (disposing)
+            SystemParameters.StaticPropertyChanged -= SystemParameters_StaticPropertyChanged;
+            SizeChanged -= FluentDialog_SizeChanged;
+            Loaded -= FluentDialog_Loaded;
+
+            // Remove timer event handlers if they exist.
+            if (_expiryTimer is not null)
             {
-                // Remove event handlers.
-                SystemParameters.StaticPropertyChanged -= SystemParameters_StaticPropertyChanged;
-                SizeChanged -= FluentDialog_SizeChanged;
-                Loaded -= FluentDialog_Loaded;
-
-                // Remove timer event handlers if they exist.
-                if (_expiryTimer is not null)
-                {
-                    _expiryTimer.Tick -= ExpiryTimer_Tick;
-                    _expiryTimer.Stop();
-                }
-                if (_persistTimer is not null)
-                {
-                    _persistTimer.Tick -= PersistTimer_Tick;
-                    _persistTimer.Stop();
-                }
-
-                // Clean up resources.
-                ApplicationThemeManager.Changed -= ThemeManager_ActualThemeChanged;
-                _countdownTimer?.Stop();
+                _expiryTimer.Tick -= ExpiryTimer_Tick;
+                _expiryTimer.Stop();
             }
+            if (_persistTimer is not null)
+            {
+                _persistTimer.Tick -= PersistTimer_Tick;
+                _persistTimer.Stop();
+            }
+
+            // Clean up resources.
+            ApplicationThemeManager.Changed -= ThemeManager_ActualThemeChanged;
+            _countdownTimer?.Stop();
             Disposed = true;
         }
 
@@ -1332,7 +1346,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 ? new CountdownAnnounceDecision(announce: true, warningAnnounced: warningAnnounced, finalMinuteAnnounced: true)
                 : seconds <= 60 && !finalMinuteAnnounced
                 ? new CountdownAnnounceDecision(announce: true, warningAnnounced: warningAnnounced, finalMinuteAnnounced: true)
-                : warning.HasValue && remaining <= warning.Value && !warningAnnounced
+                : warning is TimeSpan warningValue && remaining <= warningValue && !warningAnnounced
                 ? new CountdownAnnounceDecision(announce: true, warningAnnounced: true, finalMinuteAnnounced: finalMinuteAnnounced)
                 : new CountdownAnnounceDecision(announce: false, warningAnnounced: warningAnnounced, finalMinuteAnnounced: finalMinuteAnnounced);
         }
@@ -1399,7 +1413,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <returns>The spoken form of the segment.</returns>
         private static string SpeakVersionSegment(string segment)
         {
-            bool readAsCardinal = segment.Length <= 2 && !(segment.Length == 2 && segment[0] == '0');
+            bool readAsCardinal = segment.Length <= 2 && !(segment.Length is 2 && segment[0] is '0');
             return readAsCardinal
                 ? CardinalUnderHundred(int.Parse(segment, CultureInfo.InvariantCulture))
                 : string.Join(" ", segment.Select(static c => DigitWords[c - '0']));
@@ -1425,7 +1439,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             }
             string tens = TensWords[(value / 10) - 2];
             int ones = value % 10;
-            return ones == 0 ? tens : $"{tens} {OnesWords[ones]}";
+            return ones is 0 ? tens : $"{tens} {OnesWords[ones]}";
         }
 
         /// <summary>
@@ -1530,11 +1544,6 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 _ = children.RemoveAll(peer => peer is FrameworkElementAutomationPeer frameworkElementPeer && (frameworkElementPeer.Owner is System.Windows.Controls.Separator || owner._screenReaderSuppressedElements.Contains(frameworkElementPeer.Owner)));
                 return children;
             }
-        }
-
-        private void CloseAppsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Selection changes in the close-apps list view require no additional action.
         }
     }
 }

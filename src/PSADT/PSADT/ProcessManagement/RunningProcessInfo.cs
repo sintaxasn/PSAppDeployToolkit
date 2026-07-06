@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Security.Principal;
-using PSADT.Extensions;
 using PSADT.FileSystem;
 using PSADT.Interop;
 using PSADT.Security;
@@ -16,7 +15,7 @@ namespace PSADT.ProcessManagement
     /// <summary>
     /// Represents a running process.
     /// </summary>
-    public sealed record RunningProcessInfo
+    public sealed record class RunningProcessInfo
     {
         /// <summary>
         /// Retrieves a list of running processes that match the specified process definitions.
@@ -31,10 +30,43 @@ namespace PSADT.ProcessManagement
             ArgumentNullException.ThrowIfNull(processDefinitions);
             ArgumentOutOfRangeException.ThrowIfZero(processDefinitions.Count, nameof(processDefinitions));
             ReadOnlyDictionary<string, string> ntPathLookupTable = FileSystemUtilities.MakeNtPathLookupTable();
-            Dictionary<Process, string[]> processArgvMap = [];
+            Dictionary<Process, string> processFilePathMap = []; Dictionary<Process, string[]> processArgvMap = [];
+
+            // Inline lambda to get the file path from the given process.
+            static string? GetProcessFilePath(Process process, Dictionary<Process, string> processFilePathMap, ReadOnlyDictionary<string, string> ntPathLookupTable)
+            {
+                // Get the file path from the cache if we have it.
+                if (processFilePathMap.TryGetValue(process, out string? filePath))
+                {
+                    return filePath;
+                }
+
+                // Get the file path for the process.
+                if (ProcessUtilities.HasProcessExited(process))
+                {
+                    return null;
+                }
+                try
+                {
+                    filePath = process.GetFilePath(ntPathLookupTable).FullName;
+                }
+                catch (Exception ex)
+                {
+                    if (!ProcessUtilities.HasProcessExited(process))
+                    {
+                        ExceptionDispatchInfo.Capture(ex).Throw();
+                    }
+                    return null;
+                    throw;
+                }
+
+                // Cache and return the file path.
+                processFilePathMap.Add(process, filePath);
+                return filePath;
+            }
 
             // Inline lambda to get the command line from the given process.
-            static string[] GetProcessArgv(Process process, Dictionary<Process, string[]> processArgvMap, ReadOnlyDictionary<string, string> ntPathLookupTable)
+            static string[] GetProcessArgv(Process process, Dictionary<Process, string> processFilePathMap, Dictionary<Process, string[]> processArgvMap, ReadOnlyDictionary<string, string> ntPathLookupTable)
             {
                 // Get the command line from the cache if we have it.
                 if (processArgvMap.TryGetValue(process, out string[]? argv))
@@ -64,36 +96,25 @@ namespace PSADT.ProcessManagement
                 }
 
                 // If we couldn't get the command line or the file path is malformed, try and get the process's image name.
-                if (ProcessUtilities.HasProcessExited(process))
+                string? filePath = GetProcessFilePath(process, processFilePathMap, ntPathLookupTable);
+                if (filePath is null)
                 {
                     return [];
                 }
-                try
+                if (argv?.Length > 0)
                 {
-                    if (argv?.Length > 0)
+                    if (!argv[0].Contains(process.ProcessName, StringComparison.OrdinalIgnoreCase) && !argv[0].EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (!argv[0].Contains(process.ProcessName, StringComparison.OrdinalIgnoreCase) && !argv[0].EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                        {
-                            argv = [.. (new[] { process.GetFilePath(ntPathLookupTable).FullName }).Concat(argv)];
-                        }
-                        else
-                        {
-                            argv[0] = process.GetFilePath(ntPathLookupTable).FullName;
-                        }
+                        argv = [.. (new[] { filePath }).Concat(argv)];
                     }
                     else
                     {
-                        argv = [process.GetFilePath(ntPathLookupTable).FullName];
+                        argv[0] = filePath;
                     }
                 }
-                catch (Exception ex) when (ex.Message is not null)
+                else
                 {
-                    if (!ProcessUtilities.HasProcessExited(process))
-                    {
-                        ExceptionDispatchInfo.Capture(ex).Throw();
-                        throw;
-                    }
-                    return [];
+                    argv = [filePath];
                 }
 
                 // Cache and return the command line.
@@ -102,10 +123,11 @@ namespace PSADT.ProcessManagement
             }
 
             // Pre-cache running processes and start looping through to find matches.
-            Process[] allProcesses = [.. Process.GetProcesses().Where(p => processDefinitions.Any(pd => pd.ProcessNameIsMatch(p.ProcessName)))]; List<RunningProcessInfo> runningProcesses = [];
+            Process[] allProcesses = [.. Process.GetProcesses().Where(p => p.Id > 0 && processDefinitions.Any(pd => pd.ProcessNameIsMatch(p.ProcessName)))]; List<RunningProcessInfo> runningProcesses = [];
             foreach (ProcessDefinition processDefinition in processDefinitions)
             {
                 // Loop through each process and check if it matches the definition.
+                bool nameIsFullyQualifiedPath = processDefinition.NameIsFullyQualifiedPath();
                 foreach (Process process in allProcesses)
                 {
                     // Skip this process if it doesn't match the name.
@@ -120,66 +142,75 @@ namespace PSADT.ProcessManagement
                         continue;
                     }
 
-                    // Try to get the command line. If we can't, skip this process.
-                    string[] argv;
+                    // Only throw if the ProcessDefinition's name doesn't contain a wildcard character.
                     try
                     {
-                        if (ProcessUtilities.HasProcessExited(process))
+                        // Continue if this isn't our process or it's ended since we cached it.
+                        if (nameIsFullyQualifiedPath && (GetProcessFilePath(process, processFilePathMap, ntPathLookupTable) is not string filePath || !processDefinition.IsNameMatch(filePath)))
                         {
                             continue;
                         }
-                        argv = GetProcessArgv(process, processArgvMap, ntPathLookupTable);
-                    }
-                    catch (ArgumentException)
-                    {
-                        continue;
-                    }
 
-                    // If we couldn't get the command line, skip this process.
-                    if (argv.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    // Continue if this isn't our process or it's ended since we cached it.
-                    if (processDefinition.NameIsFullyQualifiedPath() && !processDefinition.IsNameMatch(argv[0]))
-                    {
-                        continue;
-                    }
-
-                    // Calculate a description for the running application.
-                    string description = processDefinition.Description is string defDescription && !string.IsNullOrWhiteSpace(defDescription)
-                        ? defDescription
-                        : File.Exists(argv[0]) && FileVersionInfo.GetVersionInfo(argv[0]).FileDescription is string fileDescription && !string.IsNullOrWhiteSpace(fileDescription)
-                        ? fileDescription
-                        : PrivilegeManager.HasPrivilege(SE_PRIVILEGE.SeDebugPrivilege) && !ProcessUtilities.HasProcessExited(process) && ProcessVersionInfo.GetVersionInfo(process, argv[0]).FileDescription is string procDescription && !string.IsNullOrWhiteSpace(procDescription)
-                        ? procDescription
-                        : process.ProcessName;
-
-                    // Grab the process owner if we can.
-                    SecurityIdentifier? sid = null;
-                    if (!ProcessUtilities.HasProcessExited(process))
-                    {
+                        // Try to get the command line. If we can't, skip this process.
+                        string[] argv;
                         try
                         {
-                            sid = ProcessUtilities.GetProcessSid(process);
+                            if (ProcessUtilities.HasProcessExited(process))
+                            {
+                                continue;
+                            }
+                            argv = GetProcessArgv(process, processFilePathMap, processArgvMap, ntPathLookupTable);
                         }
-                        catch (Exception ex) when (ex.Message is not null)
+                        catch (ArgumentException)
                         {
-                            sid = null;
+                            continue;
+                        }
+
+                        // If we couldn't get the command line, skip this process.
+                        if (argv.Length is 0)
+                        {
+                            continue;
+                        }
+
+                        // Calculate a description for the running application.
+                        string description = processDefinition.Description is string defDescription && !string.IsNullOrWhiteSpace(defDescription)
+                            ? defDescription
+                            : File.Exists(argv[0]) && FileVersionInfo.GetVersionInfo(argv[0]).FileDescription is string fileDescription && !string.IsNullOrWhiteSpace(fileDescription)
+                            ? fileDescription
+                            : PrivilegeManager.HasPrivilege(SE_PRIVILEGE.SeDebugPrivilege) && !ProcessUtilities.HasProcessExited(process) && ProcessVersionInfo.GetVersionInfo(process, argv[0]).FileDescription is string procDescription && !string.IsNullOrWhiteSpace(procDescription)
+                            ? procDescription
+                            : process.ProcessName;
+
+                        // Grab the process owner if we can.
+                        SecurityIdentifier? sid = null;
+                        if (!ProcessUtilities.HasProcessExited(process))
+                        {
+                            try
+                            {
+                                sid = ProcessUtilities.GetProcessSid(process);
+                            }
+                            catch (Exception ex) when (ex.Message is not null)
+                            {
+                                sid = null;
+                            }
+                        }
+
+                        // Store the process information.
+                        if (!ProcessUtilities.HasProcessExited(process))
+                        {
+                            runningProcesses.Add(new(process, description, argv[0], argv.Skip(1), sid));
                         }
                     }
-
-                    // Store the process information.
-                    if (!ProcessUtilities.HasProcessExited(process))
+                    catch when (processDefinition.Name.Contains('*', StringComparison.Ordinal))
                     {
-                        runningProcesses.Add(new(process, description, argv[0], argv.Skip(1), sid));
+                        continue;
+                        throw;
                     }
                 }
             }
 
             // Return an ordered list of running processes to the caller.
-            return new ReadOnlyCollection<RunningProcessInfo>([.. runningProcesses.OrderBy(static runningProcess => runningProcess.Description, StringComparer.OrdinalIgnoreCase)]);
+            return new ReadOnlyCollection<RunningProcessInfo>([.. runningProcesses.OrderBy(static runningProcess => runningProcess.Description, StringComparer.OrdinalIgnoreCase).ThenBy(static runningProcess => runningProcess.Description, StringComparer.Ordinal)]);
         }
 
         /// <summary>

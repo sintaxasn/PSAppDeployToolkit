@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using Microsoft.Win32;
 using PSADT.AccountManagement;
-using PSADT.Extensions;
 using PSADT.ProcessManagement;
 using PSADT.Security;
 
@@ -30,7 +29,7 @@ namespace PSADT.Foundation
         {
             // Set up the assembly path for the client/server architecture, factoring in the caller may be coming from a .NET Core client.
             string assemblyDirectory = Path.GetDirectoryName(typeof(ClientServerUtilities).Assembly.Location) ?? throw new InvalidProgramException("Failed to retrieve directory for this assembly.");
-            ClientServerDirectory = !assemblyDirectory.EndsWith("net472", StringComparison.OrdinalIgnoreCase)
+            ClientServerDirectory = !assemblyDirectory.EndsWith("net472", StringComparison.Ordinal)
                 ? new(Path.Join(Directory.GetParent(assemblyDirectory)?.FullName ?? throw new InvalidProgramException("Failed to retrieve parent directory for this assembly."), "net472"))
                 : new(assemblyDirectory);
 
@@ -55,6 +54,9 @@ namespace PSADT.Foundation
             CallerIsClientServerClientLauncher = callingProcessPath.Equals(ClientLauncherDefaultPath.FullName, StringComparison.OrdinalIgnoreCase)
                 || callingProcessPath.Equals(ClientLauncherCompatiblePath.FullName, StringComparison.OrdinalIgnoreCase);
             CallerIsClientServerExecutable = CallerIsClientServerClient || CallerIsClientServerClientLauncher;
+
+            // Determine whether the client/server executables are on a UNC path or not.
+            ClientServerOnUncPath = new Uri(ClientServerDirectory.FullName).IsUnc;
         }
 
         /// <summary>
@@ -65,9 +67,9 @@ namespace PSADT.Foundation
         /// <param name="runAsActiveUser">If specified, determines whether the client process should be launched as the active user.</param>
         /// <param name="elevatedTokenType">Specifies the elevation level to use when launching the client process.</param>
         /// <exception cref="InvalidOperationException">Thrown if the client process fails to launch.</exception>
-        public static ProcessHandle StartClientOperation(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser, ElevatedTokenType? elevatedTokenType)
+        public static ProcessHandle StartClientOperationAsync(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser, ElevatedTokenType? elevatedTokenType)
         {
-            return InvokeClientOperationImpl(ClientDefaultPath, argumentList, runAsActiveUser, elevatedTokenType);
+            return InvokeClientOperationImplAsync(ClientDefaultPath, argumentList, runAsActiveUser, elevatedTokenType);
         }
 
         /// <summary>
@@ -78,9 +80,9 @@ namespace PSADT.Foundation
         /// <param name="runAsActiveUser">If specified, determines whether the client process should be launched as the active user.</param>
         /// <param name="elevatedTokenType">Specifies the elevation level to use when launching the client process.</param>
         /// <exception cref="InvalidOperationException">Thrown if the client process fails to launch.</exception>
-        public static ProcessHandle StartClientLauncherOperation(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser, ElevatedTokenType? elevatedTokenType)
+        public static ProcessHandle StartClientLauncherOperationAsync(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser, ElevatedTokenType? elevatedTokenType)
         {
-            return InvokeClientOperationImpl(ClientLauncherDefaultPath, argumentList, runAsActiveUser, elevatedTokenType);
+            return InvokeClientOperationImplAsync(ClientLauncherDefaultPath, argumentList, runAsActiveUser, elevatedTokenType);
         }
 
         /// <summary>
@@ -94,9 +96,9 @@ namespace PSADT.Foundation
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the process launch operation. May be null.</param>
         /// <returns>A handle to the launched client process.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the client process fails to launch.</exception>
-        internal static ProcessHandle StartClientOperation(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser = null, IReadOnlyList<nint>? handlesToInherit = null, CancellationToken? cancellationToken = null)
+        internal static ProcessHandle StartClientOperationAsync(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser = null, IReadOnlyList<nint>? handlesToInherit = null, CancellationToken? cancellationToken = null)
         {
-            return InvokeClientOperationImpl(ClientDefaultPath, argumentList, runAsActiveUser, handlesToInherit: handlesToInherit, cancellationToken: cancellationToken);
+            return InvokeClientOperationImplAsync(ClientDefaultPath, argumentList, runAsActiveUser, handlesToInherit: handlesToInherit, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -110,9 +112,9 @@ namespace PSADT.Foundation
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the process launch operation. May be null.</param>
         /// <returns>A handle to the launched client process.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the client process fails to launch.</exception>
-        internal static ProcessHandle StartClientLauncherOperation(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser = null, IReadOnlyList<nint>? handlesToInherit = null, CancellationToken? cancellationToken = null)
+        internal static ProcessHandle StartClientLauncherOperationAsync(IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser = null, IReadOnlyList<nint>? handlesToInherit = null, CancellationToken? cancellationToken = null)
         {
-            return InvokeClientOperationImpl(ClientLauncherDefaultPath, argumentList, runAsActiveUser, handlesToInherit: handlesToInherit, cancellationToken: cancellationToken);
+            return InvokeClientOperationImplAsync(ClientLauncherDefaultPath, argumentList, runAsActiveUser, handlesToInherit: handlesToInherit, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -128,13 +130,13 @@ namespace PSADT.Foundation
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the process launch operation. May be null.</param>
         /// <returns>A handle to the launched client process.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the client process fails to launch.</exception>
-        private static ProcessHandle InvokeClientOperationImpl(FileInfo filePath, IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser = null, ElevatedTokenType? elevatedTokenType = null, IReadOnlyList<nint>? handlesToInherit = null, CancellationToken? cancellationToken = null)
+        private static ProcessHandle InvokeClientOperationImplAsync(FileInfo filePath, IReadOnlyList<string> argumentList, RunAsActiveUser? runAsActiveUser = null, ElevatedTokenType? elevatedTokenType = null, IReadOnlyList<nint>? handlesToInherit = null, CancellationToken? cancellationToken = null)
         {
             bool denyUserTermination = true; bool runAsInvoker = false; bool useShellExecute = false;
-            if (runAsActiveUser?.Equals(AccountUtilities.CallerRunAsActiveUser) != false)
+            if (runAsActiveUser?.Equals(AccountUtilities.CallerRunAsActiveUser) is not false)
             {
                 bool cannotUseToken = !AccountUtilities.CallerIsAdmin || !AccountUtilities.CallerIsLoggedOnUser;
-                if (useShellExecute = cannotUseToken && filePath == ClientLauncherAutoPath && elevatedTokenType?.Equals(ElevatedTokenType.None) != false)
+                if (useShellExecute = cannotUseToken && filePath == ClientLauncherAutoPath && elevatedTokenType?.Equals(ElevatedTokenType.None) is not false)
                 {
                     denyUserTermination = filePath != ClientLauncherDefaultPath || AccountUtilities.CallerIsAdmin;
                 }
@@ -158,7 +160,7 @@ namespace PSADT.Foundation
                 uiAccess: true,
                 handlesToInherit: handlesToInherit,
                 useShellExecute: useShellExecute,
-                createNoWindow: !filePath.Name.Contains("Launcher", StringComparison.OrdinalIgnoreCase),
+                createNoWindow: !filePath.Name.Contains("Launcher", StringComparison.Ordinal),
                 waitForChildProcesses: true,
                 cancellationToken: cancellationToken
             )) ?? throw new InvalidOperationException("Failed to launch client operation.");
@@ -259,6 +261,11 @@ namespace PSADT.Foundation
         /// Gets the directory path where the client-server architecture executables are located, based on the location of the current assembly.
         /// </summary>
         internal static readonly DirectoryInfo ClientServerDirectory;
+
+        /// <summary>
+        /// Indicates whether the client-server executables are located on a UNC path, which can affect how they are launched and executed.
+        /// </summary>
+        internal static readonly bool ClientServerOnUncPath;
 
         /// <summary>
         /// Indicates whether the current caller is the client component of the client-server architecture.

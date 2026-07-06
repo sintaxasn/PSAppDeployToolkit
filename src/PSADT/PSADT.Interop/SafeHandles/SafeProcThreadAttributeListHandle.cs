@@ -36,7 +36,7 @@ namespace PSADT.Interop.SafeHandles
                 _ = Initialize((LPPROC_THREAD_ATTRIBUTE_LIST)hGlobal, count, ref lpSize);
                 return new(hGlobal, ownsHandle: true);
             }
-            catch (Exception ex) when (ex.Message is not null)
+            catch (Exception ex)
             {
                 Marshal.FreeHGlobal(hGlobal);
                 ExceptionDispatchInfo.Capture(ex).Throw();
@@ -74,7 +74,7 @@ namespace PSADT.Interop.SafeHandles
             if (!res)
             {
                 WIN32_ERROR lastWin32Error = ExceptionUtilities.GetLastWin32Error();
-                if (lastWin32Error != WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER || lpAttributeList != default)
+                if (lastWin32Error is not WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER || lpAttributeList != default)
                 {
                     throw ExceptionUtilities.GetException(lastWin32Error);
                 }

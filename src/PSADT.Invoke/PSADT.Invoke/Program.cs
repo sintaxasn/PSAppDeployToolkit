@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -48,7 +47,7 @@ namespace PSADT.Invoke
                 try
                 {
                     // Display help if being asked to do so.
-                    if (argv.Contains("/?", StringComparer.OrdinalIgnoreCase) || argv.Contains("/Help", StringComparer.OrdinalIgnoreCase))
+                    if (argv.Contains("/?", StringComparer.Ordinal) || argv.Contains("/Help", StringComparer.OrdinalIgnoreCase))
                     {
                         WriteHelpInformation();
                         return 1;
@@ -114,7 +113,7 @@ namespace PSADT.Invoke
                         process.WaitForExit();
                         return process.ExitCode;
                     }
-                    catch (Exception ex) when (ex.Message is not null)
+                    catch (Exception ex)
                     {
                         string errorMessage = $"Error launching [{processStartInfo.FileName} {processStartInfo.Arguments}].";
                         WriteDebugMessage($"{errorMessage} {ex}", isError: true);
@@ -123,9 +122,10 @@ namespace PSADT.Invoke
                             Environment.FailFast($"{errorMessage}\nException Info: {ex}", ex);
                         }
                         return 60011;
+                        throw;
                     }
                 }
-                catch (Exception ex) when (ex.Message is not null)
+                catch (Exception ex)
                 {
                     const string errorMessage = "Error while preparing to invoke deployment script.";
                     WriteDebugMessage($"{errorMessage} {ex}", isError: true);
@@ -134,6 +134,7 @@ namespace PSADT.Invoke
                         Environment.FailFast($"{errorMessage}\nException Info: {ex}", ex);
                     }
                     return 60010;
+                    throw;
                 }
                 finally
                 {
@@ -243,7 +244,7 @@ namespace PSADT.Invoke
             string pwshExecutablePath = pwshDefaultPath;
             if (coreSpecified)
             {
-                if (Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator).Where(static p => File.Exists($"{p.TrimEnd('\\')}{Path.DirectorySeparatorChar}pwsh.exe")).Select(static p => $"{p.TrimEnd('\\')}{Path.DirectorySeparatorChar}pwsh.exe").FirstOrDefault() is not string pwshCorePath)
+                if (Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator).Where(static p => File.Exists(Path.Join(p, "pwsh.exe"))).Select(static p => Path.Join(p, "pwsh.exe")).FirstOrDefault() is not string pwshCorePath)
                 {
                     throw new InvalidOperationException("The [/Core] parameter was specified, but PowerShell Core was not found on this system.");
                 }
@@ -258,9 +259,9 @@ namespace PSADT.Invoke
                 // Remove the /32 command line argument so that it is not passed to PowerShell script
                 WriteDebugMessage("The [/32] parameter was specified on the command line. Running in forced x86 PowerShell mode...");
                 _ = argv.RemoveAll(static x => x.Equals("/32", StringComparison.OrdinalIgnoreCase));
-                if (RuntimeInformation.OSArchitecture.ToString().EndsWith("64", StringComparison.OrdinalIgnoreCase))
+                if (RuntimeInformation.OSArchitecture.ToString().EndsWith("64", StringComparison.Ordinal))
                 {
-                    pwshExecutablePath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.SystemX86)}{Path.DirectorySeparatorChar}WindowsPowerShell\v1.0\PowerShell.exe";
+                    pwshExecutablePath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.SystemX86), @"WindowsPowerShell\v1.0\PowerShell.exe");
                 }
             }
 
@@ -294,14 +295,14 @@ namespace PSADT.Invoke
             }
 
             // Determine the path to the script to invoke.
-            string adtFrontendPath = $"{currentPath}{Path.DirectorySeparatorChar}{Path.GetFileNameWithoutExtension(AssemblyInfo.Location)}.ps1";
+            string adtFrontendPath = Path.Join(currentPath, $"{Path.GetFileNameWithoutExtension(AssemblyInfo.Location)}.ps1");
             int fileIndex = Array.FindIndex(argv.ToArray(), static x => x.Equals("-File", StringComparison.OrdinalIgnoreCase));
             if (fileIndex != -1)
             {
                 adtFrontendPath = argv[fileIndex + 1].Replace("\"", newValue: null);
                 if (!Path.IsPathRooted(adtFrontendPath))
                 {
-                    adtFrontendPath = $"{currentPath}{Path.DirectorySeparatorChar}{adtFrontendPath}";
+                    adtFrontendPath = Path.Join(currentPath, adtFrontendPath);
                 }
                 argv.RemoveAt(fileIndex + 1);
                 argv.RemoveAt(fileIndex);
@@ -312,7 +313,7 @@ namespace PSADT.Invoke
                 adtFrontendPath = argv.Find(static x => x.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) || x.EndsWith(".ps1\"", StringComparison.OrdinalIgnoreCase)).Replace("\"", newValue: null);
                 if (!Path.IsPathRooted(adtFrontendPath))
                 {
-                    adtFrontendPath = $"{currentPath}{Path.DirectorySeparatorChar}{adtFrontendPath}";
+                    adtFrontendPath = Path.Join(currentPath, adtFrontendPath);
                 }
                 argv.RemoveAt(argv.FindIndex(static x => x.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) || x.EndsWith(".ps1\"", StringComparison.OrdinalIgnoreCase)));
                 WriteDebugMessage("Using script (.ps1) file directly specified on the command line...");
@@ -341,7 +342,7 @@ namespace PSADT.Invoke
         /// accessed or does not exist, the collection may be truncated.</remarks>
         /// <returns>A read-only collection of <see cref="Process"/> objects representing the parent processes
         /// of the current process. The collection is empty if no parent processes can be determined.</returns>
-        private static ReadOnlyCollection<Process> GetParentProcesses()
+        private static IEnumerable<Process> GetParentProcesses()
         {
             // Internal method to get the parent process of a given process.
             static int GetParentProcessId(int processId)
@@ -353,7 +354,6 @@ namespace PSADT.Invoke
 
             // Build a list of parent processes and return it to the caller.
             int processId = (int)PInvoke.GetCurrentProcessId();
-            List<Process> processes = [];
             List<int> processesIds = [];
             while (true)
             {
@@ -376,16 +376,17 @@ namespace PSADT.Invoke
                 processesIds.Add(processId);
 
                 // Attempt to get the Process object for the parent process. If this fails (e.g., process has exited), break the loop.
+                Process process;
                 try
                 {
-                    processes.Add(Process.GetProcessById(processId));
+                    process = Process.GetProcessById(processId);
                 }
                 catch (ArgumentException)
                 {
                     break;
                 }
+                yield return process;
             }
-            return processes.AsReadOnly();
         }
 
         /// <summary>
@@ -461,7 +462,7 @@ namespace PSADT.Invoke
         /// <summary>
         /// The default path to PowerShell.
         /// </summary>
-        private static readonly string pwshDefaultPath = $@"{Environment.SystemDirectory}{Path.DirectorySeparatorChar}WindowsPowerShell\v1.0\PowerShell.exe";
+        private static readonly string pwshDefaultPath = Path.Join(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\PowerShell.exe");
 
         /// <summary>
         /// The default arguments to pass to PowerShell.

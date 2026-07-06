@@ -99,6 +99,9 @@ function Set-ADTActiveSetup
 
     .LINK
         https://psappdeploytoolkit.com/docs/reference/functions/Set-ADTActiveSetup
+
+    .LINK
+        https://github.com/PSAppDeployToolkit/PSAppDeployToolkit/blob/main/src/PSAppDeployToolkit/Public/Set-ADTActiveSetup.ps1
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Create')]
@@ -250,12 +253,6 @@ function Set-ADTActiveSetup
         $CUArguments = $null
         $StubExeExt = [System.IO.Path]::GetExtension($StubExePath)
         $StubPath = $null
-
-        # Announce deprecation of .vbs support within this function.
-        if ($StubExeExt -in '.js', '.vbs')
-        {
-            Write-ADTLogEntry -Message "Support for [.vbs] and/or [.js] files is deprecated and will be removed in PSAppDeployToolkit 4.3.0." -Severity Warning
-        }
 
         # Define internal function to test current ActiveSetup stuff.
         function Test-ADTActiveSetup
@@ -676,8 +673,7 @@ function Set-ADTActiveSetup
                     return
                 }
 
-                $processResult = $null
-                if ([PSADT.AccountManagement.AccountUtilities]::CallerSid.IsWellKnown([System.Security.Principal.WellKnownSidType]::LocalSystemSid))
+                $processResult = $null; if ([PSADT.AccountManagement.AccountUtilities]::CallerSid.IsWellKnown([System.Security.Principal.WellKnownSidType]::LocalSystemSid))
                 {
                     if (!$runAsActiveUser)
                     {
@@ -733,9 +729,13 @@ function Set-ADTActiveSetup
                 }
 
                 # Return the process result if its available and requested.
-                if ($processResult -and $PassThru)
+                if ($processResult)
                 {
-                    return $processResult
+                    if ($PassThru)
+                    {
+                        return $processResult
+                    }
+                    $processResult.Dispose()
                 }
             }
             catch

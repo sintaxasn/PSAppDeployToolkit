@@ -13,6 +13,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// Instantiates a new RestartDialog dialog.
         /// </summary>
         /// <param name="options">Mandatory options needed to construct the window.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0191:Do not use the null-forgiving operator", Justification = "This is necessary here.")]
         internal RestartDialog(RestartDialogOptions options) : base(options, null!, options.CustomMessageText, options.CountdownDuration, options.CountdownNoMinimizeDuration)
         {
             // Reset the dialog's title. It must be that of the string table in the options.
@@ -30,6 +31,7 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 FormatMessageWithHyperlinks(MessageTextBlock, options.Strings.Message);
             }
             ButtonPanel.Visibility = Visibility.Visible;
+            allowCancel = options.AllowCancel;
 
             // Configure left button
             SetButtonContentWithAccelerator(ButtonLeft, options.Strings.ButtonRestartNow);
@@ -37,11 +39,28 @@ namespace PSADT.UserInterface.Interfaces.Fluent
             SetDefaultButton(ButtonLeft);
             SetAccentButton(ButtonLeft);
 
-            // Configure right button
-            SetButtonContentWithAccelerator(ButtonRight, options.Strings.ButtonRestartLater);
-            IsMinimizeButtonVisible = Visibility.Visible;
-            ButtonRight.Visibility = Visibility.Visible;
-            SetCancelButton(ButtonRight);
+            if (allowCancel)
+            {
+                // Configure middle button (Restart Later / minimize). SetButtonContentWithAccelerator
+                // keeps the accessible name in sync with the visible label (access-key marker stripped),
+                // so no explicit AutomationProperties.SetName call is required.
+                SetButtonContentWithAccelerator(ButtonMiddle, options.Strings.ButtonRestartLater);
+                IsMinimizeButtonVisible = Visibility.Visible;
+                ButtonMiddle.Visibility = Visibility.Visible;
+
+                // Configure right button (Cancel) to close the dialog without restarting.
+                SetButtonContentWithAccelerator(ButtonRight, options.Strings.ButtonCancel);
+                ButtonRight.Visibility = Visibility.Visible;
+                SetCancelButton(ButtonRight);
+            }
+            else
+            {
+                // Configure right button (Restart Later / minimize).
+                SetButtonContentWithAccelerator(ButtonRight, options.Strings.ButtonRestartLater);
+                IsMinimizeButtonVisible = Visibility.Visible;
+                ButtonRight.Visibility = Visibility.Visible;
+                SetCancelButton(ButtonRight);
+            }
         }
 
         /// <inheritdoc />
@@ -57,19 +76,38 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// <param name="sender">The source of the event, typically the control that raised the event.</param>
         /// <param name="e">The event data associated with the click event.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "This is OK here.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0155:Do not use async void methods", Justification = "This is OK here.")]
         private protected override async void ButtonLeft_Click(object? sender, RoutedEventArgs e)
         {
             // Immediately restart the computer.
-            await DeviceUtilities.RestartComputer(shutdownReasonText);
+            await DeviceUtilities.RestartComputerAsync(shutdownReasonText);
             base.ButtonLeft_Click(sender, e);
         }
 
         /// <summary>
         /// Handles the right button click event by minimizing the window.
         /// </summary>
+        /// <remarks>Overrides the default right button behavior to minimize the window instead of
+        /// performing any other action. When cancellation is allowed, the right button is the Cancel button and the
+        /// base implementation is invoked to close the dialog without restarting.</remarks>
         /// <param name="sender">The source of the event, typically the button that was clicked.</param>
         /// <param name="e">The event data associated with the click event.</param>
         private protected override void ButtonRight_Click(object? sender, RoutedEventArgs e)
+        {
+            if (allowCancel)
+            {
+                base.ButtonRight_Click(sender, e);
+                return;
+            }
+            WindowState = WindowState.Minimized;
+        }
+
+        /// <summary>
+        /// Handles the middle button click event by minimizing the window when cancellation is allowed.
+        /// </summary>
+        /// <param name="sender">The source of the event, typically the button that was clicked.</param>
+        /// <param name="e">The event data associated with the click event.</param>
+        private protected override void ButtonMiddle_Click(object? sender, RoutedEventArgs e)
         {
             WindowState = WindowState.Minimized;
         }
@@ -83,18 +121,19 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// user.</remarks>
         /// <param name="state">An optional state object that can be used to pass additional information to the timer event handler.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "This is OK here.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0155:Do not use async void methods", Justification = "This is OK here.")]
         private protected override async void CountdownTimer_Tick(object? state)
         {
             // Call the base timer and test local expiration.
             base.CountdownTimer_Tick(state);
             if (_countdownStopwatch.Elapsed >= _countdownDuration)
             {
-                await DeviceUtilities.RestartComputer(shutdownReasonText);
+                await DeviceUtilities.RestartComputerAsync(shutdownReasonText);
             }
-            else if (_countdownWarningDuration.HasValue && _countdownRemainingTime <= _countdownWarningDuration.Value)
+            else if (_countdownWarningDuration is not null && _countdownRemainingTime <= _countdownWarningDuration.Value)
             {
                 IsMinimizeButtonVisible = Visibility.Collapsed;
-                ButtonRight.IsEnabled = false;
+                (allowCancel ? ButtonMiddle : ButtonRight).IsEnabled = false;
                 RestoreWindow();
             }
         }
@@ -103,5 +142,10 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// An optional string that specifies the reason for the shutdown, which will be logged in the system event log. If <see langword="null"/> or empty, no reason will be logged.
         /// </summary>
         private readonly string? shutdownReasonText;
+
+        /// <summary>
+        /// Indicates whether a Cancel button is shown to close the dialog without restarting.
+        /// </summary>
+        private readonly bool allowCancel;
     }
 }

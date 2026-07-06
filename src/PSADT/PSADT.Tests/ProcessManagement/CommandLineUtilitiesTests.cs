@@ -120,6 +120,7 @@ namespace PSADT.Tests.ProcessManagement
         /// <summary>
         /// Tests null input handling.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0191:Do not use the null-forgiving operator", Justification = "This is deliberate as part of unit testing.")]
         [Fact]
         public void CommandLineToArgumentList_NullInput_ThrowsArgumentNullException()
         {
@@ -135,7 +136,7 @@ namespace PSADT.Tests.ProcessManagement
         [Theory]
         [InlineData(new[] { "program" }, "program")]
         [InlineData(new[] { "program", "arg1", "arg2" }, "program arg1 arg2")]
-        public void ArgumentListToCommandLine_BasicCases_ReturnsCorrectCommandLine(string[] args, string expected)
+        public void ArgumentListToCommandLine_BasicCases_ReturnsCorrectCommandLine(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -154,7 +155,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "program", "arg with spaces" }, "program \"arg with spaces\"")]
         [InlineData(new[] { "program with spaces", "arg with spaces" }, "\"program with spaces\" \"arg with spaces\"")]
         [InlineData(new[] { "program", "arg" }, "program arg")]
-        public void ArgumentListToCommandLine_ArgumentsWithSpaces_ReturnsQuotedCommandLine(string[] args, string expected)
+        public void ArgumentListToCommandLine_ArgumentsWithSpaces_ReturnsQuotedCommandLine(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -173,7 +174,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "program", "arg\\with\\backslashes" }, "program arg\\with\\backslashes")] // No quotes needed
         [InlineData(new[] { "program", "arg\\\"escaped" }, "program \"arg\\\\\\\"escaped\"")]
         [InlineData(new[] { "program", "path\\to\\file\\" }, "program path\\to\\file\\")]
-        public void ArgumentListToCommandLine_ArgumentsWithSpecialCharacters_ReturnsEscapedCommandLine(string[] args, string expected)
+        public void ArgumentListToCommandLine_ArgumentsWithSpecialCharacters_ReturnsEscapedCommandLine(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -239,6 +240,7 @@ namespace PSADT.Tests.ProcessManagement
         /// <summary>
         /// Tests null input handling for ArgumentListToCommandLine.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0191:Do not use the null-forgiving operator", Justification = "This is deliberate as part of unit testing.")]
         [Fact]
         public void ArgumentListToCommandLine_NullArrayInput_ThrowsArgumentNullException()
         {
@@ -249,6 +251,7 @@ namespace PSADT.Tests.ProcessManagement
         /// <summary>
         /// Tests null input handling for ArgumentListToCommandLine with List.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0191:Do not use the null-forgiving operator", Justification = "This is deliberate as part of unit testing.")]
         [Fact]
         public void ArgumentListToCommandLine_NullListInput_ThrowsArgumentNullException()
         {
@@ -519,7 +522,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "arg ending with backslash\\" }, "\"arg ending with backslash\\\\\"")]
         [InlineData(new[] { "arg ending with quote\"" }, "\"arg ending with quote\\\"\"")]
         [InlineData(new[] { "arg ending with backslash and quote\\\"" }, "\"arg ending with backslash and quote\\\\\\\"\"")]
-        public void ArgumentListToCommandLine_TrailingSpecialChars_EscapedCorrectly(string[] args, string expected)
+        public void ArgumentListToCommandLine_TrailingSpecialChars_EscapedCorrectly(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -619,7 +622,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "program", "arg\\\\escaped" }, "program arg\\\\escaped")]  // Fixed: No quotes needed
         [InlineData(new[] { "a\\", "b" }, "a\\ b")]
         [InlineData(new[] { "a\\\\", "b" }, "a\\\\ b")]
-        public void ArgumentListToCommandLine_WindowsPathsAndTrailingBackslashes_EscapedCorrectly(string[] args, string expected)
+        public void ArgumentListToCommandLine_WindowsPathsAndTrailingBackslashes_EscapedCorrectly(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -672,7 +675,7 @@ namespace PSADT.Tests.ProcessManagement
         /// <param name="originalArgv">The original array of arguments to test.</param>
         [Theory]
         [MemberData(nameof(SystematicRoundTripTestData))]
-        public void SystematicRoundTrip_ArgumentListToCommandLineAndBack_PreservesArguments(string[] originalArgv)
+        public void SystematicRoundTrip_ArgumentListToCommandLineAndBack_PreservesArguments(IReadOnlyList<string> originalArgv)
         {
             // Act
             string commandLine = CommandLineUtilities.ArgumentListToCommandLine(originalArgv);
@@ -709,7 +712,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData("a\\\\ b", new[] { "a\\\\", "b" })]
         [InlineData("a\\\"b c", new[] { "a\"b", "c" })]
         [InlineData("a\\\\\"b c", new[] { "a\\b c" })]
-        public void SystematicRoundTrip_CommandLineToArgumentListAndBack_PreservesArguments(string commandLine, string[] expectedArgv)
+        public void SystematicRoundTrip_CommandLineToArgumentListAndBack_PreservesArguments(string commandLine, IReadOnlyList<string> expectedArgv)
         {
             // Act
             IReadOnlyList<string> argv = CommandLineUtilities.CommandLineToArgumentList(commandLine);
@@ -820,7 +823,7 @@ namespace PSADT.Tests.ProcessManagement
                    "arg1 \"arg2 with \\\"quotes\\\"\" arg3")]
         [InlineData(new[] { "msiexec.exe", "/i", "C:\\Temp\\App Installer.msi", "/qn", "TARGETDIR=\"C:\\Program Files\\My App\\\"" },
                    "msiexec.exe /i \"C:\\Temp\\App Installer.msi\" /qn TARGETDIR=\"C:\\Program Files\\My App\\\"")]
-        public void ArgumentListToCommandLine_ComplexRealWorldScenarios_EscapedCorrectly(string[] argv, string expected)
+        public void ArgumentListToCommandLine_ComplexRealWorldScenarios_EscapedCorrectly(IReadOnlyList<string> argv, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(argv);
@@ -989,7 +992,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "\\\\server\\share\\" }, "\\\\server\\share\\")]
         [InlineData(new[] { "\\\\server\\share\\folder with spaces\\" }, "\"\\\\server\\share\\folder with spaces\\\\\"")]
         [InlineData(new[] { "\\\\server\\share\\file\"name.txt" }, "\"\\\\server\\share\\file\\\"name.txt\"")]
-        public void ArgumentListToCommandLine_UncPaths_EscapedCorrectly(string[] args, string expected)
+        public void ArgumentListToCommandLine_UncPaths_EscapedCorrectly(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -1033,7 +1036,7 @@ namespace PSADT.Tests.ProcessManagement
                    "net use Z: \"\\\\server\\share with spaces\" /persistent:yes")]
         [InlineData(new[] { "\\\\server\\share\\app.exe", "--config", "\\\\config-server\\configs\\app.config" },
                    "\\\\server\\share\\app.exe --config \\\\config-server\\configs\\app.config")]
-        public void ArgumentListToCommandLine_ComplexUncScenarios_EscapedCorrectly(string[] args, string expected)
+        public void ArgumentListToCommandLine_ComplexUncScenarios_EscapedCorrectly(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -1068,7 +1071,7 @@ namespace PSADT.Tests.ProcessManagement
         /// <param name="originalArgs">The original array of arguments to convert to a command line string and back.</param>
         [Theory]
         [MemberData(nameof(UncPathRoundTripTestData))]
-        public void UncPaths_RoundTripConversion_PreservesExactArguments(string[] originalArgs)
+        public void UncPaths_RoundTripConversion_PreservesExactArguments(IReadOnlyList<string> originalArgs)
         {
             // Act
             string commandLine = CommandLineUtilities.ArgumentListToCommandLine(originalArgs);
@@ -1109,7 +1112,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "\\\\server\\share\\\"file" }, "\"\\\\server\\share\\\\\\\"file\"")]
         [InlineData(new[] { "\\\\server\\share\\folder\\\\" }, "\\\\server\\share\\folder\\\\")]
         [InlineData(new[] { "\\\\server\\share\\file\\\\", "arg" }, "\\\\server\\share\\file\\\\ arg")]
-        public void ArgumentListToCommandLine_UncPathsWithComplexBackslashes_EscapedCorrectly(string[] args, string expected)
+        public void ArgumentListToCommandLine_UncPathsWithComplexBackslashes_EscapedCorrectly(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -1131,7 +1134,7 @@ namespace PSADT.Tests.ProcessManagement
                    "msiexec.exe /i \"\\\\server\\msi-packages\\Application Suite.msi\" /qn TARGETDIR=\\\\server\\app-installs\\Application\\")]
         [InlineData(new[] { "powershell.exe", "-File", "\\\\scripts-server\\powershell\\Deploy-Application.ps1", "-ApplicationPath", "\\\\apps-server\\applications\\MyApp\\" },
                    "powershell.exe -File \\\\scripts-server\\powershell\\Deploy-Application.ps1 -ApplicationPath \\\\apps-server\\applications\\MyApp\\")]
-        public void ArgumentListToCommandLine_RealWorldUncScenarios_EscapedCorrectly(string[] argv, string expected)
+        public void ArgumentListToCommandLine_RealWorldUncScenarios_EscapedCorrectly(IReadOnlyList<string> argv, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(argv);
@@ -1551,7 +1554,7 @@ namespace PSADT.Tests.ProcessManagement
                    "setup.exe /S /D=C:\\Program Files\\My App")]
         [InlineData(new[] { "installer.exe", "TARGETDIR=C:\\Program Files\\App" },
                    "installer.exe TARGETDIR=C:\\Program Files\\App")]
-        public void ArgumentListToCommandLine_NsisStyleKeyValue_PreservesUnquotedFormat(string[] args, string expected)
+        public void ArgumentListToCommandLine_NsisStyleKeyValue_PreservesUnquotedFormat(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -1573,7 +1576,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "-output\\\\server\\shared folder\\file.txt" }, "-output\"\\\\server\\shared folder\\file.txt\"")]
         [InlineData(new[] { "--pathC:\\Simple\\Path" }, "--pathC:\\Simple\\Path")] // No spaces, no quoting needed
         [InlineData(new[] { "-oC:\\NoSpaces\\file.exe" }, "-oC:\\NoSpaces\\file.exe")] // No spaces, no quoting needed
-        public void ArgumentListToCommandLine_FlagWithAttachedPath_EscapesOnlyPathPortion(string[] args, string expected)
+        public void ArgumentListToCommandLine_FlagWithAttachedPath_EscapesOnlyPathPortion(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -1594,7 +1597,7 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "/D\"C:\\Program Files\\App\"" }, "/D\"C:\\Program Files\\App\"")]
         [InlineData(new[] { "-output\"\\\\server\\share\\folder\"" }, "-output\"\\\\server\\share\\folder\"")]
         [InlineData(new[] { "--path\"C:\\Already Quoted\\Path\"" }, "--path\"C:\\Already Quoted\\Path\"")]
-        public void ArgumentListToCommandLine_FlagWithAlreadyQuotedPath_PreservesQuotes(string[] args, string expected)
+        public void ArgumentListToCommandLine_FlagWithAlreadyQuotedPath_PreservesQuotes(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
@@ -1667,13 +1670,156 @@ namespace PSADT.Tests.ProcessManagement
         [InlineData(new[] { "-flag", "value" }, "-flag value")]
         [InlineData(new[] { "--long-flag=value" }, "--long-flag=value")]
         [InlineData(new[] { "-D=value" }, "-D=value")]
-        public void ArgumentListToCommandLine_RegularFlags_NotTreatedAsFlagWithPath(string[] args, string expected)
+        public void ArgumentListToCommandLine_RegularFlags_NotTreatedAsFlagWithPath(IReadOnlyList<string> args, string expected)
         {
             // Act
             string result = CommandLineUtilities.ArgumentListToCommandLine(args);
 
             // Assert
             Assert.Equal(expected, result);
+        }
+
+        /// <summary>
+        /// Tests that PowerShell-style flag:value arguments quote only the value portion when needed.
+        /// </summary>
+        /// <param name="args">The array of arguments to convert to a command line string.</param>
+        /// <param name="expected">The expected command line string resulting from converting the arguments.</param>
+        [Theory]
+        [InlineData(new[] { "-Key1:this is my string", "-Key2:System.Collections.Hashtable" },
+                   "-Key1:\"this is my string\" -Key2:System.Collections.Hashtable")]
+        [InlineData(new[] { "-Path:C:\\Program Files\\App" },
+                   "-Path:\"C:\\Program Files\\App\"")]
+        [InlineData(new[] { "-Key:value" }, "-Key:value")]
+        [InlineData(new[] { "-Key:a\"b" }, "-Key:\"a\"b\"")]
+        public void ArgumentListToCommandLine_PowerShellStyleFlagValues_EscapesOnlyValuePortion(IReadOnlyList<string> args, string expected)
+        {
+            // Act
+            string result = CommandLineUtilities.ArgumentListToCommandLine(args);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        /// <summary>
+        /// Tests round-trip conversion for PowerShell-style flag:value arguments.
+        /// </summary>
+        [Fact]
+        public void PowerShellStyleFlagValues_RoundTrip_PreservesArguments()
+        {
+            // Arrange
+            string[] originalArgs = ["-Key1:this is my string", "-Key2:System.Collections.Hashtable"];
+
+            // Act
+            string commandLine = CommandLineUtilities.ArgumentListToCommandLine(originalArgs);
+            IReadOnlyList<string> roundTripArgs = CommandLineUtilities.CommandLineToArgumentList(commandLine);
+
+            // Assert
+            Assert.Equal("-Key1:\"this is my string\" -Key2:System.Collections.Hashtable", commandLine);
+            Assert.Equal(originalArgs, roundTripArgs);
+        }
+
+        /// <summary>
+        /// Tests parsing for PowerShell-style hashtable arguments where a key contains spaces remains token-based.
+        /// </summary>
+        [Fact]
+        public void CommandLineToArgumentList_PowerShellHashtableKeyWithSpaces_PreservesTokenizedArguments()
+        {
+            // Arrange
+            const string commandLine = "-Key Five:5 -Key1:\"this is my string\" -Key2:System.Collections.Hashtable";
+            string[] expectedArgs = ["-Key", "Five:5", "-Key1:this is my string", "-Key2:System.Collections.Hashtable"];
+
+            // Act
+            IReadOnlyList<string> args = CommandLineUtilities.CommandLineToArgumentList(commandLine);
+
+            // Assert
+            Assert.Equal(expectedArgs, args);
+        }
+
+        /// <summary>
+        /// Tests parsing for PowerShell-style hashtable arguments where quoted values contain embedded quotes.
+        /// </summary>
+        [Fact]
+        public void CommandLineToArgumentList_PowerShellHashtableValuesWithEmbeddedQuotes_PreservesInnerQuotes()
+        {
+            // Arrange
+            const string commandLine = "-Key Five:\"This is also \"my\" string\" -Key1:\"this is \"my\" string\" -Key2:System.Collections.Hashtable";
+            string[] expectedArgs = ["-Key", "Five:This is also \"my\" string", "-Key1:this is \"my\" string", "-Key2:System.Collections.Hashtable"];
+
+            // Act
+            IReadOnlyList<string> args = CommandLineUtilities.CommandLineToArgumentList(commandLine);
+
+            // Assert
+            Assert.Equal(expectedArgs, args);
+        }
+
+        /// <summary>
+        /// Tests command-line creation from tokenized PowerShell-style hashtable arguments where a key contains spaces.
+        /// </summary>
+        [Fact]
+        public void ArgumentListToCommandLine_PowerShellHashtableKeyWithSpaces_PreservesCommandLine()
+        {
+            // Arrange
+            string[] args = ["-Key", "Five:5", "-Key1:this is my string", "-Key2:System.Collections.Hashtable"];
+
+            // Act
+            string commandLine = CommandLineUtilities.ArgumentListToCommandLine(args);
+
+            // Assert
+            Assert.Equal("-Key Five:5 -Key1:\"this is my string\" -Key2:System.Collections.Hashtable", commandLine);
+        }
+
+        /// <summary>
+        /// Tests command-line creation from tokenized PowerShell-style hashtable arguments where a spaced key has a value that requires quoting.
+        /// </summary>
+        [Fact]
+        public void ArgumentListToCommandLine_PowerShellHashtableKeyWithSpacesAndQuotedValue_QuotesValuePortion()
+        {
+            // Arrange
+            string[] args = ["-Key", "Five:This is also \"my\" string", "-Key1:this is \"my\" string", "-Key2:System.Collections.Hashtable"];
+
+            // Act
+            string commandLine = CommandLineUtilities.ArgumentListToCommandLine(args);
+
+            // Assert
+            Assert.Equal("-Key Five:\"This is also \"my\" string\" -Key1:\"this is \"my\" string\" -Key2:System.Collections.Hashtable", commandLine);
+        }
+
+        /// <summary>
+        /// Tests exact command-line round-trip for PowerShell-style hashtable arguments where quoted values contain embedded quotes.
+        /// </summary>
+        [Fact]
+        public void PowerShellHashtableValuesWithEmbeddedQuotes_RoundTrip_PreservesCommandLine()
+        {
+            // Arrange
+            const string originalCommandLine = "-Key Five:\"This is also \"my\" string\" -Key1:\"this is \"my\" string\" -Key2:System.Collections.Hashtable";
+
+            // Act
+            IReadOnlyList<string> args = CommandLineUtilities.CommandLineToArgumentList(originalCommandLine);
+            string commandLine = CommandLineUtilities.ArgumentListToCommandLine(args);
+            IReadOnlyList<string> roundTripArgs = CommandLineUtilities.CommandLineToArgumentList(commandLine);
+
+            // Assert
+            Assert.Equal(originalCommandLine, commandLine);
+            Assert.Equal(args, roundTripArgs);
+        }
+
+        /// <summary>
+        /// Tests round-trip conversion for PowerShell-style hashtable arguments where a key contains spaces.
+        /// </summary>
+        [Fact]
+        public void PowerShellHashtableKeyWithSpaces_RoundTrip_PreservesCommandLine()
+        {
+            // Arrange
+            const string originalCommandLine = "-Key Five:5 -Key1:\"this is my string\" -Key2:System.Collections.Hashtable";
+
+            // Act
+            IReadOnlyList<string> args = CommandLineUtilities.CommandLineToArgumentList(originalCommandLine);
+            string commandLine = CommandLineUtilities.ArgumentListToCommandLine(args);
+            IReadOnlyList<string> roundTripArgs = CommandLineUtilities.CommandLineToArgumentList(commandLine);
+
+            // Assert
+            Assert.Equal(originalCommandLine, commandLine);
+            Assert.Equal(args, roundTripArgs);
         }
 
         /// <summary>

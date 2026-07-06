@@ -10,7 +10,7 @@ namespace PSADT.UserInterface.DialogOptions
     /// Options for the RestartDialog.
     /// </summary>
     [DataContract]
-    public sealed record RestartDialogOptions : BaseDialogOptions
+    public sealed record class RestartDialogOptions : BaseDialogOptions
     {
         /// <summary>
         /// Initializes a new instance of the RestartDialogOptions class using the specified deployment type and a
@@ -41,7 +41,8 @@ namespace PSADT.UserInterface.DialogOptions
             (TimeSpan?)options["CountdownDuration"],
             (TimeSpan?)options["CountdownNoMinimizeDuration"],
             (string?)options["ShutdownReasonText"],
-            (string?)options["CustomMessageText"])
+            (string?)options["CustomMessageText"],
+            (bool?)options["DialogAllowCancel"])
         {
         }
 
@@ -76,8 +77,9 @@ namespace PSADT.UserInterface.DialogOptions
         /// behavior is used.</param>
         /// <param name="shutdownReasonText">The reason for the shutdown, optionally shown in the dialog. If <see langword="null"/>, no reason is displayed.</param>
         /// <param name="customMessageText">Custom text displayed in the dialog. If <see langword="null"/>, no custom message is displayed.</param>
+        /// <param name="allowCancel">Indicates whether the dialog displays a Cancel button that closes the prompt without restarting. If <see langword="null"/> or <see langword="false"/>, no Cancel button is shown.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="strings"/> is <see langword="null"/>.</exception>
-        private RestartDialogOptions(string appTitle, string subtitle, string appIconImage, string? appIconDarkImage, string appBannerImage, string? appTaskbarIconImage, bool dialogTopMost, CultureInfo language, int? fluentAccentColor, int? fluentAccentColorDark, DialogPosition? dialogPosition, bool? dialogAllowMove, bool? dialogAllowMinimize, TimeSpan? dialogExpiryDuration, TimeSpan? dialogPersistInterval, RestartDialogStrings strings, TimeSpan? countdownDuration, TimeSpan? countdownNoMinimizeDuration, string? shutdownReasonText, string? customMessageText) : base(appTitle, subtitle, appIconImage, appIconDarkImage, appBannerImage, appTaskbarIconImage, dialogTopMost, language, fluentAccentColor, fluentAccentColorDark, dialogPosition, dialogAllowMove, dialogAllowMinimize, dialogExpiryDuration, dialogPersistInterval)
+        private RestartDialogOptions(string appTitle, string subtitle, string appIconImage, string? appIconDarkImage, string appBannerImage, string? appTaskbarIconImage, bool dialogTopMost, CultureInfo language, int? fluentAccentColor, int? fluentAccentColorDark, DialogPosition? dialogPosition, bool? dialogAllowMove, bool? dialogAllowMinimize, TimeSpan? dialogExpiryDuration, TimeSpan? dialogPersistInterval, RestartDialogStrings strings, TimeSpan? countdownDuration, TimeSpan? countdownNoMinimizeDuration, string? shutdownReasonText, string? customMessageText, bool? allowCancel) : base(appTitle, subtitle, appIconImage, appIconDarkImage, appBannerImage, appTaskbarIconImage, dialogTopMost, language, fluentAccentColor, fluentAccentColorDark, dialogPosition, dialogAllowMove, dialogAllowMinimize, dialogExpiryDuration, dialogPersistInterval)
         {
             if (customMessageText is not null)
             {
@@ -89,6 +91,7 @@ namespace PSADT.UserInterface.DialogOptions
             CountdownNoMinimizeDuration = countdownNoMinimizeDuration;
             ShutdownReasonText = shutdownReasonText;
             CustomMessageText = customMessageText;
+            AllowCancel = allowCancel ?? false;
         }
 
         /// <summary>
@@ -122,11 +125,17 @@ namespace PSADT.UserInterface.DialogOptions
         public readonly string? CustomMessageText;
 
         /// <summary>
+        /// Indicates whether the dialog displays a Cancel button that closes the prompt without restarting.
+        /// </summary>
+        [DataMember]
+        public readonly bool AllowCancel;
+
+        /// <summary>
         /// The strings used for the RestartDialog.
         /// </summary>
         [DataContract]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "The nesting in this case is alright.")]
-        public sealed record RestartDialogStrings
+        public sealed record class RestartDialogStrings
         {
             /// <summary>
             /// Initializes a new instance of the RestartDialogStrings class using the specified string resources and
@@ -145,7 +154,8 @@ namespace PSADT.UserInterface.DialogOptions
                 (string?)strings["MessageRestart"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'MessageRestart' is missing."),
                 (string?)strings["TimeRemaining"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'TimeRemaining' is missing."),
                 (string?)strings["ButtonRestartNow"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonRestartNow' is missing."),
-                (string?)strings["ButtonRestartLater"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonRestartLater' is missing."))
+                (string?)strings["ButtonRestartLater"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonRestartLater' is missing."),
+                (string?)strings["ButtonCancel"] ?? throw new ArgumentNullException(nameof(strings), "The specified key 'ButtonCancel' is missing."))
             {
             }
 
@@ -162,8 +172,9 @@ namespace PSADT.UserInterface.DialogOptions
             /// <param name="timeRemaining">The string representing the remaining time before the restart. Cannot be <see langword="null"/>.</param>
             /// <param name="buttonRestartNow">The label for the "Restart Now" button. Cannot be <see langword="null"/>.</param>
             /// <param name="buttonRestartLater">The label for the "Restart Later" button. Cannot be <see langword="null"/>.</param>
+            /// <param name="buttonCancel">The label for the "Cancel" button. Cannot be <see langword="null"/>.</param>
             /// <exception cref="ArgumentNullException">Thrown if any of the parameters are <see langword="null"/>.</exception>
-            private RestartDialogStrings(string title, string message, string messageTime, string messageRestart, string timeRemaining, string buttonRestartNow, string buttonRestartLater)
+            private RestartDialogStrings(string title, string message, string messageTime, string messageRestart, string timeRemaining, string buttonRestartNow, string buttonRestartLater, string buttonCancel)
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(title);
                 ArgumentException.ThrowIfNullOrWhiteSpace(message);
@@ -172,6 +183,7 @@ namespace PSADT.UserInterface.DialogOptions
                 ArgumentException.ThrowIfNullOrWhiteSpace(timeRemaining);
                 ArgumentException.ThrowIfNullOrWhiteSpace(buttonRestartNow);
                 ArgumentException.ThrowIfNullOrWhiteSpace(buttonRestartLater);
+                ArgumentException.ThrowIfNullOrWhiteSpace(buttonCancel);
                 Title = title;
                 Message = message;
                 MessageTime = messageTime;
@@ -179,6 +191,7 @@ namespace PSADT.UserInterface.DialogOptions
                 TimeRemaining = timeRemaining;
                 ButtonRestartNow = buttonRestartNow;
                 ButtonRestartLater = buttonRestartLater;
+                ButtonCancel = buttonCancel;
             }
 
             /// <summary>
@@ -222,6 +235,12 @@ namespace PSADT.UserInterface.DialogOptions
             /// </summary>
             [DataMember]
             public readonly string ButtonRestartLater;
+
+            /// <summary>
+            /// Button text for cancelling the pending restart.
+            /// </summary>
+            [DataMember]
+            public readonly string ButtonCancel;
         }
     }
 }

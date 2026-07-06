@@ -32,13 +32,13 @@ namespace PSADT.Foundation
         /// The default value is <see cref="ElevatedTokenType.None"/>.</param>
         /// <exception cref="DriveNotFoundException">Thrown if any path in <paramref name="extraPaths"/> is not an absolute path.</exception>
         /// <exception cref="FileNotFoundException">Thrown if any path in <paramref name="extraPaths"/> or the default assemblies does not exist.</exception>
-        /// <exception cref="InvalidOperationException">Thrown if the permissions cannot be modified for any path due to insufficient privileges or if the file is located on a network share.</exception>"
-        internal static async Task Remediate(RunAsActiveUser runAsActiveUser, IReadOnlyList<FileInfo>? extraPaths = null, ElevatedTokenType elevatedTokenType = ElevatedTokenType.None)
+        /// <exception cref="InvalidOperationException">Thrown if the permissions cannot be modified for any path due to insufficient privileges or if the file is located on a network share.</exception>
+        internal static async ValueTask RemediateAsync(RunAsActiveUser runAsActiveUser, IReadOnlyList<FileInfo>? extraPaths = null, ElevatedTokenType elevatedTokenType = ElevatedTokenType.None)
         {
             // Get the primary token for the user if they have a valid session ID, otherwise we'll just use their SID.
             using WindowsIdentity currentUser = WindowsIdentity.GetCurrent();
             using SafeHandle? hPrimaryToken = runAsActiveUser.SessionId != uint.MaxValue
-                ? runAsActiveUser != AccountUtilities.CallerRunAsActiveUser || AccountUtilities.CallerIsAdmin
+                ? runAsActiveUser != AccountUtilities.CallerRunAsActiveUser || TokenManager.CanGetUserPrimaryToken
                 ? await TokenManager.GetUserPrimaryTokenAsync(runAsActiveUser.SessionId, elevatedTokenType).ConfigureAwait(false)
                 : currentUser.AccessToken
                 : null;
@@ -75,11 +75,20 @@ namespace PSADT.Foundation
                 {
                     FileSystemUtilities.SetAccessControl(path, fileSecurity);
                 }
-                catch (Exception ex) when (ex.Message is not null)
+                catch (Exception ex)
                 {
                     throw new InvalidOperationException($"Failed to grant [{runAsActiveUser.NTAccount}] the permissions [{_requiredPermissions}] to file [{path.FullName}]. This can occur when the caller can't modify permissions, such as when the file is located on a network share.", ex);
                 }
             }
+        }
+
+        /// <summary>
+        /// Determines whether the Local System account has the required file system permissions for all client/server assembly files.
+        /// </summary>
+        /// <returns>True if the Local System account has the required permissions; otherwise, false.</returns>
+        internal static bool SystemAccountHasPermissions()
+        {
+            return _assemblies.All(path => FileSystemUtilities.TestEffectiveAccess(path, AccountUtilities.LocalSystemSid, _requiredPermissions));
         }
 
         /// <summary>

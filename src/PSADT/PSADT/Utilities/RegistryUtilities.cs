@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
-using PSADT.Extensions;
 using PSADT.Interop;
 using Windows.Win32.System.Registry;
 
@@ -59,7 +58,7 @@ namespace PSADT.Utilities
         internal static RegistryKey GetRegistryKeyForPath(string keyPath, bool writable = false)
         {
             keyPath = keyPath.Replace(@"Microsoft.PowerShell.Core\Registry::", newValue: null, StringComparison.OrdinalIgnoreCase);
-            int firstBackslashIndex = keyPath.IndexOf('\\', StringComparison.OrdinalIgnoreCase);
+            int firstBackslashIndex = keyPath.IndexOf('\\', StringComparison.Ordinal);
             if (firstBackslashIndex == -1)
             {
                 throw new FormatException("Invalid registry key format.");

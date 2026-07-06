@@ -46,6 +46,9 @@ function New-ADTLogFileName
 
     .LINK
         https://psappdeploytoolkit.com/docs/reference/functions/New-ADTLogFileName
+
+    .LINK
+        https://github.com/PSAppDeployToolkit/PSAppDeployToolkit/blob/main/src/PSAppDeployToolkit/Public/New-ADTLogFileName.ps1
     #>
 
     [CmdletBinding()]
@@ -56,7 +59,7 @@ function New-ADTLogFileName
         [PSAppDeployToolkit.Attributes.ValidateNotNullOrWhiteSpace()]
         [System.String]$Discriminator,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [System.Management.Automation.SwitchParameter]$FileNameOnly
     )
 
@@ -69,9 +72,5 @@ function New-ADTLogFileName
     {
         $PSCmdlet.ThrowTerminatingError($_)
     }
-    if ($FileNameOnly)
-    {
-        return $adtSession.NewLogFileName($Discriminator)
-    }
-    return [System.IO.Path]::Combine($adtSession.LogPath, $adtSession.NewLogFileName($Discriminator))
+    return $adtSession.NewLogFileName($Discriminator, !!$FileNameOnly)
 }

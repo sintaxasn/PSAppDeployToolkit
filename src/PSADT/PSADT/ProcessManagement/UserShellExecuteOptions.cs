@@ -11,7 +11,7 @@ namespace PSADT.ProcessManagement
     /// Provides options for launching a managed process.
     /// </summary>
     [DataContract]
-    public sealed record UserShellExecuteOptions
+    public sealed record class UserShellExecuteOptions
     {
         /// <summary>
         /// Initializes a new instance of the ProcessLaunchInfo class with the specified process launch parameters.
@@ -42,7 +42,7 @@ namespace PSADT.ProcessManagement
             }
 
             // Initially set ArgumentList and FilePath, and test that the caller hasn't done something weird by quoting the path.
-            ArgumentList = new ReadOnlyCollection<string>([.. argumentList ?? []]);
+            ArgumentList = new ReadOnlyCollection<string>(argumentList is not null ? [.. argumentList] : []);
             FilePath = filePath.TrimStart('"').TrimEnd('"');
 
             // Create an arguments string out of our ArgumentList (ShellExecute needs this).

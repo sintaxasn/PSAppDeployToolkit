@@ -54,6 +54,9 @@ function Block-ADTAppExecution
 
     .LINK
         https://psappdeploytoolkit.com/docs/reference/functions/Block-ADTAppExecution
+
+    .LINK
+        https://github.com/PSAppDeployToolkit/PSAppDeployToolkit/blob/main/src/PSAppDeployToolkit/Public/Block-ADTAppExecution.ps1
     #>
 
     [CmdletBinding(SupportsShouldProcess = $true)]
@@ -126,7 +129,7 @@ function Block-ADTAppExecution
                     if (!($runAsActiveUser = Get-ADTClientServerUser))
                     {
                         Write-ADTLogEntry -Message "There is no active logged on user. Verifying client/server access permissions using [BUILTIN\Users]."
-                        $usersSid = [PSADT.AccountManagement.AccountUtilities]::GetWellKnownSid([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid)
+                        $usersSid = [System.Security.Principal.SecurityIdentifier]::new([System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
                         $usersNtAccount = $usersSid.Translate([System.Security.Principal.NTAccount]); $usersSessionId = [System.UInt32]::MaxValue
                         Set-ADTClientServerProcessPermissions -User ([PSADT.Foundation.RunAsActiveUser]::new($usersNtAccount, $usersSid, $usersSessionId, $false))
                     }

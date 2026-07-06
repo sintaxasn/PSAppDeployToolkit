@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Internal;
-using System.Management.Automation.Language;
 using System.Security.Principal;
+using PSAppDeployToolkit.Utilities;
 
 namespace PSAppDeployToolkit.Attributes
 {
@@ -32,16 +31,10 @@ namespace PSAppDeployToolkit.Attributes
         /// <exception cref="ArgumentNullException">Thrown when the argument is null and allowNull is <see langword="false"/>.</exception>
         /// <exception cref="ArgumentException">Thrown when the argument is empty or consists only of white-space characters and allowEmpty is <see langword="false"/>.</exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0015:Specify the parameter name in ArgumentException", Justification = "We don't want a paramter name on these exceptions.")]
-        protected override void Validate(object arguments, EngineIntrinsics engineIntrinsics)
+        protected override void Validate(object? arguments, EngineIntrinsics engineIntrinsics)
         {
-            // Unwrap PSObject to get the underlying value.
-            while (arguments is PSObject psObject)
-            {
-                arguments = psObject.BaseObject;
-            }
-
             // Handle null based on configuration.
-            if (IsNull(arguments))
+            if (!PowerShellUtilities.TryGetBaseObject(arguments, out arguments))
             {
                 if (allowNull)
                 {
@@ -81,14 +74,14 @@ namespace PSAppDeployToolkit.Attributes
             }
             else if (arguments is IDictionary dict)
             {
-                if (dict.Count == 0)
+                if (dict.Count is 0)
                 {
                     throw new ArgumentException("The argument is an empty collection. Provide an argument that is not an empty collection, and then try running the command again.");
                 }
             }
             else if (IsReadOnlyDictionary(arguments, out int count))
             {
-                if (count == 0)
+                if (count is 0)
                 {
                     throw new ArgumentException("The argument is an empty collection. Provide an argument that is not an empty collection, and then try running the command again.");
                 }
@@ -104,8 +97,7 @@ namespace PSAppDeployToolkit.Attributes
                     {
                         do
                         {
-                            object element = enumerator.Current;
-                            if (IsNull(element))
+                            if (!PowerShellUtilities.TryGetBaseObject(enumerator.Current, out object? element))
                             {
                                 throw new ArgumentException("The argument collection contains a null element. Provide a collection that does not contain null elements, and then try running the command again.");
                             }
@@ -126,15 +118,6 @@ namespace PSAppDeployToolkit.Attributes
             }
         }
 
-        /// <summary>
-        /// Determines whether the specified value is null, including PowerShell-specific null representations.
-        /// </summary>
-        /// <param name="value">The value to check.</param>
-        /// <returns><see langword="true"/> if the value is null or a PowerShell/database null representation; otherwise, <see langword="false"/>.</returns>
-        private static bool IsNull(object? value)
-        {
-            return value is null || value is DBNull || value == AutomationNull.Value || value == NullString.Value;
-        }
 
         /// <summary>
         /// Determines whether the specified string consists only of white-space characters (but is not empty).
@@ -181,7 +164,7 @@ namespace PSAppDeployToolkit.Attributes
         /// <returns><see langword="true"/> if the type is a value type that is not <see cref="Nullable{T}"/>; otherwise, <see langword="false"/>.</returns>
         private static bool IsNonNullableValueType(Type? type)
         {
-            return type?.IsValueType == true && Nullable.GetUnderlyingType(type) is null;
+            return (type?.IsValueType) is true && Nullable.GetUnderlyingType(type) is null;
         }
 
         /// <summary>

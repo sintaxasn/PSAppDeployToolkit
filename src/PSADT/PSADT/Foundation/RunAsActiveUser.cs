@@ -16,7 +16,7 @@ namespace PSADT.Foundation
     /// account, security identifier (SID), username, and domain name. This class is useful for scenarios where
     /// operations need to be performed under the context of a specific user.</remarks>
     [DataContract]
-    public sealed record RunAsActiveUser
+    public sealed record class RunAsActiveUser
     {
         /// <summary>
         /// Gets the active user session associated with the caller, or the most recent active user session if the
@@ -28,7 +28,7 @@ namespace PSADT.Foundation
         /// session information.</param>
         /// <returns>A RunAsActiveUser object representing the active user session for the caller, or null if no active user
         /// session is found.</returns>
-        public static async Task<RunAsActiveUser?> GetAsync(IReadOnlyList<SessionInfo>? sessionInfo = null)
+        public static async ValueTask<RunAsActiveUser?> GetAsync(IReadOnlyList<SessionInfo>? sessionInfo = null)
         {
             // Determine the account that will be used to execute client/server commands in the user's context.
             // Favour the caller's session if it's found and is currently an active user session on the device.
@@ -51,6 +51,16 @@ namespace PSADT.Foundation
             ArgumentException.ThrowIfNullOrWhiteSpace(nTAccount?.Value, nameof(nTAccount));
             ArgumentException.ThrowIfNullOrWhiteSpace(sID?.Value, nameof(sID));
             NTAccountValue = nTAccount.Value;
+            int domainSeparator = NTAccountValue.IndexOf('\\', StringComparison.Ordinal);
+            if (domainSeparator != -1)
+            {
+                UserName = NTAccountValue[(domainSeparator + 1)..];
+                DomainName = NTAccountValue[..domainSeparator];
+            }
+            else
+            {
+                UserName = NTAccountValue;
+            }
             SIDValue = sID.Value;
             SessionId = sessionId;
             IsLocalAdmin = isLocalAdmin;
@@ -90,32 +100,14 @@ namespace PSADT.Foundation
         /// <summary>
         /// Gets the username associated with the user.
         /// </summary>
-        [IgnoreDataMember]
-        public string UserName
-        {
-            get
-            {
-                int divider = NTAccount.Value.IndexOf('\\', StringComparison.OrdinalIgnoreCase);
-                return divider != -1
-                    ? NTAccount.Value[(divider + 1)..]
-                    : NTAccountValue;
-            }
-        }
+        [DataMember]
+        public readonly string UserName;
 
         /// <summary>
         /// Represents the domain name associated with the current context.
         /// </summary>
-        [IgnoreDataMember]
-        public string? DomainName
-        {
-            get
-            {
-                int divider = NTAccount.Value.IndexOf('\\', StringComparison.OrdinalIgnoreCase);
-                return divider != -1
-                    ? NTAccount.Value[..divider]
-                    : null;
-            }
-        }
+        [DataMember]
+        public readonly string? DomainName;
 
         /// <summary>
         /// Represents the session ID of the user.

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Management.Automation;
+using PSAppDeployToolkit.Utilities;
 
 namespace PSAppDeployToolkit.Attributes
 {
@@ -22,13 +23,9 @@ namespace PSAppDeployToolkit.Attributes
         /// <exception cref="ArgumentNullException">Thrown when the input value is null.</exception>
         /// <exception cref="ArgumentException">Thrown when the input value cannot be transformed into a DateTime.</exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0015:Specify the parameter name in ArgumentException", Justification = "We don't want a paramter name on these exceptions.")]
-        public override object Transform(EngineIntrinsics engineIntrinsics, object inputData)
+        public override object Transform(EngineIntrinsics engineIntrinsics, object? inputData)
         {
-            while (inputData is PSObject psObject)
-            {
-                inputData = psObject.BaseObject;
-            }
-            if (inputData is null)
+            if (!PowerShellUtilities.TryGetBaseObject(inputData, out inputData))
             {
                 throw new ArgumentNullException(paramName: null, "Cannot transform null to DateTime.");
             }
@@ -82,35 +79,65 @@ namespace PSAppDeployToolkit.Attributes
             switch (inputData)
             {
                 case sbyte value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case byte value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case short value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case ushort value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case int value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case uint value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case long value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case ulong value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case float value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case double value:
-                    days = value;
-                    return true;
+                    {
+                        days = value;
+                        return true;
+                    }
+
                 case decimal value:
                     try
                     {
@@ -122,9 +149,12 @@ namespace PSAppDeployToolkit.Attributes
                         days = default;
                         return false;
                     }
+
                 default:
-                    days = default;
-                    return false;
+                    {
+                        days = default;
+                        return false;
+                    }
             }
         }
     }
