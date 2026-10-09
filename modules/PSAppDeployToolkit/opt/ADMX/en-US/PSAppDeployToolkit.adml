@@ -89,6 +89,8 @@
       <string id="FluentAccentColor_Explain">Specify the Accent Color in hex (with the first two characters for transparency, 00 = 0%, FF = 100%), e.g. 0xFF0078D7. Leave empty to clear a value set in the deployment's config on 4.2.0 or higher; earlier versions ignore an empty value.</string>
       <string id="FluentAccentColorDark_Display">FluentAccentColorDark</string>
       <string id="FluentAccentColorDark_Explain">Specify the Accent Color in hex for dark mode (with the first two characters for transparency, 00 = 0%, FF = 100%), e.g. 0xFF0078D7. Requires PSAppDeployToolkit 4.2.0 or higher. Leave empty to clear a value set in the deployment's config.</string>
+      <string id="FluentAccentColorExact_Display">FluentAccentColorExact</string>
+      <string id="FluentAccentColorExact_Explain">Use the configured Fluent accent colors as the visible accent fills exactly. Enabled: FluentAccentColor is exact in Light mode; if FluentAccentColorDark is also set, it is exact in Dark mode, otherwise Dark is derived from the Light color. If only FluentAccentColorDark is set, Dark uses that exact color and Light follows the Windows accent color. Disabled: calculate the existing WinUI accent palettes from the configured colors (the default). Not configured: use the deployment's config value, which defaults to False. This setting has no effect without a custom accent color and applies only to Fluent dialogs. Requires PSAppDeployToolkit 4.2.0 or higher.</string>
       <string id="DialogStyle_Display">DialogStyle</string>
       <string id="DialogStyle_Explain">Choose from either 'Fluent' for contemporary dialogs, or 'Classic' for PSAppDeployToolkit 3.x WinForms dialogs.</string>
       <string id="DefaultExitCode_Display">DefaultExitCode</string>

@@ -135,6 +135,10 @@ try
                                                 # The value specified here should be literally typed (i.e. `FluentAccentColorDark = 0xFF0078D7`) and not wrapped in quotes. Requires PSAppDeployToolkit 4.2.0 or higher.
                                                 FluentAccentColorDark = $null
 
+                                                # Keep calculated WinUI accent palettes by default; set to $true to use the configured visible accent colors exactly.
+                                                # With only FluentAccentColor set, Light uses that exact color and Dark is derived. Set both colors for exact per-theme values. Requires PSAppDeployToolkit 4.2.0 or higher.
+                                                FluentAccentColorExact = $false
+
                                                 # Exit code used when a UI prompt times out.
                                                 DefaultExitCode = 1618
 

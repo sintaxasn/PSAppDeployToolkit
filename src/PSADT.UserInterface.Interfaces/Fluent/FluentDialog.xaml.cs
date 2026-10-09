@@ -74,6 +74,8 @@ namespace PSADT.UserInterface.Interfaces.Fluent
                 { ApplicationTheme.HighContrast, accentColorDark ?? accentColor },
                 { ApplicationTheme.Auto, accentColor },
             });
+            _dialogAccentHasExplicitDark = accentColorDark is not null;
+            _dialogAccentColorExact = options.FluentAccentColorExact;
 
             // Set the language and flow direction for the dialog.
             Language = System.Windows.Markup.XmlLanguage.GetLanguage(options.Language.IetfLanguageTag);
@@ -752,15 +754,48 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         }
 
         /// <summary>
-        /// Applies the accent color to the dialog based on the current application theme. The accent color is retrieved
-        /// from the dialog's accent color cache.
+        /// Applies the configured accent intent for the current theme.
         /// </summary>
-        /// <param name="theme">The current application theme for which to apply the accent color. This parameter is used to look up the appropriate accent color from the cache.</param>
+        /// <param name="theme">The resolved application theme.</param>
         private void SetDialogAccent(ApplicationTheme theme)
         {
-            if (_dialogAccentCache[theme] is Color accentColor)
+            if (_dialogAccentCache[ApplicationTheme.Light] is Color lightAccent)
             {
-                ApplicationAccentColorManager.ApplyCustomAccent(accentColor);
+                if (_dialogAccentHasExplicitDark && _dialogAccentCache[ApplicationTheme.Dark] is Color darkAccent)
+                {
+                    if (_dialogAccentColorExact)
+                    {
+                        ApplicationAccentColorManager.ApplyCustomAccentExact(lightAccent, darkAccent);
+                    }
+                    else
+                    {
+                        ApplicationAccentColorManager.ApplyCustomAccent(lightAccent, darkAccent);
+                    }
+                }
+                else if (_dialogAccentColorExact)
+                {
+                    ApplicationAccentColorManager.ApplyCustomAccentExact(lightAccent);
+                }
+                else
+                {
+                    ApplicationAccentColorManager.ApplyCustomAccent(lightAccent);
+                }
+            }
+            else if (_dialogAccentHasExplicitDark && _dialogAccentCache[theme] is Color darkAccent && theme is ApplicationTheme.Dark or ApplicationTheme.HighContrast)
+            {
+                if (_dialogAccentColorExact)
+                {
+                    // The single-color overload pins Light and derives Dark, so supply an explicit Dark primary.
+                    ApplicationAccentColorManager.ApplyCustomAccentExact(darkAccent, darkAccent);
+                }
+                else
+                {
+                    ApplicationAccentColorManager.ApplyCustomAccent(darkAccent);
+                }
+            }
+            else
+            {
+                ApplicationAccentColorManager.ApplySystemAccent();
             }
         }
 
@@ -1142,6 +1177,16 @@ namespace PSADT.UserInterface.Interfaces.Fluent
         /// A read-only dictionary that caches accent colors for different application themes.
         /// </summary>
         private readonly ReadOnlyDictionary<ApplicationTheme, Color?> _dialogAccentCache;
+
+        /// <summary>
+        /// Whether the Dark accent was configured separately from the Light fallback.
+        /// </summary>
+        private readonly bool _dialogAccentHasExplicitDark;
+
+        /// <summary>
+        /// A read-only boolean that determines whether custom accent values are exact visible primary fills.
+        /// </summary>
+        private readonly bool _dialogAccentColorExact;
 
         /// <summary>
         /// Releases the managed resources used by the dialog.

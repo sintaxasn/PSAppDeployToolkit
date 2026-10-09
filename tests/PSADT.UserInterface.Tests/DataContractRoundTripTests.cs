@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -103,6 +104,55 @@ namespace PSADT.UserInterface.Tests
                 // Assert
                 Assert.IsType(original.GetType(), restored);
                 Assert.Equal(original, restored);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that every dialog preserves calculated defaults and explicit exact selection across the client/server pipe.
+        /// </summary>
+        /// <param name="exact">The optional exact accent setting supplied by the module.</param>
+        [Theory]
+        [InlineData(null)]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Options_AccentSettingsSurviveBaseTypeRoundTrip(bool? exact)
+        {
+            Func<Hashtable>[] tables =
+            [
+                SampleOptions.CloseAppsDialog,
+                SampleOptions.CustomDialog,
+                SampleOptions.InputDialog,
+                static () => SampleOptions.ListSelectionDialog(),
+                SampleOptions.ProgressDialog,
+                SampleOptions.RestartDialog,
+            ];
+            Func<Hashtable, BaseDialogOptions>[] constructors =
+            [
+                static table => new CloseAppsDialogOptions(DeploymentType.Install, table),
+                static table => new CustomDialogOptions(table),
+                static table => new InputDialogOptions(table),
+                static table => new ListSelectionDialogOptions(table),
+                static table => new ProgressDialogOptions(table),
+                static table => new RestartDialogOptions(DeploymentType.Install, table),
+            ];
+            for (int i = 0; i < tables.Length; i++)
+            {
+                Hashtable table = tables[i]();
+                table["FluentAccentColor"] = 0x87ABC8;
+                table["FluentAccentColorDark"] = 0x4236A4;
+                if (exact is bool useExactColors)
+                {
+                    table["FluentAccentColorExact"] = useExactColors;
+                }
+                BaseDialogOptions original = constructors[i](table);
+
+                BaseDialogOptions restored = Assert.IsType<BaseDialogOptions>(RoundTrip(original, typeof(BaseDialogOptions)), exactMatch: false);
+
+                Assert.IsType(original.GetType(), restored);
+                Assert.Equal(exact ?? false, original.FluentAccentColorExact);
+                Assert.Equal(exact ?? false, restored.FluentAccentColorExact);
+                Assert.Equal(0x87ABC8, restored.FluentAccentColor);
+                Assert.Equal(0x4236A4, restored.FluentAccentColorDark);
             }
         }
 

@@ -140,6 +140,47 @@ namespace PSADT.UserInterface.Interfaces.Tests.TestHelpers
         }
 
         /// <summary>
+        /// Shuts down an initialized application and waits for its dispatcher thread to finish before process exit.
+        /// </summary>
+        /// <remarks>
+        /// Assembly teardown runs outside the owning apartment. Application shutdown is posted on that apartment,
+        /// and joining it lets WPF remove native window hooks before its process-exit tracker starts walking them.
+        /// An unused host is left uninitialized, and cleanup failures propagate to the assembly fixture.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown if cleanup runs on the owning thread or the application is unavailable.</exception>
+        /// <exception cref="TimeoutException">Thrown if the dispatcher cannot begin shutdown or its thread does not exit within ten seconds.</exception>
+        [SuppressMessage("ApiDesign", "RS0030:Do not use banned APIs", Justification = "The assembly fixture must shut down the shared WPF application after all UI tests finish, on the dispatcher that owns it.")]
+        public static void Shutdown()
+        {
+            if (!LazyDispatcher.IsValueCreated)
+            {
+                return;
+            }
+
+            Dispatcher dispatcher = LazyDispatcher.Value;
+            if (dispatcher.CheckAccess())
+            {
+                throw new InvalidOperationException("The test host must shut down from outside its owning dispatcher thread.");
+            }
+
+            TimeSpan timeout = TimeSpan.FromSeconds(10);
+            if (!dispatcher.HasShutdownStarted)
+            {
+                dispatcher.Invoke(static () =>
+                {
+                    System.Windows.Application application = System.Windows.Application.Current
+                        ?? throw new InvalidOperationException("The initialized test host has no WPF application to shut down.");
+                    application.Shutdown();
+                }, DispatcherPriority.Send, CancellationToken.None, timeout);
+            }
+
+            if (!dispatcher.Thread.Join(timeout))
+            {
+                throw new TimeoutException("The WPF test host thread did not exit within ten seconds after application shutdown.");
+            }
+        }
+
+        /// <summary>
         /// Starts <see cref="DialogManager"/> and hands back the dispatcher it created.
         /// </summary>
         /// <remarks>
