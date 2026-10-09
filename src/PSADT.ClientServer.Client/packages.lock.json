@@ -167,7 +167,7 @@
       "psadt.userinterface.interfaces": {
         "type": "Project",
         "dependencies": {
-          "Fluence.Wpf": "[0.9.0-pre, )",
+          "Fluence.Wpf": "[0.9.2-pre, )",
           "PSADT": "[1.0.0, )",
           "PSADT.UserInterface": "[1.0.0, )",
           "PSAppDeployToolkit": "[1.0.0, )"

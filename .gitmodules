@@ -1,0 +1,3 @@
+[submodule "vendor/Fluence.Wpf"]
+	path = vendor/Fluence.Wpf
+	url = https://github.com/sintaxasn/Fluence.Wpf.git
