@@ -567,17 +567,26 @@ namespace PSADT.Tests.WindowsInstaller
         [Fact]
         public void GetMsiTableDictionary_KeepsReadingWhenANameRepeats()
         {
-            // Arrange: three rows the installer keeps apart, whose names differ only by the space around them
+            // Arrange: three rows with distinct primary keys whose names differ only by surrounding whitespace
             using TempDirectory temp = new();
             string msiPath = temp.WriteFile("spaced.msi", string.Empty);
-            WriteMsiWithProperties(msiPath, [("Spaced", "plain"), ("Spaced ", "trailing"), (" Spaced", "leading"), ("Other", "kept")]);
+            WriteMsi(
+                msiPath,
+                "CREATE TABLE `Names` (`Id` CHAR(72) NOT NULL, `Name` CHAR(72) NOT NULL, `Value` CHAR(0) NOT NULL PRIMARY KEY `Id`)",
+                [
+                    "INSERT INTO `Names` (`Id`, `Name`, `Value`) VALUES ('plain', 'Spaced', 'plain')",
+                    "INSERT INTO `Names` (`Id`, `Name`, `Value`) VALUES ('trailing', 'Spaced ', 'trailing')",
+                    "INSERT INTO `Names` (`Id`, `Name`, `Value`) VALUES ('leading', ' Spaced', 'leading')",
+                    "INSERT INTO `Names` (`Id`, `Name`, `Value`) VALUES ('other', 'Other', 'kept')",
+                ]);
 
             // Act
-            IReadOnlyDictionary<string, object>? properties = MsiUtilities.GetMsiTableDictionary(msiPath, "Property", 1, 2);
+            IReadOnlyDictionary<string, object>? properties = MsiUtilities.GetMsiTableDictionary(msiPath, "Names", 2, 3);
 
             // Assert
             Assert.NotNull(properties);
             Assert.True(properties.ContainsKey("Spaced"));
+            Assert.Equal("leading", properties["Spaced"]);
             Assert.Equal("kept", properties["Other"]);
         }
 
